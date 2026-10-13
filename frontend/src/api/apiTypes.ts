@@ -1,0 +1,25 @@
+import type { z } from 'zod';
+import type * as S from './schemas';
+
+export type Severity = z.infer<typeof S.SeveritySchema>;
+export type FindingStatus = z.infer<typeof S.FindingStatusSchema>;
+export type DiffState = z.infer<typeof S.DiffStateSchema>;
+export type GraphView = z.infer<typeof S.GraphViewSchema>;
+export type ConformanceMetrics = z.infer<typeof S.ConformanceMetricsSchema>;
+export type SeverityCounts = z.infer<typeof S.SeverityCountsSchema>;
+export type DashboardSummary = z.infer<typeof S.DashboardSummarySchema>;
+export type Finding = z.infer<typeof S.FindingSchema>;
+export type FindingsResponse = z.infer<typeof S.FindingsResponseSchema>;
+export type GraphNode = z.infer<typeof S.GraphNodeSchema>;
+export type GraphEdge = z.infer<typeof S.GraphEdgeSchema>;
+export type ArchitectureGraph = z.infer<typeof S.ArchitectureGraphSchema>;
+export type Intent = z.infer<typeof S.IntentSchema>;
+export type IntentsResponse = z.infer<typeof S.IntentsResponseSchema>;
+export type DriftEvent = z.infer<typeof S.DriftEventSchema>;
+export type DriftEventsResponse = z.infer<typeof S.DriftEventsResponseSchema>;
+export type RemediationRequest = z.infer<typeof S.RemediationRequestSchema>;
+export type RemediationsResponse = z.infer<typeof S.RemediationsResponseSchema>;
+export type AuditEvent = z.infer<typeof S.AuditEventSchema>;
+export type AuditEventsResponse = z.infer<typeof S.AuditEventsResponseSchema>;
+export type SystemStatus = z.infer<typeof S.SystemStatusSchema>;
+export type JobStatus = z.infer<typeof S.JobStatusSchema>;

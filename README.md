@@ -21,6 +21,30 @@ backend/
 
 The backend implements draft intent creation/retrieval/approval, four deterministic constraints, live inventory with observed graph edges, findings persistence and synchronous evaluations. Dashboard aggregation, finding details, evaluation history/status reads, version management, audit events, relationship-conformance rules, role/account isolation, remediation workflows and Bedrock explanations remain to be implemented. Automatic remediation is disabled by absence of an implementation.
 
+The React frontend is in `frontend/`, together with its PRD and implementation specification. [Integration status](INTEGRATION.md) records the API and Cognito gaps between the two implementations.
+
+## Frontend setup on macOS
+
+Use Node.js 22.19 or newer in a supported release line. From the repository root:
+
+```bash
+cd frontend
+npm ci
+test -f .env.development.local || cp .env.example .env.development.local
+npm run dev
+```
+
+The example explicitly enables development mocks with a visible banner. This is a fixture preview, not live AWS data. `VITE_USE_MOCKS=false` disables mocks even during development. Endpoint paths include `/v1`, so `VITE_API_BASE_URL` must be an origin such as `http://127.0.0.1:3000`, without that suffix. Live connection additionally requires the contracts and Cognito configuration described in [INTEGRATION.md](INTEGRATION.md).
+
+```bash
+npm run lint
+npm test
+npm run test:contract
+npm run build
+```
+
+Production builds reject `VITE_USE_MOCKS=true`; `.env.development.local` is not loaded for a default production build. See [frontend README](frontend/README.md) for public configuration.
+
 ## 1. macOS tools
 
 Use Terminal with zsh or bash. Check installed tools:

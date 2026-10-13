@@ -1,0 +1,47 @@
+@import "tailwindcss";
+@import "./fonts.css";
+
+@theme {
+  --color-film: #F6F8FB;
+  --color-sheet: #FFFFFF;
+  --color-ink: #172033;
+  --color-graphite: #5A677B;
+  --color-pencil: #68758A;
+  --color-rule: #E2E8F0;
+  --color-rule-strong: #CBD5E1;
+  --color-prussian: #183B87;
+  --color-prussian-hover: #122C66;
+  --color-survey: #1B7A4B;
+  --color-sev-critical: #B42318;
+  --color-sev-high: #C2410C;
+  --color-sev-medium: #8A5A00;
+  --color-sev-low: #1F6C8C;
+  --color-sev-info: #5A677B;
+
+  --font-sans: "Atkinson Hyperlegible Next", system-ui, sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, monospace;
+  --font-title: "Archivo Variable", sans-serif;
+}
+
+@layer base {
+  *, ::after, ::before, ::backdrop, ::file-selector-button {
+    border-color: var(--color-rule, currentColor);
+  }
+
+  body {
+    background-color: var(--color-film);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    margin: 0;
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* No shadows on cards or containers per AGENTS.md §5.7 */
+  .no-shadow {
+    box-shadow: none !important;
+  }
+}

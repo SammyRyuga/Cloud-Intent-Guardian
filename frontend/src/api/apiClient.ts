@@ -1,0 +1,149 @@
+/**
+ * ApiClient (INV-01: Only src/api/ may call fetch)
+ * Validates responses using zod schemas and attaches bearer token
+ */
+import { z } from 'zod';
+import { env } from '@/config/env';
+import { authClient } from '@/auth/authClient';
+import { ApiError } from './errors';
+
+interface RequestOptions {
+  method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+  body?: unknown;
+  headers?: Record<string, string>;
+}
+
+export async function apiClient<T>(
+  endpoint: string,
+  schema: z.ZodType<T>,
+  options: RequestOptions = {}
+): Promise<T> {
+  const token = await authClient.getAccessToken();
+  const url = endpoint.startsWith('http') ? endpoint : `${env.apiBaseUrl}${endpoint}`;
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: options.method || 'GET',
+      headers,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+  } catch (err: unknown) {
+    throw new ApiError({
+      message: 'Could not reach the API. Check connection.',
+      kind: 'network',
+      code: 'NETWORK_ERROR',
+    });
+  }
+
+  const requestId = response.headers.get('x-amzn-requestid') || response.headers.get('x-request-id') || undefined;
+
+  if (response.status === 401) {
+    throw new ApiError({
+      message: 'Your session has expired. Sign in again to continue.',
+      kind: 'auth',
+      code: 'UNAUTHENTICATED',
+      requestId,
+      status: 401,
+    });
+  }
+
+  if (response.status === 403) {
+    throw new ApiError({
+      message: 'You do not have permission to do this.',
+      kind: 'forbidden',
+      code: 'FORBIDDEN',
+      requestId,
+      status: 403,
+    });
+  }
+
+  if (response.status === 404) {
+    throw new ApiError({
+      message: 'Requested resource was not found.',
+      kind: 'not_found',
+      code: 'NOT_FOUND',
+      requestId,
+      status: 404,
+    });
+  }
+
+  if (response.status === 409) {
+    throw new ApiError({
+      message: 'This item was already changed by someone else. Refresh to see its current state.',
+      kind: 'conflict',
+      code: 'STATE_CONFLICT',
+      requestId,
+      status: 409,
+    });
+  }
+
+  if (response.status === 429) {
+    throw new ApiError({
+      message: 'Too many requests. Please try again shortly.',
+      kind: 'rate_limited',
+      code: 'RATE_LIMITED',
+      requestId,
+      status: 429,
+    });
+  }
+
+  if (response.status >= 500) {
+    throw new ApiError({
+      message: 'The server could not complete the request.',
+      kind: 'server',
+      code: 'INTERNAL_ERROR',
+      requestId,
+      status: response.status,
+    });
+  }
+
+  if (!response.ok) {
+    let errMsg = 'The request failed.';
+    try {
+      const errJson = await response.json();
+      if (errJson.message) errMsg = errJson.message;
+    } catch {
+      // ignore
+    }
+    throw new ApiError({
+      message: errMsg,
+      kind: 'validation',
+      code: 'VALIDATION_ERROR',
+      requestId,
+      status: response.status,
+    });
+  }
+
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch {
+    data = {};
+  }
+
+  const parseResult = schema.safeParse(data);
+  if (!parseResult.success) {
+    if (import.meta.env.DEV) {
+      console.warn('API Contract Mismatch on', endpoint, parseResult.error);
+    }
+    throw new ApiError({
+      message: 'The server sent data this version of the app does not understand.',
+      kind: 'contract',
+      code: 'CONTRACT_MISMATCH',
+      requestId,
+      status: response.status,
+    });
+  }
+
+  return parseResult.data;
+}
