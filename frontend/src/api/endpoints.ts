@@ -8,6 +8,7 @@ export const endpoints = {
   architecture: (view: string) => `/v1/architecture/graph?view=${encodeURIComponent(view)}`,
   intents: () => '/v1/intents',
   intent: (id: string) => `/v1/intents/${encodeURIComponent(id)}`,
+  intentApprove: (id: string) => `/v1/intents/${encodeURIComponent(id)}/approve`,
   intentUploadUrl: () => '/v1/intents/upload-url',
   driftEvents: (params?: string) => `/v1/drift-events${params ? `?${params}` : ''}`,
   remediations: (status?: string) => `/v1/remediations${status ? `?status=${encodeURIComponent(status)}` : ''}`,

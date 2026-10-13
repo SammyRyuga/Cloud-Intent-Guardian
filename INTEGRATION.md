@@ -1,51 +1,97 @@
-# Frontend/backend integration status
+# Frontend/backend integration
 
-The `frontend` branch has been incorporated alongside the existing backend. This joins source histories; it does not establish live end-to-end integration. No backend endpoint or persisted identifier was renamed to make the merge appear complete.
+The implemented MVP routes now have matching frontend consumers. The existing backend identifiers and response shapes are preserved; the API layer adapts transport fields for the UI. This is a local integration, not an AWS deployment.
 
-## Verified merge checks
+## Connected flows
 
-Checked on 2026-10-13 using Node.js 22.19.0:
+| UI | Backend contract |
+| --- | --- |
+| Overview | `GET /v1/dashboard/summary` reads stored findings and evaluation metrics; no evaluation means null conformance |
+| Intents | JSON draft creation, paginated list, detail retrieval and explicit approval using `intentId` |
+| Findings | List filters and opaque pagination, plus `/v1/findings/{findingId}` detail with stored evidence |
+| System/status | Existing fields plus frontend readiness fields; local mode explicitly disables AWS discovery |
+| Evaluation | Existing synchronous `/v1/evaluations` response is parsed and displayed; no invented job ID or polling |
+| Architecture | `/v1/architecture/graph?view=ACTUAL` renders observed resources/edges; UNKNOWN means comparison is unavailable |
+| Login | SAM template now includes a Cognito hosted domain, authorization-code OAuth and configurable callback/logout URLs |
 
-- Locked dependency installation (`npm ci`) completed.
-- `npm test`: 12 checks passed (nine mock-fixture schema checks and three environment/configuration checks).
-- `npm run test:contract`: nine fixture checks passed.
-- `npm run build`: TypeScript and production Vite build passed; the mock service worker was absent from the final output.
-- A build with `VITE_USE_MOCKS=true` failed with the intended configuration error.
-- `npm run lint` completed with four warnings in imported code (two fast-refresh export warnings and two unused-variable warnings). The configured linter is Oxlint; it does not implement every boundary rule prescribed by the frontend instruction file.
-- Emitted JavaScript files passed the documented gzip thresholds after route splitting. Vite reported the main chunk at 130.37 KB gzip and the architecture chunk at 83.86 KB gzip.
-- A limited artifact check found no selected fixture identifiers/MSW markers, AWS access-key-shaped values, or private-key headers in generated JavaScript. This is not a comprehensive security audit.
+`frontend/src/api/backendSchemas.ts` validates backend transport data and maps `findingId` to the UI's `id`, `firstSeenAt` to `detectedAt`, and `nextToken` to `meta.nextCursor`. JSON manifests retain native IDs and numeric versions. No historical versions, declared-resource counts or graph diff results are fabricated.
 
-See `backend/VALIDATION.md` for separate backend checks. No browser journeys, accessibility checks, live AWS discovery, Cognito login or real database persistence were verified by this merge.
+Finding acknowledgement, uploads, asynchronous jobs, intent topology comparison, drift history, audit events, Bedrock explanations and remediation remain disabled in live mode. Capability flags cannot enable a route that the backend does not implement. Stored dashboard drift/remediation counts are null and render as Not enabled. Partial inventory or incomplete scans cannot claim full conformance or resolve unseen findings.
 
-## Contracts that still need alignment
+## Run the actual local integration
 
-| Area | Current backend | Current frontend expectation |
-| --- | --- | --- |
-| System status | `status`, `accountId`, `region`, `sources`, `checkedAt` | `backendReachable`, `awsSourcesConnected`, `evaluatedRegion`, `lastSyncAt`, `version` |
-| Findings | `findingId`, `firstSeenAt`, `nextToken` at top level | `id`, `detectedAt`, `remediationAvailable`, `meta.nextCursor` |
-| Intents | `intentId`, numeric `version`, `constraints`, `updatedAt`; detail `{item}` | `id`, `currentVersion`, `versions`, `resourceCount`, `lastUpdatedAt`; direct detail object |
-| Evaluations | Synchronous `{evaluation, findings, inventory}` | Job submission with `jobId`, followed by `/v1/jobs/{jobId}` polling |
-| Architecture | `/v1/resources` with observed items/edges | `/v1/architecture/graph` with diff nodes/edges and truncation |
-| Authentication | Cognito pool/client and JWT authorizer; SRP/password flows | Managed-login domain and authorization-code OAuth callbacks |
+Start the database and SAM using the main [README](README.md). Preserve any existing database container. From `backend/`:
 
-The supplied implementation specification and actual frontend also differ in places (for example `/v1/architecture` in the specification versus `/v1/architecture/graph` in frontend endpoints, and recommended `data/meta` envelopes versus direct frontend objects). Resolve these explicitly with both owners before changing contracts. Do not silently fabricate conformance, graph diff states, historical versions or approval success.
+```bash
+sam validate --lint
+sam build
+sam local start-api \
+  --template .aws-sam/build/template.yaml \
+  --env-vars local-env.json \
+  --docker-network cig-local \
+  --region ap-south-1 \
+  --skip-pull-image
+```
 
-Backend routes absent today: dashboard summary, finding detail/status mutation, job status, graph comparison, intent upload/ingestion, drift events, audit events, remediation requests/decisions and explanation generation. Existing approval is `/v1/intents/{intentId}/approve`; the UI does not yet implement that JSON-manifest flow.
+The default CORS origin is `http://localhost:5173`. In a second terminal, from `frontend/`:
 
-## Safe development mode
+```bash
+npm ci
+test -f .env.development.local || cp .env.local-api.example .env.development.local
+npm run dev -- --host localhost --port 5173 --strictPort
+```
 
-Use explicit development mocks to inspect the full frontend. Copy `frontend/.env.example` to `.env.development.local`. The visible mock banner identifies fixture data. `VITE_USE_MOCKS=false` disables mocking; production rejects a true flag. API base URLs are origins without `/v1`, since endpoint paths include that prefix.
+If a configuration file already exists, edit its public settings to match `.env.local-api.example`; copying only when absent will not switch an existing mock profile. The required settings are `VITE_USE_MOCKS=false`, `VITE_LOCAL_API=true`, `VITE_API_BASE_URL=http://127.0.0.1:3000` and the agreed region. Open `http://localhost:5173/intents`. The visible Local API banner identifies the unauthenticated, loopback-only development mode. It uses real DynamoDB Local data and does not run MSW mocks.
 
-Setting an API URL alone does not close the contracts above. Keep unsupported live capabilities disabled. Do not remove Cognito authorization to connect the UI; the backend template needs managed-login domain/callback support before the frontend's real login can work.
+The local mode is restricted to a loopback API origin in development and is rejected by production builds. SAM's local JWT limitation remains; deployed API Gateway authentication is not removed. The backend refuses live discovery/evaluation in local mode, even if local SDK environment credentials exist. Local status does not claim AWS connectivity.
 
-## Next integration milestone
+## Repeatable validation
 
-1. Prove the existing intent POST/list/detail flow with the backend persistence verifier.
-2. Agree a compatible status, findings and JSON-intent transport contract, preserving backend identifiers or explicitly adapting them in `src/api/`.
-3. Configure Cognito OAuth and exact frontend-origin CORS after deployment authorization.
-4. Implement job-based evaluation/status and server-backed dashboard/graph data, with deterministic evidence and partial inventory handling.
-5. Add history/audit and human-approved remediation only after detection and approval paths pass.
+From `backend/`, install `requirements-dev.txt` for the additional Moto contract tests:
 
-## Validation boundaries
+```bash
+python3 -m pip install -r requirements-dev.txt
+python3 -m unittest discover -s tests -v
+```
 
-The frontend instruction file specifies additional unit/component, accessibility, E2E, boundary-lint, bundle and live-contract gates. The imported branch did not provide implementations for all those gates. Fixture tests and the available lint/build scripts are checked during this merge; missing gates must be implemented before treating the application as production ready. Backend live integration and browser journeys remain separate unverified work.
+The generated frontend contract fixture came from actual Python handler responses using Moto and explicit test inventory observations. To regenerate it, run from the repository root:
+
+```bash
+CIG_CONTRACT_OUTPUT=frontend/tests/fixtures/backend-contract.json python3 -m unittest discover -s backend/tests -v
+```
+
+From `frontend/`:
+
+```bash
+npm test
+npm run lint
+npm run build
+npx playwright install chromium
+```
+
+Browser tests expect a running real local backend and start a separate frontend on `http://127.0.0.1:15173`. For them, start SAM with `--parameter-overrides AllowedOrigin=http://127.0.0.1:15173`, then run:
+
+```bash
+CIG_API_URL=http://127.0.0.1:3000 npm run test:e2e
+```
+
+The browser tests leave their draft/approved test items in the configured local database. Screenshots/traces are written outside the repository. They do not prove live AWS discovery or Cognito login.
+
+## Validation performed on 2026-10-13
+
+- SAM CLI 1.168.0: template lint/validation and local Python 3.13 build passed.
+- Thirteen Python tests passed, including handler persistence/evaluation/view contracts with Moto and the original SDK-stubbed checks.
+- Seventeen frontend configuration/fixture/real-handler-response schema checks passed.
+- Production TypeScript/Vite build passed. A build with `VITE_LOCAL_API=true` was rejected as intended; mock-enabled builds are also rejected.
+- Actual SAM Lambda containers and isolated DynamoDB Local: POST 201, direct consistent database read, list GET and detail GET all passed. Intent ID: `bc168b39-52f4-481f-938a-44f14198a50a`.
+- Chromium: create/read/approve/reload flow and unavailable-workflow checks passed at desktop and 390px mobile width, with no relevant browser errors in the checked intent flow. React Router emitted its existing future-flag warning.
+- Browser plugin was not available; the repository's Playwright workflow performed rendered validation.
+- Lint completed with three warnings from imported code (two fast-refresh exports and one unused mock-handler parameter).
+
+The local database was an isolated temporary instance on host port 18000, the API used port 13000 and the browser test frontend used port 15173. Existing Docker databases were not modified. This proves persistence within the running local instance, not durability across an in-memory container restart.
+
+## Production configuration and remaining work
+
+Production uses `VITE_USE_MOCKS=false` and `VITE_LOCAL_API=false`, the deployed API origin, Cognito pool/client/domain outputs and exact OAuth callback/logout URLs. Configure `CognitoCallbackUrl`, `CognitoLogoutUrl` and `AllowedOrigin` together in the SAM deployment review. The template uses classic Cognito hosted login (`ManagedLoginVersion: 1`) with authorization-code flow, keeping the public app client secret-free. Amplify owns the PKCE flow and token/session handling. [Cognito client properties](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html).
+
+No AWS resources were deployed. Live Cognito sign-in, anonymous/invalid-token rejection, AWS inventory, graph discovery and live evaluations need authorized Academy testing. Evaluation remains synchronous and bounded by the Lambda timeout; large accounts require later async orchestration. Full accessibility/component, boundary-lint and production security gates also remain broader work. Do not advertise these as verified.

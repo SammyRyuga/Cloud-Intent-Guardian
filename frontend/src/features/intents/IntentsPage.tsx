@@ -6,8 +6,14 @@ import { Button } from '@/components/ui/Button';
 import { formatDateTime } from '@/utils/dates';
 import { Upload, History } from 'lucide-react';
 import type { Intent, IntentVersion } from '@/types/domain';
+import { env } from '@/config/env';
+import { ManifestIntentsPage } from './ManifestIntentsPage';
 
 export function IntentsPage() {
+  return env.useMocks ? <MockIntentsPage /> : <ManifestIntentsPage />;
+}
+
+function MockIntentsPage() {
   const { data, isLoading, isError, error, refetch } = useIntents();
   const [selectedIntentId, setSelectedIntentId] = useState<string | null>(null);
 
@@ -24,9 +30,9 @@ export function IntentsPage() {
         </div>
 
         {/* Upload Button */}
-        <Button variant="secondary" size="sm">
+        <Button variant="secondary" size="sm" disabled title="File upload is not implemented">
           <Upload className="w-3.5 h-3.5 mr-1.5 stroke-[1.5]" />
-          Upload intent specification
+          File upload not enabled
         </Button>
       </div>
 

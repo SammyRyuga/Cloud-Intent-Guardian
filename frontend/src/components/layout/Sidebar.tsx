@@ -1,4 +1,5 @@
 import React from 'react';
+import { env } from '@/config/env';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -24,7 +25,7 @@ const navigation = [
 
 export function Sidebar() {
   return (
-    <aside className="w-64 border-r border-rule bg-sheet flex flex-col shrink-0 select-none">
+    <aside className="hidden md:flex w-64 border-r border-rule bg-sheet flex-col shrink-0 select-none">
       <div className="h-14 border-b border-rule flex items-center px-4 gap-2.5">
         {/* Custom SVG logomark per AGENTS.md §5.7 */}
         <div className="w-7 h-7 rounded bg-prussian flex items-center justify-center text-white font-title font-bold text-sm tracking-tighter">
@@ -60,7 +61,7 @@ export function Sidebar() {
 
       <div className="p-3 border-t border-rule text-[11px] text-pencil">
         <span>Region: </span>
-        <span className="font-mono text-ink">us-east-1</span>
+        <span className="font-mono text-ink">{env.defaultRegion}</span>
       </div>
     </aside>
   );

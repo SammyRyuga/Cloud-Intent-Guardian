@@ -15,7 +15,7 @@ interface RequestOptions {
 
 export async function apiClient<T>(
   endpoint: string,
-  schema: z.ZodType<T>,
+  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
   options: RequestOptions = {}
 ): Promise<T> {
   const token = await authClient.getAccessToken();
@@ -37,7 +37,15 @@ export async function apiClient<T>(
       headers,
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
-  } catch (err: unknown) {
+    if (response.status === 401 && !env.useMocks && !env.localApi) {
+      const refreshed = await authClient.getAccessToken(true);
+      if (refreshed) {
+        headers.Authorization = `Bearer ${refreshed}`;
+        response = await fetch(url, {method: options.method || 'GET', headers,
+          body: options.body ? JSON.stringify(options.body) : undefined});
+      }
+    }
+  } catch {
     throw new ApiError({
       message: 'Could not reach the API. Check connection.',
       kind: 'network',
@@ -48,6 +56,7 @@ export async function apiClient<T>(
   const requestId = response.headers.get('x-amzn-requestid') || response.headers.get('x-request-id') || undefined;
 
   if (response.status === 401) {
+    if (!env.useMocks && !env.localApi) await authClient.clearExpiredSession();
     throw new ApiError({
       message: 'Your session has expired. Sign in again to continue.',
       kind: 'auth',
@@ -111,7 +120,8 @@ export async function apiClient<T>(
     let errMsg = 'The request failed.';
     try {
       const errJson = await response.json();
-      if (errJson.message) errMsg = errJson.message;
+      if (errJson.error?.message) errMsg = errJson.error.message;
+      else if (errJson.message) errMsg = errJson.message;
     } catch {
       // ignore
     }

@@ -1,3 +1,4 @@
+import { hasCapability } from '@/config/capabilities';
 import { useDriftEvents } from '@/hooks/apiHooks';
 import { StateBoundary } from '@/components/common/StateBoundary';
 import { CopyableId } from '@/components/common/CopyableId';
@@ -19,6 +20,7 @@ export function DriftEventsPage() {
       </div>
 
       <StateBoundary
+        isNotEnabled={!hasCapability('driftEvents')}
         isLoading={isLoading}
         isError={isError}
         error={error}

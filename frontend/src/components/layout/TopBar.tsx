@@ -8,7 +8,7 @@ export function TopBar() {
   const { user, signOut } = useAuth();
 
   return (
-    <header className="h-14 border-b border-rule bg-sheet px-6 flex items-center justify-between shrink-0">
+    <header className="h-14 border-b border-rule bg-sheet px-4 md:px-6 flex items-center justify-between shrink-0">
       <div className="flex items-center gap-4">
         <ConnectionStatus />
       </div>

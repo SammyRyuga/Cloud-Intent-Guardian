@@ -1,3 +1,4 @@
+import { hasCapability } from '@/config/capabilities';
 import { useRemediations, useRemediationDecision } from '@/hooks/apiHooks';
 import { StateBoundary } from '@/components/common/StateBoundary';
 import { SeverityBadge } from '@/components/common/SeverityBadge';
@@ -26,6 +27,7 @@ export function RemediationPage() {
       </div>
 
       <StateBoundary
+        isNotEnabled={!hasCapability('remediation')}
         isLoading={isLoading}
         isError={isError}
         error={error}

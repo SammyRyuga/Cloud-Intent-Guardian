@@ -2,6 +2,7 @@ import os
 from common.dynamodb import dynamodb_resource
 from botocore.exceptions import BotoCoreError, ClientError
 from common.http import response, error, utc_now
+from boto3.dynamodb.conditions import Attr
 
 
 def lambda_handler(event, context):
@@ -20,6 +21,8 @@ def lambda_handler(event, context):
             return error(409, "INTENT_NOT_VALID", "An intent with no constraints cannot be approved.")
         if found.get("status") == "APPROVED":
             return response(200, {"item": found, "message": "Intent was already approved."})
+        if found.get('status') != 'DRAFT':
+            return error(409, 'INTENT_STATE_CONFLICT', 'Only a draft intent can be approved.')
         now = utc_now()
         updated = table.update_item(
             Key={"intentId": intent_id},
@@ -27,7 +30,10 @@ def lambda_handler(event, context):
             ExpressionAttributeNames={"#s": "status"},
             ExpressionAttributeValues={":approved": "APPROVED", ":now": now},
             ReturnValues="ALL_NEW",
+            ConditionExpression=Attr('status').eq('DRAFT'),
         ).get("Attributes", {})
         return response(200, {"item": updated})
+    except table.meta.client.exceptions.ConditionalCheckFailedException:
+        return error(409, 'INTENT_STATE_CONFLICT', 'The intent changed during approval. Refresh before trying again.')
     except (ClientError, BotoCoreError) as exc:
         return error(502, "INTENT_APPROVAL_FAILED", "Could not approve the intent.", str(exc)[:250])

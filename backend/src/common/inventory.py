@@ -47,6 +47,8 @@ def collect_inventory(region: str | None = None) -> dict[str, Any]:
     ec2 = session.client("ec2")
     try:
         result = ec2.describe_vpcs(MaxResults=1000)
+        if result.get("NextToken"):
+            warnings.append({"source": "ec2:vpcs", "code": "TRUNCATED", "message": "Additional VPC pages were not collected."})
         for vpc in result.get("Vpcs", [])[:MAX_PER_KIND]:
             rid = vpc["VpcId"]
             nodes[rid] = {
@@ -122,6 +124,8 @@ def collect_inventory(region: str | None = None) -> dict[str, Any]:
         for page in paginator.paginate(PaginationConfig={"MaxItems": MAX_PER_KIND}):
             for reservation in page.get("Reservations", []):
                 for inst in reservation.get("Instances", []):
+                    if count >= MAX_PER_KIND:
+                        break
                     rid = inst["InstanceId"]
                     rels = []
                     subnet_id, vpc_id = inst.get("SubnetId"), inst.get("VpcId")
@@ -220,12 +224,19 @@ def collect_inventory(region: str | None = None) -> dict[str, Any]:
     except (ClientError, BotoCoreError) as exc:
         _warn(warnings, "s3:buckets", exc)
 
-    # Attach inverse references only when both endpoints were actually collected.
+    # Snapshot direct relationships so inverse links never create new inverse-of-inverse links.
+    direct = [(node["resourceId"], rel) for node in nodes.values() for rel in list(node.get("relationships", []))]
+    for source, rel in direct:
+        target = rel.get("targetId")
+        if target in nodes:
+            nodes[target].setdefault("relationships", []).append({"type": f"HAS_{rel['type']}", "targetId": source})
+    counts = {}
     for node in nodes.values():
-        for rel in node.get("relationships", []):
-            target = rel.get("targetId")
-            if target in nodes:
-                nodes[target].setdefault("relationships", []).append({"type": f"HAS_{rel['type']}", "targetId": node["resourceId"]})
+        kind = node['resourceType']
+        counts[kind] = counts.get(kind, 0) + 1
+    for kind, count in counts.items():
+        if count >= MAX_PER_KIND:
+            warnings.append({'source': kind, 'code': 'RESOURCE_CAP', 'message': 'Resource cap reached; completeness is not established.'})
 
     items = list(nodes.values())
     return {

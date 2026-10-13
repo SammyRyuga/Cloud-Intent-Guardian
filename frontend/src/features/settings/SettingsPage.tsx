@@ -38,7 +38,7 @@ export function SettingsPage() {
                   <div>
                     <span className="font-medium text-ink block">AWS Sources Telemetry</span>
                     <span className="text-pencil text-[11px] block mt-0.5">
-                      Status: {status.awsSourcesConnected ? 'Connected (CloudTrail / Config)' : 'Disconnected'}
+                      Status: {status.awsSourcesConnected ? 'Connected (AWS discovery probes)' : 'Not connected or disabled locally'}
                     </span>
                   </div>
                 </div>
@@ -61,7 +61,7 @@ export function SettingsPage() {
               </div>
 
               <div className="mt-4 pt-4 border-t border-rule text-xs text-pencil">
-                Last synchronized telemetry timestamp: {formatDateTime(status.lastSyncAt)}
+                Last backend readiness check: {formatDateTime(status.lastSyncAt)}
               </div>
             </Card>
 
@@ -69,11 +69,10 @@ export function SettingsPage() {
               <CardHeader title="Authentication & Session Policies" />
               <div className="text-xs text-pencil space-y-2 leading-relaxed">
                 <p>
-                  Authentication is managed via Amazon Cognito Managed Login utilizing PKCE and Authorization Code flow.
+                  Deployed sign-in uses Cognito hosted login with the authorization-code flow and PKCE.
                 </p>
                 <p>
-                  Tokens are kept securely within Amplify Auth session storage and refreshed transparently. No AWS
-                  credentials or secret keys are stored within the frontend application bundle.
+                  Amplify owns the session and token refresh. API requests use Cognito access tokens; this interface never requests AWS access keys.
                 </p>
               </div>
             </Card>

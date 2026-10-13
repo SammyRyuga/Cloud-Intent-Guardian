@@ -93,7 +93,7 @@ class LocalPersistenceTests(unittest.TestCase):
                                    "UpdateExpression": "SET #s = :approved, approvedAt = :now, updatedAt = :now",
                                    "ExpressionAttributeNames": {"#s": "status"},
                                    "ExpressionAttributeValues": {":approved": "APPROVED", ":now": "test-time"},
-                                   "ReturnValues": "ALL_NEW"})
+                                   "ReturnValues": "ALL_NEW", "ConditionExpression": ANY})
                 with patch.object(approval, "dynamodb_resource", return_value=resource), patch.object(approval, "utc_now", return_value="test-time"):
                     result = approval.lambda_handler({"pathParameters": key}, None)
                 self.assertEqual(result["statusCode"], 200)

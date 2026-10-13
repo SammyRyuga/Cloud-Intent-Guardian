@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSystemStatus } from '@/hooks/apiHooks';
+import { env } from '@/config/env';
 
 export function ConnectionStatus() {
   const { data: status, isLoading, isError } = useSystemStatus();
@@ -19,6 +20,10 @@ export function ConnectionStatus() {
     label = 'Disconnected';
     pillColor = 'bg-sev-critical text-white';
     dotColor = 'bg-white';
+  } else if (env.localApi) {
+    label = 'Local API';
+    pillColor = 'bg-pencil/20 text-ink';
+    dotColor = 'bg-pencil';
   } else if (!status?.awsSourcesConnected) {
     label = 'AWS Unreachable';
     pillColor = 'bg-sev-high text-white';

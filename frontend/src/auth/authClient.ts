@@ -5,9 +5,10 @@
 import { Amplify } from 'aws-amplify';
 import { getCurrentUser, fetchAuthSession, signInWithRedirect, signOut as amplifySignOut } from 'aws-amplify/auth';
 import { env } from '@/config/env';
+import 'aws-amplify/auth/enable-oauth-listener';
 
 // Configure Amplify
-if (!env.useMocks) {
+if (!env.useMocks && !env.localApi) {
   try {
     Amplify.configure({
       Auth: {
@@ -17,9 +18,9 @@ if (!env.useMocks) {
           loginWith: {
             oauth: {
               domain: env.cognitoDomain,
-              scopes: ['openid', 'email', 'phone', 'profile'],
-              redirectSignIn: [window.location.origin + '/'],
-              redirectSignOut: [window.location.origin + '/login'],
+              scopes: ['openid', 'email', 'profile'],
+              redirectSignIn: [env.redirectSignIn],
+              redirectSignOut: [env.redirectSignOut],
               responseType: 'code',
             },
           },
@@ -36,21 +37,34 @@ export interface UserProfile {
   email?: string;
   name?: string;
 }
+let sessionExpired: (() => void) | undefined;
 
 export const authClient = {
-  async getAccessToken(): Promise<string | null> {
+  async getAccessToken(forceRefresh = false): Promise<string | null> {
+    if (env.localApi) return null;
     if (env.useMocks) {
       return 'mock-access-token-cig';
     }
     try {
-      const session = await fetchAuthSession();
+      const session = await fetchAuthSession({forceRefresh});
       return session.tokens?.accessToken?.toString() || null;
     } catch {
       return null;
     }
   },
 
+  onSessionExpired(listener: () => void): () => void {
+    sessionExpired = listener;
+    return () => { if (sessionExpired === listener) sessionExpired = undefined; };
+  },
+
+  async clearExpiredSession(): Promise<void> {
+    try { await amplifySignOut(); } catch { /* The expired session is still cleared from UI state. */ }
+    sessionExpired?.();
+  },
+
   async getCurrentUser(): Promise<UserProfile | null> {
+    if (env.localApi) return sessionStorage.getItem('cig_local_signed_out') === 'true' ? null : { username: 'Local developer' };
     if (env.useMocks) {
       const stored = sessionStorage.getItem('cig_mock_user');
       if (stored === 'false') return null;
@@ -75,6 +89,7 @@ export const authClient = {
   },
 
   async signIn(): Promise<void> {
+    if (env.localApi) { sessionStorage.removeItem('cig_local_signed_out'); return; }
     if (env.useMocks) {
       sessionStorage.setItem('cig_mock_user', 'true');
       return;
@@ -83,6 +98,7 @@ export const authClient = {
   },
 
   async signOut(): Promise<void> {
+    if (env.localApi) { sessionStorage.setItem('cig_local_signed_out', 'true'); return; }
     if (env.useMocks) {
       sessionStorage.setItem('cig_mock_user', 'false');
       return;

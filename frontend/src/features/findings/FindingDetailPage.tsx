@@ -1,3 +1,4 @@
+import { hasCapability } from '@/config/capabilities';
 import { useParams, Link } from 'react-router-dom';
 import { useFinding, useAcknowledgeFinding } from '@/hooks/apiHooks';
 import { StateBoundary } from '@/components/common/StateBoundary';
@@ -46,7 +47,7 @@ export function FindingDetailPage() {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                {finding.status === 'OPEN' && (
+                {finding.status === 'OPEN' && hasCapability('findings.update') && (
                   <Button
                     variant="secondary"
                     size="sm"
@@ -75,6 +76,7 @@ export function FindingDetailPage() {
               </div>
             </div>
 
+            {finding.evidence && <Card><CardHeader title="Evaluation evidence" /><p className="text-sm mb-3">{finding.explanation}</p>{finding.evidence.map((entry, index) => <div key={index} className="border-t border-rule py-3"><p className="text-xs">{entry.source} - {formatDateTime(entry.observedAt)}</p><CopyableId id={entry.resourceId} /><pre className="text-xs whitespace-pre-wrap break-words mt-2">{JSON.stringify(entry.details, null, 2)}</pre></div>)}</Card>}
             {/* Finding Details Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card className="md:col-span-2">

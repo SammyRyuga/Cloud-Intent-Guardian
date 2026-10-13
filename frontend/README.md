@@ -22,6 +22,9 @@ Create a local `.env` file for a deployed backend. Only public configuration bel
 | --- | --- |
 | `VITE_API_BASE_URL` | API origin without `/v1`; endpoint paths already include it |
 | `VITE_USE_MOCKS` | Enable development mock responses (`true` or `false`) |
+| `VITE_LOCAL_API` | Explicit development-only local backend mode; production rejects true |
+| `VITE_COGNITO_REDIRECT_SIGN_IN` | Exact configured OAuth callback URL |
+| `VITE_COGNITO_REDIRECT_SIGN_OUT` | Exact configured sign-out URL |
 | `VITE_COGNITO_REGION` | Cognito region |
 | `VITE_COGNITO_USER_POOL_ID` | Cognito user pool ID |
 | `VITE_COGNITO_CLIENT_ID` | Public Cognito app client ID |
@@ -29,9 +32,9 @@ Create a local `.env` file for a deployed backend. Only public configuration bel
 | `VITE_DEFAULT_REGION` | Region selected in the interface |
 | `VITE_FEATURES` | Comma-separated enabled frontend capabilities |
 
-The frontend follows the frontend PRD in `Cloud_Intent_Guardian_Frontend_PRD.md`. The current backend starter exposes a smaller API surface than that PRD; keep unsupported capabilities disabled in live configuration and use mock mode for the full UI until the API contracts are aligned.
+The frontend follows the frontend PRD in `Cloud_Intent_Guardian_Frontend_PRD.md`. The connected MVP implements JSON intent creation/detail/approval, findings list/detail, stored dashboard data, system readiness, observed topology and synchronous evaluation. Unsupported later workflows remain disabled in live mode.
 
-Merging the frontend does not establish live integration: findings/intents identifiers and pagination differ, system-status fields differ, and evaluations expect jobs while the backend runs synchronously. Dashboard, graph, finding detail, jobs, upload, drift, remediation and audit endpoints are not yet implemented by the backend. The template also lacks the managed-login domain and OAuth callback configuration used by this frontend. See [integration gaps](../INTEGRATION.md).
+For real local integration, copy `.env.local-api.example` to `.env.development.local` (preserve and edit an existing configuration), start the local SAM backend, and use `npm run dev -- --host localhost --port 5173 --strictPort`. This is explicit loopback-only local API mode, not Cognito authentication. See [integration instructions and evidence](../INTEGRATION.md).
 
 ## Project structure
 

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { authClient, type UserProfile } from './authClient';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface AuthContextValue {
   user: UserProfile | null;
@@ -11,8 +12,10 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  useEffect(() => authClient.onSessionExpired(() => {setUser(null); queryClient.clear();}), [queryClient]);
 
   useEffect(() => {
     let mounted = true;
@@ -35,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleSignOut = async () => {
     await authClient.signOut();
+    queryClient.clear();
     setUser(null);
   };
 

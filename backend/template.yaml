@@ -12,6 +12,14 @@ Parameters:
     Type: String
     Default: http://localhost:5173
     Description: Exact frontend origin permitted by API CORS. Change to the deployed frontend origin later.
+  CognitoCallbackUrl:
+    Type: String
+    Default: http://localhost:5173/
+    Description: Exact frontend OAuth callback URL including the trailing slash.
+  CognitoLogoutUrl:
+    Type: String
+    Default: http://localhost:5173/login
+    Description: Exact frontend OAuth sign-out return URL.
 
 Globals:
   Function:
@@ -56,6 +64,12 @@ Resources:
       ClientName: !Sub cloud-intent-guardian-${StageName}-web
       UserPoolId: !Ref UserPool
       GenerateSecret: false
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows: [code]
+      AllowedOAuthScopes: [openid, email, profile]
+      SupportedIdentityProviders: [COGNITO]
+      CallbackURLs: [!Ref CognitoCallbackUrl]
+      LogoutURLs: [!Ref CognitoLogoutUrl]
       PreventUserExistenceErrors: ENABLED
       EnableTokenRevocation: true
       ExplicitAuthFlows:
@@ -69,6 +83,13 @@ Resources:
         AccessToken: minutes
         IdToken: minutes
         RefreshToken: days
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId: !Ref UserPool
+      Domain: !Sub cig-${AWS::AccountId}-${AWS::Region}-${StageName}
+      ManagedLoginVersion: 1
 
   Api:
     Type: AWS::Serverless::HttpApi
@@ -181,6 +202,9 @@ Resources:
               Action:
                 - config:DescribeConfigurationRecorders
                 - config:DescribeConfigurationRecorderStatus
+                - ec2:DescribeInstances
+                - rds:DescribeDBInstances
+                - s3:ListAllMyBuckets
               Resource: '*'
       Events:
         StatusRoute:
@@ -219,6 +243,42 @@ Resources:
             Path: /v1/resources
             Method: GET
             TimeoutInMillis: 29000
+        GraphRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /v1/architecture/graph
+            Method: GET
+            TimeoutInMillis: 29000
+
+  ViewsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: views.app.lambda_handler
+      Description: Stored findings detail and dashboard summary without live discovery.
+      Environment:
+        Variables:
+          FINDINGS_TABLE: !Ref FindingsTable
+          EVALUATIONS_TABLE: !Ref EvaluationsTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref FindingsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref EvaluationsTable
+      Events:
+        DashboardRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /v1/dashboard/summary
+            Method: GET
+        FindingDetailRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /v1/findings/{findingId}
+            Method: GET
 
   FindingsFunction:
     Type: AWS::Serverless::Function
@@ -363,6 +423,9 @@ Outputs:
   CognitoUserPoolClientId:
     Description: Cognito public web client ID (not a secret).
     Value: !Ref UserPoolClient
+  CognitoDomain:
+    Description: Public Cognito hosted login domain for the frontend OAuth flow.
+    Value: !Sub '${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com'
   IntentsTableName:
     Value: !Ref IntentsTable
   FindingsTableName:

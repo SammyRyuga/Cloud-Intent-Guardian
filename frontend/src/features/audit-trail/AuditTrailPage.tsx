@@ -1,3 +1,4 @@
+import { hasCapability } from '@/config/capabilities';
 import { useAuditEvents } from '@/hooks/apiHooks';
 import { StateBoundary } from '@/components/common/StateBoundary';
 import { CopyableId } from '@/components/common/CopyableId';
@@ -17,6 +18,7 @@ export function AuditTrailPage() {
       </div>
 
       <StateBoundary
+        isNotEnabled={!hasCapability('auditTrail')}
         isLoading={isLoading}
         isError={isError}
         error={error}

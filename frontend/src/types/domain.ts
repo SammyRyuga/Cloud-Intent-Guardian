@@ -27,8 +27,9 @@ export interface DashboardSummary {
   conformance: ConformanceMetrics;
   severityCounts: SeverityCounts;
   totalFindings: number;
-  activeDriftCount: number;
-  openRemediations: number;
+  activeDriftCount: number | null;
+  openRemediations: number | null;
+  partial?: boolean;
   lastEvaluatedAt: string | null;
   evaluatedRegion: string;
 }
@@ -52,6 +53,10 @@ export interface Finding {
     rationale: string;
     citedEvidence: string[];
   };
+  evidence?: Array<{source: string; resourceId: string; observedAt: string; details: Record<string, unknown>}>;
+  observed?: Record<string, unknown>;
+  expected?: Record<string, unknown>;
+  explanation?: string;
 }
 
 export interface FindingsResponse {
@@ -88,6 +93,8 @@ export interface ArchitectureGraph {
   truncated: boolean;
   totalNodeCount: number;
   asOf: string;
+  partial?: boolean;
+  warnings?: Array<{source: string; message: string}>;
 }
 
 export interface IntentVersion {

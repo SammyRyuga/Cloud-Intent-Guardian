@@ -1,3 +1,5 @@
+import { env } from '@/config/env';
+import { hasCapability } from '@/config/capabilities';
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -102,7 +104,7 @@ function getLayoutedElements(nodes: Node[], edges: Edge[]) {
 
 export function ArchitectureExplorerPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const currentView = (searchParams.get('view') || 'DIFF') as GraphView;
+  const currentView = (env.useMocks ? searchParams.get('view') || 'DIFF' : 'ACTUAL') as GraphView;
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
 
   const { data: graphData, isLoading, isError, error, refetch } = useArchitectureGraph(currentView);
@@ -162,7 +164,7 @@ export function ArchitectureExplorerPage() {
 
         {/* View Switcher */}
         <div className="inline-flex rounded-md border border-rule bg-sheet p-1 text-xs font-medium">
-          {(['DIFF', 'INTENT', 'ACTUAL'] as const).map((view) => (
+          {(env.useMocks ? ['DIFF', 'INTENT', 'ACTUAL'] as const : ['ACTUAL'] as const).map((view) => (
             <button
               key={view}
               onClick={() => handleViewChange(view)}
@@ -185,8 +187,11 @@ export function ArchitectureExplorerPage() {
         </div>
       )}
 
-      <StateBoundary isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
+      {!env.useMocks && <p className="text-xs text-graphite mb-3">Observed topology only. UNKNOWN means comparison has not been implemented. Showing {graphData?.nodes.length ?? 0} resources.</p>}
+      {graphData?.partial && <p role="status" className="text-sm text-sev-medium">Inventory is partial: {graphData.warnings?.map(row => row.message).join('; ')}</p>}
+      <StateBoundary isNotEnabled={!hasCapability('architecture')} isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
         <div className="flex-1 rounded-[12px] border border-rule bg-sheet overflow-hidden relative">
+          <details className="p-3 border-b border-rule text-xs"><summary>Resource list</summary><ul className="max-h-40 overflow-auto">{graphData?.nodes.map(node => <li key={node.id}><button className="p-2 text-left underline" onClick={() => setSelectedNode(node)}>{node.label}</button></li>)}</ul></details>
           <ReactFlow
             nodes={flowNodes}
             edges={flowEdges}
@@ -208,7 +213,7 @@ export function ArchitectureExplorerPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setSelectedNode(null)}
+                  aria-label="Close resource details" onClick={() => setSelectedNode(null)}
                   className="text-graphite hover:text-ink text-sm px-1.5 py-0.5 rounded border border-rule"
                 >
                   ✕

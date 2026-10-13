@@ -134,9 +134,10 @@ No resources have been deployed. Before Academy deployment, inspect the lab's ac
 ## Repeatable code checks
 
 ```bash
+.venv/bin/python -m pip install -r requirements-dev.txt
 .venv/bin/python -m unittest discover -s tests -v
 bash -n scripts/diagnose-local.sh
 sam validate --lint
 ```
 
-Tests use real Boto3 resource serialization with botocore Stubber responses; they test local isolation, timeout config, error shape and create/list/detail/approval contracts. They do not connect to DynamoDB Local, run SAM or verify Cognito. There are no additional test dependencies beyond `src/requirements.txt`.
+Tests use real Boto3 resource serialization with botocore Stubber responses; they test local isolation, timeout config, error shape and create/list/detail/approval contracts. They do not connect to DynamoDB Local, run SAM or verify Cognito. The subsequent integration tests require the development dependencies in `requirements-dev.txt`; runtime Lambda dependencies remain in `src/requirements.txt`. See [current integration status](../INTEGRATION.md).

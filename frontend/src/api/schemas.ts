@@ -27,8 +27,9 @@ export const DashboardSummarySchema = z.object({
   conformance: ConformanceMetricsSchema,
   severityCounts: SeverityCountsSchema,
   totalFindings: z.number(),
-  activeDriftCount: z.number(),
-  openRemediations: z.number(),
+  activeDriftCount: z.number().nullable(),
+  openRemediations: z.number().nullable(),
+  partial: z.boolean().optional(),
   lastEvaluatedAt: z.string().nullable(),
   evaluatedRegion: z.string(),
 });
@@ -88,6 +89,8 @@ export const ArchitectureGraphSchema = z.object({
   truncated: z.boolean(),
   totalNodeCount: z.number(),
   asOf: z.string(),
+  partial: z.boolean().optional(),
+  warnings: z.array(z.object({source: z.string(), message: z.string()})).optional(),
 });
 
 export const IntentVersionSchema = z.object({

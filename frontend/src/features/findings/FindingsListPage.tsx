@@ -6,6 +6,8 @@ import { formatDateTime } from '@/utils/dates';
 import { formatResourceType } from '@/utils/format';
 import { Card } from '@/components/ui/Card';
 import { Search, Filter } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { env } from '@/config/env';
 
 export function FindingsListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -17,7 +19,9 @@ export function FindingsListPage() {
     severity: severityFilter,
     status: statusFilter,
     q: searchQuery,
+    cursor: searchParams.get('cursor') || undefined,
   });
+  const displayed = data?.items.filter(row => env.useMocks || !searchQuery || `${row.title} ${row.resourceId} ${row.ruleId}`.toLowerCase().includes(searchQuery.toLowerCase())) || [];
 
   const updateParam = (key: string, val: string) => {
     const next = new URLSearchParams(searchParams);
@@ -82,12 +86,13 @@ export function FindingsListPage() {
           </div>
         </div>
       </Card>
+      {!env.useMocks && <p className="text-xs text-pencil">Search filters this loaded page only. Severity and status are filtered by the backend.</p>}
 
       <StateBoundary
         isLoading={isLoading}
         isError={isError}
         error={error}
-        isEmpty={data?.items.length === 0}
+        isEmpty={Boolean(data) && displayed.length === 0}
         emptyTitle="No findings match filter"
         emptyDescription="There are no active findings with the selected severity or search query."
         onRetry={() => refetch()}
@@ -105,7 +110,7 @@ export function FindingsListPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-rule">
-                {data.items.map((item) => (
+                {displayed.map((item) => (
                   <tr key={item.id} className="hover:bg-film/60 transition-colors">
                     <td className="py-3 px-4">
                       <SeverityBadge severity={item.severity} />
@@ -135,6 +140,7 @@ export function FindingsListPage() {
           </div>
         )}
       </StateBoundary>
+      <div className="flex gap-2">{searchParams.get('cursor') && <Button variant="secondary" onClick={() => { const next = new URLSearchParams(searchParams); next.delete('cursor'); setSearchParams(next); }}>First page</Button>}{data?.meta.nextCursor && <Button variant="secondary" onClick={() => { const next = new URLSearchParams(searchParams); next.set('cursor', data.meta.nextCursor!); setSearchParams(next); }}>Next page</Button>}</div>
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 Cloud Intent Guardian compares approved architecture constraints with live AWS configuration and stores findings with severity and evidence. The current backend uses AWS SAM, Python 3.13 Lambda, API Gateway, Cognito and DynamoDB.
 
-**Start by proving local intent persistence. AWS Academy activation and deployment are separate steps requiring explicit authorization.** No AWS deployment or complete live SAM/DynamoDB verification has been established by the local persistence patch. See [recorded validation](backend/VALIDATION.md).
+**Start by proving local intent persistence. AWS Academy activation and deployment are separate steps requiring explicit authorization.** Local SAM/DynamoDB integration is verified; AWS deployment and Cognito authentication remain unverified. See [recorded validation](backend/VALIDATION.md).
 
 ## Files and current scope
 
@@ -19,9 +19,9 @@ backend/
   src/                          Eight handlers and shared helpers
 ```
 
-The backend implements draft intent creation/retrieval/approval, four deterministic constraints, live inventory with observed graph edges, findings persistence and synchronous evaluations. Dashboard aggregation, finding details, evaluation history/status reads, version management, audit events, relationship-conformance rules, role/account isolation, remediation workflows and Bedrock explanations remain to be implemented. Automatic remediation is disabled by absence of an implementation.
+The backend implements draft intent creation/retrieval/approval, four deterministic constraints, live inventory with observed graph edges, findings persistence and synchronous evaluations. Stored dashboard summaries, finding details and observed graph views are implemented. Evaluation history/status reads, version management, audit events, relationship-conformance rules, role/account isolation, remediation workflows and Bedrock explanations remain to be implemented. Automatic remediation is disabled by absence of an implementation.
 
-The React frontend is in `frontend/`, together with its PRD and implementation specification. [Integration status](INTEGRATION.md) records the API and Cognito gaps between the two implementations.
+The React frontend is in `frontend/`, together with its PRD and implementation specification. [Integration guide](INTEGRATION.md) documents the connected MVP, real local API mode and remaining AWS validation.
 
 ## Frontend setup on macOS
 
@@ -34,7 +34,7 @@ test -f .env.development.local || cp .env.example .env.development.local
 npm run dev
 ```
 
-The example explicitly enables development mocks with a visible banner. This is a fixture preview, not live AWS data. `VITE_USE_MOCKS=false` disables mocks even during development. Endpoint paths include `/v1`, so `VITE_API_BASE_URL` must be an origin such as `http://127.0.0.1:3000`, without that suffix. Live connection additionally requires the contracts and Cognito configuration described in [INTEGRATION.md](INTEGRATION.md).
+The example explicitly enables development mocks with a visible banner. This is a fixture preview, not live AWS data. `VITE_USE_MOCKS=false` disables mocks even during development. Endpoint paths include `/v1`, so `VITE_API_BASE_URL` must be an origin such as `http://127.0.0.1:3000`, without that suffix. For the real local backend, use `.env.local-api.example` instead of the mock example and follow [INTEGRATION.md](INTEGRATION.md). Production uses the deployed Cognito configuration.
 
 ```bash
 npm run lint
@@ -228,6 +228,9 @@ The original checkout ignored `DYNAMODB_ENDPOINT_URL`; the shared helper fixes t
 | `GET /v1/health` | Public `{ok, service, timestamp, version}` |
 | `GET /v1/system/status` | Live AWS `{status, accountId, region, stage, checkedAt, sources, warnings}` |
 | `GET /v1/resources` | Live inventory `{items, edges, meta}` |
+| `GET /v1/architecture/graph?view=ACTUAL` | Observed graph; comparison states remain UNKNOWN |
+| `GET /v1/dashboard/summary` | Stored counts and latest evaluation conformance; unavailable features are null |
+| `GET /v1/findings/{findingId}` | `{item}` with persisted evidence |
 | `GET /v1/intents` | Optional `limit`, `nextToken`; `{items, count, nextToken, limit}` |
 | `POST /v1/intents` | Manifest; HTTP 201 `{item}` containing `intentId` and DRAFT status |
 | `GET /v1/intents/{intentId}` | `{item}` |
@@ -235,7 +238,7 @@ The original checkout ignored `DYNAMODB_ENDPOINT_URL`; the shared helper fixes t
 | `POST /v1/evaluations` | `{intentId}` or `{}`; synchronous `{evaluation, findings, inventory}` |
 | `GET /v1/findings` | Optional `limit`, `nextToken`, `status`; `{items, nextToken, count, limit}` |
 
-Prefer an explicit approved ID for evaluation: default selection scans only a first page. Evaluation responses include at most 100 findings. List ordering applies within each scan page, not globally.
+Prefer an explicit approved ID for evaluation: default selection has a bounded scan and refuses incomplete selection. Evaluation responses include at most 100 findings. List ordering applies within each scan page, not globally.
 
 Example manifest:
 
@@ -258,17 +261,18 @@ Application errors use `{ "error": { "code": "...", "message": "...", "details":
 
 ## Authentication and validation
 
-The template retains Cognito JWT authorization for all application routes except health. Local SAM's JWT limitation explains authorizer warnings; local success does not prove deployed authentication. [AWS SAM issue](https://github.com/aws/aws-sam-cli/issues/6550). Deployed tests must confirm public health succeeds, anonymous/invalid/expired-token protected requests fail, and a valid JWT succeeds. The Cognito user pool allows admin-only user creation.
+The template retains Cognito JWT authorization for all application routes except health. It now provisions a hosted login domain and configurable OAuth callback/logout URLs. Local SAM's JWT limitation explains authorizer warnings; local success does not prove deployed authentication. [AWS SAM issue](https://github.com/aws/aws-sam-cli/issues/6550). Deployed tests must confirm public health succeeds, anonymous/invalid/expired-token protected requests fail, and a valid JWT succeeds. The Cognito user pool allows admin-only user creation.
 
 ```bash
+.venv/bin/python -m pip install -r requirements-dev.txt
 .venv/bin/python -m unittest discover -s tests -v
 bash -n scripts/diagnose-local.sh
 sam validate --lint
 ```
 
-Seven SDK-stubbed tests passed during the persistence patch, covering local configuration isolation, connection-error handling and create/list/detail/approval contracts. They do not prove actual persistence, SAM connectivity or Cognito authorization. [Validation record](backend/VALIDATION.md).
+The earlier persistence patch passed seven SDK-stubbed tests. The integration work additionally passed thirteen Python tests, seventeen frontend tests, SAM validation/build, real local persistence and two browser journeys. Cognito and live AWS discovery remain unverified; see [INTEGRATION.md](INTEGRATION.md). [Validation record](backend/VALIDATION.md).
 
-Next, fix inventory completeness/finding resolution when results are capped, incomplete scan pagination, TCP-specific SSH checking, finding-write exception handling and conditional approval transitions. Then agree and test dashboard/history/detail/audit contracts. Bedrock and remediation remain later phases.
+Inventory cap handling, bounded evaluation scans, TCP-specific SSH checking, finding-write error handling and conditional approval were corrected during integration. Next add async evaluation/history and audit contracts. Bedrock and remediation remain later phases.
 
 ## AWS Academy deployment - requires explicit authorization
 
@@ -285,7 +289,7 @@ sam build
 sam deploy --guided
 ```
 
-Use stack `cloud-intent-guardian-dev`, the lab-approved region, `StageName=dev`, and `AllowedOrigin` equal to the actual frontend origin. Enable change-set confirmation and rollback; review before executing. Allow role creation only if the lab permits it. Do not deploy `local-env.json`: production defaults use `CIG_LOCAL=false`, an empty local endpoint and the Lambda execution role.
+Use stack `cloud-intent-guardian-dev`, the lab-approved region, `StageName=dev`, `AllowedOrigin` equal to the actual frontend origin, and matching `CognitoCallbackUrl`/`CognitoLogoutUrl`. Enable change-set confirmation and rollback; review before executing. Allow role creation only if the lab permits it. Do not deploy `local-env.json`: production defaults use `CIG_LOCAL=false`, an empty local endpoint and the Lambda execution role.
 
 After deployment, inspect the API URL, region, Cognito pool/client and table outputs; verify health, authorization and persistence before reporting success. Keep credentials, passwords and tokens out of Git/chat.
 

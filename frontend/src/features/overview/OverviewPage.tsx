@@ -1,3 +1,5 @@
+import { hasCapability } from '@/config/capabilities';
+import { env } from '@/config/env';
 import React from 'react';
 import { useDashboardSummary, useRunEvaluation } from '@/hooks/apiHooks';
 import { Card, CardHeader } from '@/components/ui/Card';
@@ -22,20 +24,24 @@ export function OverviewPage() {
         <div>
           <h1 className="font-title text-2xl font-bold text-ink">Architecture Conformance Overview</h1>
           <p className="text-xs text-graphite mt-1">
-            Declared intent vs deployed AWS infrastructure state in <span className="font-mono text-ink">us-east-1</span>
+            Declared intent vs deployed AWS infrastructure state in <span className="font-mono text-ink">{summary?.evaluatedRegion || env.defaultRegion}</span>
           </p>
         </div>
         <Button
           variant="primary"
           onClick={handleRunEvaluation}
           isLoading={runEvaluation.isPending}
-          disabled={runEvaluation.isPending}
+          disabled={runEvaluation.isPending || !hasCapability('evaluations')}
         >
           <Play className="w-3.5 h-3.5 mr-2 stroke-[1.5]" />
-          Run evaluation
+          {hasCapability('evaluations') ? 'Run evaluation' : 'AWS evaluation not enabled locally'}
         </Button>
       </div>
 
+      {runEvaluation.isPending && <p role="status" className="text-sm text-graphite">Evaluation is running. Results appear after the backend completes.</p>}
+      {runEvaluation.error && <p role="alert" className="text-sm text-sev-critical">{runEvaluation.error.message}</p>}
+      {runEvaluation.data && <p role="status" className="text-sm">{runEvaluation.data.status}: {runEvaluation.data.message} ID: {runEvaluation.data.id}</p>}
+      {summary?.partial && <p role="status" className="text-sm text-sev-medium">Stored data is incomplete. Counts cover retrieved records; conformance is unavailable.</p>}
       <StateBoundary
         isLoading={isLoading}
         isError={isError}
@@ -58,8 +64,8 @@ export function OverviewPage() {
                   </span>
                   <span className="text-xs text-pencil">
                     {summary.conformance.percent !== null
-                      ? `${summary.conformance.passingRules}/${summary.conformance.totalRules} rules compliant`
-                      : 'Not evaluated yet'}
+                      ? `${summary.conformance.passingRules}/${summary.conformance.totalRules} evaluated constraints passing`
+                      : summary.lastEvaluatedAt ? 'Conformance unavailable for the latest evaluation' : 'Not evaluated yet'}
                   </span>
                 </div>
               </Card>
@@ -85,10 +91,10 @@ export function OverviewPage() {
                   <span className="text-xs font-medium">Active Drift Events</span>
                 </div>
                 <div className="flex items-baseline gap-2 mt-2">
-                  <span className="font-title text-3xl font-bold text-ink">{summary.activeDriftCount}</span>
-                  <Link to="/drift-events" className="text-xs text-prussian hover:underline">
+                  <span className="font-title text-3xl font-bold text-ink">{summary.activeDriftCount ?? 'Not enabled'}</span>
+                  {summary.activeDriftCount !== null && <Link to="/drift-events" className="text-xs text-prussian hover:underline">
                     Inspect drift
-                  </Link>
+                  </Link>}
                 </div>
               </Card>
 
@@ -98,10 +104,10 @@ export function OverviewPage() {
                   <span className="text-xs font-medium">Pending Remediations</span>
                 </div>
                 <div className="flex items-baseline gap-2 mt-2">
-                  <span className="font-title text-3xl font-bold text-ink">{summary.openRemediations}</span>
-                  <Link to="/remediation" className="text-xs text-prussian hover:underline">
+                  <span className="font-title text-3xl font-bold text-ink">{summary.openRemediations ?? 'Not enabled'}</span>
+                  {summary.openRemediations !== null && <Link to="/remediation" className="text-xs text-prussian hover:underline">
                     Review actions
-                  </Link>
+                  </Link>}
                 </div>
               </Card>
             </div>

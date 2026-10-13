@@ -8,7 +8,8 @@ export function hasCapability(feature: string): boolean {
   if (env.useMocks) {
     return true;
   }
-  return env.features.includes(feature) || env.features.includes('*');
+  // Only implemented live capabilities are available, even if a future flag is supplied.
+  return feature === 'intents' || (!env.localApi && ['architecture', 'evaluations'].includes(feature));
 }
 
 export const CAPABILITIES = {
