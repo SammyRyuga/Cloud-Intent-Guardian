@@ -1,0 +1,368 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Cloud Intent Guardian backend MVP - authenticated API, AWS inventory, intent constraints and evaluations.
+
+Parameters:
+  StageName:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, demo]
+    Description: Deployment stage. Use dev for initial testing.
+  AllowedOrigin:
+    Type: String
+    Default: http://localhost:5173
+    Description: Exact frontend origin permitted by API CORS. Change to the deployed frontend origin later.
+
+Globals:
+  Function:
+    Runtime: python3.13
+    Architectures: [x86_64]
+    Timeout: 25
+    MemorySize: 256
+    Environment:
+      Variables:
+        STAGE_NAME: !Ref StageName
+
+Resources:
+  # Cognito sign-up is admin-only so public visitors cannot create accounts to inspect your AWS inventory.
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub cloud-intent-guardian-${StageName}-users
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+          TemporaryPasswordValidityDays: 7
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub cloud-intent-guardian-${StageName}-web
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+
+  Api:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: '$default'
+      DefinitionBody:
+        openapi: '3.0.1'
+        info:
+          title: Cloud Intent Guardian API
+          version: '1.0'
+        paths: {}
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref AllowedOrigin
+        AllowHeaders:
+          - authorization
+          - content-type
+        AllowMethods:
+          - GET
+          - POST
+          - PATCH
+          - OPTIONS
+        MaxAge: 600
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            IdentitySource: '$request.header.Authorization'
+            JwtConfiguration:
+              issuer: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}'
+              audience:
+                - !Ref UserPoolClient
+
+  IntentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub cloud-intent-guardian-${StageName}-intents
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: intentId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: intentId
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+
+  FindingsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub cloud-intent-guardian-${StageName}-findings
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: findingId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: findingId
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+
+  EvaluationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub cloud-intent-guardian-${StageName}-evaluations
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: evaluationId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: evaluationId
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+
+  HealthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: health.app.lambda_handler
+      Description: Public liveness endpoint only; returns no account details.
+      Events:
+        HealthRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /v1/health
+            Method: GET
+            Auth:
+              Authorizer: NONE
+
+  StatusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: status.app.lambda_handler
+      Description: Authenticated AWS account and source readiness status.
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: sts:GetCallerIdentity
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - config:DescribeConfigurationRecorders
+                - config:DescribeConfigurationRecorderStatus
+              Resource: '*'
+      Events:
+        StatusRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /v1/system/status
+            Method: GET
+
+  ResourcesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: resources.app.lambda_handler
+      Description: Read-only inventory from EC2, VPC, security groups, RDS and S3 APIs.
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ec2:DescribeInstances
+                - ec2:DescribeVpcs
+                - ec2:DescribeSubnets
+                - ec2:DescribeSecurityGroups
+                - rds:DescribeDBInstances
+                - rds:DescribeDBSubnetGroups
+                - s3:ListAllMyBuckets
+                - s3:GetBucketLocation
+                - s3:GetPublicAccessBlock
+                - s3:GetBucketPolicyStatus
+              Resource: '*'
+      Events:
+        ResourcesRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /v1/resources
+            Method: GET
+            TimeoutInMillis: 29000
+
+  FindingsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: findings.app.lambda_handler
+      Description: Lists stored findings with cursor pagination.
+      Environment:
+        Variables:
+          FINDINGS_TABLE: !Ref FindingsTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref FindingsTable
+      Events:
+        FindingsRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /v1/findings
+            Method: GET
+
+  IntentsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: intents.app.lambda_handler
+      Description: Lists and creates draft JSON intent manifests.
+      Environment:
+        Variables:
+          INTENTS_TABLE: !Ref IntentsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IntentsTable
+      Events:
+        ListIntentsRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /v1/intents
+            Method: GET
+        CreateIntentRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /v1/intents
+            Method: POST
+
+  IntentDetailFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: intent_detail.app.lambda_handler
+      Description: Retrieves one intent manifest.
+      Environment:
+        Variables:
+          INTENTS_TABLE: !Ref IntentsTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref IntentsTable
+      Events:
+        IntentDetailRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /v1/intents/{intentId}
+            Method: GET
+
+  ApproveIntentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: approve_intent.app.lambda_handler
+      Description: Explicitly approves a validated draft intent.
+      Environment:
+        Variables:
+          INTENTS_TABLE: !Ref IntentsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IntentsTable
+      Events:
+        ApproveIntentRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /v1/intents/{intentId}/approve
+            Method: POST
+
+  EvaluationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: evaluations.app.lambda_handler
+      Description: Runs deterministic intent constraints against live AWS resource inventory.
+      Timeout: 29
+      MemorySize: 512
+      Environment:
+        Variables:
+          INTENTS_TABLE: !Ref IntentsTable
+          FINDINGS_TABLE: !Ref FindingsTable
+          EVALUATIONS_TABLE: !Ref EvaluationsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IntentsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FindingsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EvaluationsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ec2:DescribeInstances
+                - ec2:DescribeVpcs
+                - ec2:DescribeSubnets
+                - ec2:DescribeSecurityGroups
+                - rds:DescribeDBInstances
+                - rds:DescribeDBSubnetGroups
+                - s3:ListAllMyBuckets
+                - s3:GetBucketLocation
+                - s3:GetPublicAccessBlock
+                - s3:GetBucketPolicyStatus
+                - sts:GetCallerIdentity
+              Resource: '*'
+      Events:
+        RunEvaluationRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /v1/evaluations
+            Method: POST
+            TimeoutInMillis: 29000
+
+Outputs:
+  ApiUrl:
+    Description: Base URL for the Cloud Intent Guardian API.
+    Value: !Sub 'https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}'
+  AwsRegion:
+    Description: AWS Region used by this deployment.
+    Value: !Ref AWS::Region
+  CognitoUserPoolId:
+    Description: Cognito User Pool ID used by the frontend.
+    Value: !Ref UserPool
+  CognitoUserPoolClientId:
+    Description: Cognito public web client ID (not a secret).
+    Value: !Ref UserPoolClient
+  IntentsTableName:
+    Value: !Ref IntentsTable
+  FindingsTableName:
+    Value: !Ref FindingsTable
+  EvaluationsTableName:
+    Value: !Ref EvaluationsTable

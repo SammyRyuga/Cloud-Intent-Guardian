@@ -1,0 +1,4 @@
+{
+  "body": "{\"name\":\"Starter AWS intent\",\"description\":\"Initial approved architecture constraints for the demo account.\",\"constraints\":[{\"id\":\"no-open-ssh\",\"type\":\"SECURITY_GROUP_NO_OPEN_SSH\",\"severity\":\"HIGH\",\"description\":\"SSH must not be open to the public internet\"},{\"id\":\"s3-public-access-block\",\"type\":\"S3_BLOCK_PUBLIC_ACCESS\",\"severity\":\"HIGH\",\"description\":\"S3 buckets must enable all Block Public Access settings\"}]}",
+  "requestContext": {"http": {"method": "POST"}, "authorizer": {"jwt": {"claims": {"email": "demo@example.com"}}}}
+}
