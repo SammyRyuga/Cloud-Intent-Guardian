@@ -1,14 +1,17 @@
 import base64
 import json
 import os
-import boto3
+from common.dynamodb import dynamodb_resource
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import BotoCoreError, ClientError
 from common.http import response, error, query_params
 
 
 def lambda_handler(event, context):
-    table = boto3.resource("dynamodb").Table(os.environ["FINDINGS_TABLE"])
+    try:
+        table = dynamodb_resource().Table(os.environ["FINDINGS_TABLE"])
+    except (ClientError, BotoCoreError) as exc:
+        return error(502, "DYNAMODB_CONFIGURATION_FAILED", "Could not initialize DynamoDB.", str(exc)[:250])
     params = query_params(event)
     try:
         limit = max(1, min(int(params.get("limit", "25")), 100))

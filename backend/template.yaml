@@ -22,6 +22,9 @@ Globals:
     Environment:
       Variables:
         STAGE_NAME: !Ref StageName
+        # Empty in AWS; overridden only by the local SAM environment file.
+        DYNAMODB_ENDPOINT_URL: ''
+        CIG_LOCAL: 'false'
 
 Resources:
   # Cognito sign-up is admin-only so public visitors cannot create accounts to inspect your AWS inventory.

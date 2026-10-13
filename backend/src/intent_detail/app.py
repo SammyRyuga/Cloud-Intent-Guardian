@@ -1,5 +1,5 @@
 import os
-import boto3
+from common.dynamodb import dynamodb_resource
 from botocore.exceptions import BotoCoreError, ClientError
 from common.http import response, error
 
@@ -8,7 +8,10 @@ def lambda_handler(event, context):
     intent_id = (event.get("pathParameters") or {}).get("intentId")
     if not intent_id:
         return error(400, "MISSING_INTENT_ID", "intentId is required.")
-    table = boto3.resource("dynamodb").Table(os.environ["INTENTS_TABLE"])
+    try:
+        table = dynamodb_resource().Table(os.environ["INTENTS_TABLE"])
+    except (ClientError, BotoCoreError) as exc:
+        return error(502, "DYNAMODB_CONFIGURATION_FAILED", "Could not initialize DynamoDB.", str(exc)[:250])
     try:
         result = table.get_item(Key={"intentId": intent_id}, ConsistentRead=True)
     except (ClientError, BotoCoreError) as exc:

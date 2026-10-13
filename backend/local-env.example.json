@@ -1,0 +1,9 @@
+{
+  "Parameters": {
+    "CIG_LOCAL": "true",
+    "DYNAMODB_ENDPOINT_URL": "http://cig-dynamodb-local:8000",
+    "INTENTS_TABLE": "cloud-intent-guardian-dev-intents",
+    "FINDINGS_TABLE": "cloud-intent-guardian-dev-findings",
+    "EVALUATIONS_TABLE": "cloud-intent-guardian-dev-evaluations"
+  }
+}

@@ -2,6 +2,8 @@
 
 This is the first deployable AWS backend slice for the Cloud Intent Guardian MVP. It uses AWS SAM/CloudFormation to create the infrastructure; no long-running local server is required.
 
+For the current local persistence blocker and macOS commands, start with [LOCAL_TESTING.md](LOCAL_TESTING.md). It includes endpoint/network diagnostics and an executable create/list/detail persistence check. AWS deployment remains a separate, explicitly authorized step.
+
 ## Included in this slice
 
 - Amazon Cognito User Pool with **admin-only user creation**.

@@ -1,7 +1,7 @@
 import hashlib
 import os
 import uuid
-import boto3
+from common.dynamodb import dynamodb_resource
 from botocore.exceptions import BotoCoreError, ClientError
 from common.http import response, error, parse_body, utc_now
 from common.inventory import collect_inventory
@@ -45,9 +45,13 @@ def lambda_handler(event, context):
     except Exception as exc:
         return error(400, "INVALID_JSON", "Request body must be a valid JSON object.", str(exc))
 
-    intents_table = boto3.resource("dynamodb").Table(os.environ["INTENTS_TABLE"])
-    findings_table = boto3.resource("dynamodb").Table(os.environ["FINDINGS_TABLE"])
-    evaluations_table = boto3.resource("dynamodb").Table(os.environ["EVALUATIONS_TABLE"])
+    try:
+        dynamodb = dynamodb_resource()
+        intents_table = dynamodb.Table(os.environ["INTENTS_TABLE"])
+        findings_table = dynamodb.Table(os.environ["FINDINGS_TABLE"])
+        evaluations_table = dynamodb.Table(os.environ["EVALUATIONS_TABLE"])
+    except (ClientError, BotoCoreError) as exc:
+        return error(502, "DYNAMODB_CONFIGURATION_FAILED", "Could not initialize DynamoDB.", str(exc)[:250])
     intent_id = body.get("intentId")
     try:
         if intent_id:

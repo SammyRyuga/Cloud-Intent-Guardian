@@ -1,6 +1,7 @@
 import base64
 import json
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Any
 
 
@@ -8,11 +9,17 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _json_default(value: Any) -> Any:
+    if isinstance(value, Decimal):
+        return int(value) if value == value.to_integral_value() else float(value)
+    return str(value)
+
+
 def response(status_code: int, payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "statusCode": status_code,
         "headers": {"content-type": "application/json; charset=utf-8", "cache-control": "no-store"},
-        "body": json.dumps(payload, default=str, separators=(",", ":")),
+        "body": json.dumps(payload, default=_json_default, separators=(",", ":")),
     }
 
 

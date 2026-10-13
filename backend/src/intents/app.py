@@ -2,7 +2,7 @@ import base64
 import json
 import os
 import uuid
-import boto3
+from common.dynamodb import dynamodb_resource
 from botocore.exceptions import BotoCoreError, ClientError
 from common.http import response, error, parse_body, utc_now, query_params
 
@@ -11,7 +11,11 @@ ALLOWED_SEVERITIES = {"CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"}
 
 
 def lambda_handler(event, context):
-    table = boto3.resource("dynamodb").Table(os.environ["INTENTS_TABLE"])
+    print(json.dumps({"event": "intent_handler_started", "requestId": getattr(context, "aws_request_id", None)}), flush=True)
+    try:
+        table = dynamodb_resource().Table(os.environ["INTENTS_TABLE"])
+    except (ClientError, BotoCoreError) as exc:
+        return error(502, "DYNAMODB_CONFIGURATION_FAILED", "Could not initialize DynamoDB.", str(exc)[:250])
     method = event.get("requestContext", {}).get("http", {}).get("method", "GET").upper()
     if method == "GET":
         params = query_params(event)
@@ -80,7 +84,9 @@ def lambda_handler(event, context):
         "sourceType": "JSON_CONSTRAINT_MANIFEST",
     }
     try:
+        print(json.dumps({"event": "intent_put_started", "table": table.name, "intentId": record["intentId"]}), flush=True)
         table.put_item(Item=record, ConditionExpression="attribute_not_exists(intentId)")
     except (ClientError, BotoCoreError) as exc:
         return error(502, "INTENT_WRITE_FAILED", "Could not save the intent.", str(exc)[:250])
+    print(json.dumps({"event": "intent_put_succeeded", "intentId": record["intentId"]}), flush=True)
     return response(201, {"item": record})
