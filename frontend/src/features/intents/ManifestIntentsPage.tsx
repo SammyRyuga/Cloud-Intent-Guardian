@@ -25,14 +25,19 @@ const starter = JSON.stringify(
     name: "AWS baseline",
     description: "Reviewed architecture constraints",
     components: [
-      { id: "network", resourceTypes: ["AWS::EC2::VPC"], selector: { tags: { "cig:tier": "network" } }, minMatches: 1 },
-      { id: "api", resourceTypes: ["AWS::ApiGateway::RestApi"], selector: { tags: { "cig:tier": "api" } }, minMatches: 1 },
+      { id: "web", resourceTypes: ["AWS::EC2::Instance"], selector: { tags: { "cig:tier": "web" } }, minMatches: 1 },
+      { id: "api", resourceTypes: ["AWS::EC2::Instance"], selector: { tags: { "cig:tier": "api" } }, minMatches: 1 },
+      { id: "database", resourceTypes: ["AWS::RDS::DBInstance"], selector: { tags: { "cig:tier": "database" } }, minMatches: 1 },
     ],
     relationships: [
-      { id: "network-api", from: "network", to: "api", effect: "ALLOW", relationshipType: "CONTAINS" },
+      { id: "api-database", from: "api", to: "database", effect: "ALLOW", relationshipType: "NETWORK_REACHABILITY", protocol: "tcp", ports: [5432], required: true },
     ],
-    trustBoundaries: [{ id: "production", members: ["network", "api"] }],
-    criticality: { network: "HIGH", api: "CRITICAL" },
+    trustBoundaries: [
+      { id: "edge", members: ["web"], crossingRules: [{ id: "web-service", to: "services", effect: "ALLOW", via: ["api"] }] },
+      { id: "services", members: ["api"], crossingRules: [{ id: "service-data", to: "data", effect: "ALLOW", via: ["api"] }] },
+      { id: "data", members: ["database"], crossingRules: [] },
+    ],
+    criticality: { web: "MEDIUM", api: "HIGH", database: "CRITICAL" },
     constraints: [
       {
         id: "no-open-ssh",

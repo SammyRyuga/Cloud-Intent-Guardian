@@ -31,6 +31,10 @@
         "targetId": "i-fixture-web",
         "predicate": "DIRECTED_PATH_PRESENT",
         "snapshotId": "fixture-unruled-crossing",
+        "protocol": "tcp",
+        "ports": [
+          443
+        ],
         "observedAt": "2026-10-15T00:00:00Z",
         "explanation": "An observed boundary crossing has no explicit rule and remains an ambiguous candidate."
       },
@@ -67,7 +71,7 @@
                 "eligible": true
               }
             ],
-            "reason": "Two independent simulated sources corroborate this exact predicate and snapshot.",
+            "reason": "Two independent simulated sources corroborate this directed network-path predicate and snapshot; this does not prove an application session or approve an architectural change.",
             "simulated": true
           }
         }
@@ -104,7 +108,7 @@
             "eligible": true
           }
         ],
-        "reason": "Two independent simulated sources corroborate this exact predicate and snapshot.",
+        "reason": "Two independent simulated sources corroborate this directed network-path predicate and snapshot; this does not prove an application session or approve an architectural change.",
         "simulated": true
       },
       "llmConclusion": {
@@ -113,9 +117,9 @@
         "explanation": "Simulated advisory assessment of an undeclared directed crossing."
       },
       "llmStatus": "VALIDATED",
-      "firstSeenAt": "2026-10-15T18:37:41.470837Z",
-      "lastSeenAt": "2026-10-15T18:37:41.470837Z",
-      "updatedAt": "2026-10-15T18:37:41.470837Z",
+      "firstSeenAt": "2026-10-15T19:09:21.921223Z",
+      "lastSeenAt": "2026-10-15T19:09:21.921223Z",
+      "updatedAt": "2026-10-15T19:09:21.921223Z",
       "simulated": true,
       "constraintSeverity": "MEDIUM",
       "severityScore": 54,

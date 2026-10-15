@@ -10,7 +10,7 @@ PAB_KEYS = ('BlockPublicAcls', 'IgnorePublicAcls', 'BlockPublicPolicy', 'Restric
 
 def eligible_action(finding):
     if (finding.get('tier') == 'TIER_2' or finding.get('reviewStatus') == 'NEEDS_HUMAN_REVIEW'
-            or finding.get('confidence', 'HIGH') == 'LOW' or finding.get('status') not in {'OPEN', 'ACKNOWLEDGED'}):
+            or finding.get('confidence') not in {'HIGH', 'MEDIUM'} or finding.get('status') not in {'OPEN', 'ACKNOWLEDGED'}):
         return None
     return ACTIONS.get(finding.get('ruleId'))
 

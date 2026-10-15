@@ -12,6 +12,20 @@ Metadata:
         scope: project
 
 Parameters:
+  EnableEvidenceSources:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Optional read-only existing Flow Logs and Reachability Analyzer evidence. Never creates or runs analyses.
+  FlowLogsGroupName:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^[.\-_/#A-Za-z0-9]+$'
+    Description: Existing VPC Flow Logs group using the default 14-field format.
+  CrossValidationPathsJson:
+    Type: String
+    Default: '{}'
+    Description: Reviewed JSON mapping sourceId|targetId to an existing NetworkInsightsPathId.
   RemediationEnabled:
     Type: String
     Default: 'false'
@@ -86,6 +100,7 @@ Rules:
         AssertDescription: Optional Bedrock escalation requires an exact model permission ARN.
 
 Conditions:
+  EvidenceSourcesEnabled: !Equals [!Ref EnableEvidenceSources, 'true']
   RemediationWritesEnabled: !And [!Equals [!Ref RemediationEnabled, 'true'], !Equals [!Ref RemediationDryRun, 'false']]
   LLMEnabled: !Equals [!Ref EnableLLM, 'true']
   AsyncWorkerEnabled: !Equals [!Ref EnableAsyncWorker, 'true']
@@ -115,6 +130,9 @@ Globals:
         REMEDIATIONS_TABLE: !Ref RemediationsTable
         REMEDIATION_ENABLED: !Ref RemediationEnabled
         REMEDIATION_DRY_RUN: !Ref RemediationDryRun
+        CROSS_VALIDATION_ENABLED: !Ref EnableEvidenceSources
+        FLOW_LOGS_GROUP_NAME: !Ref FlowLogsGroupName
+        CROSS_VALIDATION_PATHS_JSON: !Ref CrossValidationPathsJson
         LLM_ENABLED: !Ref EnableLLM
         LLM_PROVIDER: bedrock
         BEDROCK_MODEL_ID: !Ref BedrockModelId
@@ -427,7 +445,7 @@ Resources:
                 - rds:DescribeDBSubnetGroups
                 - s3:ListAllMyBuckets
                 - s3:GetBucketLocation
-                - s3:GetPublicAccessBlock
+                - s3:GetBucketPublicAccessBlock
                 - s3:GetBucketPolicyStatus
               Resource: '*'
         - !If
@@ -698,6 +716,16 @@ Resources:
           EVALUATIONS_TABLE: !Ref EvaluationsTable
       Policies:
         - !If
+          - EvidenceSourcesEnabled
+          - Statement:
+              - Effect: Allow
+                Action: [ec2:DescribeNetworkInsightsPaths, ec2:DescribeNetworkInsightsAnalyses]
+                Resource: '*'
+              - Effect: Allow
+                Action: logs:FilterLogEvents
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${FlowLogsGroupName}:*
+          - !Ref AWS::NoValue
+        - !If
           - LLMEnabled
           - Statement:
               - Effect: Allow
@@ -711,13 +739,13 @@ Resources:
         - DynamoDBCrudPolicy: {TableName: !Ref EvaluationArtifactsTable}
         - Statement:
             - Effect: Allow
-              Action: dynamodb:PutItem
+              Action: [dynamodb:PutItem, dynamodb:GetItem]
               Resource: !GetAtt AuditEventsTable.Arn
             - Effect: Allow
               Action: [dynamodb:DescribeStream, dynamodb:GetRecords, dynamodb:GetShardIterator, dynamodb:ListStreams]
               Resource: !GetAtt EvaluationsTable.StreamArn
             - Effect: Allow
-              Action: [sts:GetCallerIdentity, ec2:DescribeInstances, ec2:DescribeVpcs, ec2:DescribeSubnets, ec2:DescribeSecurityGroups, rds:DescribeDBInstances, rds:DescribeDBSubnetGroups, s3:ListAllMyBuckets, s3:GetBucketLocation, s3:GetPublicAccessBlock, s3:GetBucketPolicyStatus]
+              Action: [sts:GetCallerIdentity, ec2:DescribeInstances, ec2:DescribeVpcs, ec2:DescribeSubnets, ec2:DescribeSecurityGroups, rds:DescribeDBInstances, rds:DescribeDBSubnetGroups, s3:ListAllMyBuckets, s3:GetBucketLocation, s3:GetBucketPublicAccessBlock, s3:GetBucketPolicyStatus]
               Resource: '*'
         - !If
           - LambdaInventoryEnabled
@@ -774,6 +802,10 @@ Resources:
         Variables:
           FINDINGS_TABLE: !Ref FindingsTable
       Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:ConditionCheckItem
+              Resource: !GetAtt FindingsTable.Arn
         - DynamoDBReadPolicy: {TableName: !Ref FindingsTable}
         - DynamoDBCrudPolicy: {TableName: !Ref RemediationsTable}
         - Statement:

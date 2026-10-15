@@ -169,6 +169,9 @@ class RemediationLifecycleTests(unittest.TestCase):
         variants = [
             ('tier-two', {'tier': 'TIER_2'}, 409),
             ('low-confidence', {'confidence': 'LOW'}, 409),
+            ('missing-confidence', {'confidence': None}, 409),
+            ('unknown-confidence', {'confidence': 'UNKNOWN'}, 409),
+            ('legacy-no-revision', {'revision': None}, 409),
             ('resolved', {'status': 'RESOLVED'}, 409),
         ]
         for suffix, fields, expected in variants:
@@ -201,6 +204,22 @@ class RemediationLifecycleTests(unittest.TestCase):
             {'proposalId': proposal['proposalId']}, {'expectedRevision': 1, 'reason': 'Review'})
         self.assertEqual(stale['statusCode'], 409)
         self.assertEqual(json.loads(stale['body'])['error']['code'], 'FINDING_CHANGED')
+
+    def test_altered_proposal_target_is_rejected_before_execution(self):
+        self.put_finding()
+        for field, value in [('resourceId', 'sg-other'), ('resourceType', 'AWS::S3::Bucket'),
+                             ('accountId', '999999999999'), ('region', 'us-east-1')]:
+            with self.subTest(field=field):
+                proposal = body(self.invoke('admin', 'POST', '/v1/remediations', payload={
+                    'findingId': 'finding-ssh', 'actionId': 'REMOVE_OPEN_SSH'}), 201)['item']
+                approved = body(self.invoke('approver', 'POST', f"/v1/remediations/{proposal['proposalId']}/approve",
+                    {'proposalId': proposal['proposalId']}, {'expectedRevision': 1, 'reason': 'Reviewed target'}))['item']
+                self.db.Table('remediation-proposals').put_item(Item={**approved, field: value})
+                with patch('boto3.client', side_effect=AssertionError('An altered target must not reach AWS')):
+                    result = self.invoke('admin', 'POST', f"/v1/remediations/{proposal['proposalId']}/execute",
+                        {'proposalId': proposal['proposalId']}, {'expectedRevision': 2})
+                self.assertEqual(result['statusCode'], 409)
+                self.assertEqual(json.loads(result['body'])['error']['code'], 'PROPOSAL_TARGET_MISMATCH')
 
     def test_dry_run_proposal_cannot_be_upgraded_by_flags(self):
         self.put_finding()

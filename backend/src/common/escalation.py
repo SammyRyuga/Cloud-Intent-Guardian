@@ -105,36 +105,44 @@ def candidates(intent, inventory):
             if not source or not target:
                 continue
             raw = f"{rule['ruleId']}|{source}|{target}"
+            path = witness.get('path') or []
+            edge = path[0] if len(path) == 1 and isinstance(path[0], dict) else {}
+            snapshot_id = inventory.get('meta', {}).get('snapshotId') or hashlib.sha256(json.dumps({key: inventory.get('meta', {}).get(key) for key in ('accountId', 'region', 'collectedAt')}, sort_keys=True).encode()).hexdigest()
             rows.append({'candidateId': hashlib.sha256(raw.encode()).hexdigest()[:32],
                          'ruleId': rule['ruleId'], 'sourceId': source, 'targetId': target,
                          'predicate': 'DIRECTED_PATH_PRESENT',
-                         'snapshotId': inventory.get('meta', {}).get('snapshotId'),
+                         'snapshotId': snapshot_id, 'protocol': edge.get('protocol'), 'ports': edge.get('ports') or [],
                          'observedAt': inventory.get('meta', {}).get('collectedAt'),
                          'explanation': rule.get('explanation', '')})
     return rows
 
 
-def cross_validate(candidate, inventory):
+def cross_validate(candidate, inventory, source_verdicts=None):
     """Accept independently collected, predicate-bound verdicts, never source names alone.
 
-    No live source adapter currently emits these records. Only bundled local fixture
-    records are accepted until source-specific live collectors are implemented.
-    CloudTrail change events cannot establish a current directed path.
+    Live records must come from the dedicated read-only adapters, never from an
+    inventory metadata or model claim. CloudTrail events cannot establish a path.
     """
     meta = inventory.get('meta', {})
-    rows = meta.get('sourceVerdicts', [])
+    rows = meta.get('sourceVerdicts', []) if source_verdicts is None else source_verdicts
+    if not isinstance(rows, list):
+        rows = []
     verdicts = []
     families, origins = set(), set()
     valid_fixture = meta.get('simulated') is True and is_local() and os.environ.get('INVENTORY_PROVIDER') == 'fixture'
+    valid_live = source_verdicts is not None and not is_local() and meta.get('simulated') is not True
+    allowed_families = {'flowLogs', 'reachabilityAnalyzer'} if valid_live else {'inventory', 'flowLogs', 'securityGroupReachability'}
     for row in rows[:50]:
         if not isinstance(row, dict):
             continue
-        valid = (valid_fixture and row.get('sourceFamily') in {'inventory', 'flowLogs', 'securityGroupReachability'}
+        expected_keys = {'sourceFamily', 'verdict', 'evidenceId', 'originId', 'predicate', 'sourceId', 'targetId', 'snapshotId', 'observedAt'}
+        shape_valid = set(row) == expected_keys and all(isinstance(value, str) and 0 < len(value) <= 512 for value in row.values())
+        valid = (shape_valid and (valid_fixture or valid_live) and row.get('sourceFamily') in allowed_families
                  and all(row.get(k) == candidate.get(k) for k in ('predicate', 'sourceId', 'targetId', 'snapshotId', 'observedAt'))
                  and isinstance(row.get('evidenceId'), str) and bool(row['evidenceId'])
                  and isinstance(row.get('originId'), str) and bool(row['originId'])
                  and row.get('verdict') in {'CORROBORATES', 'DISAGREES', 'UNKNOWN'})
-        copy = {key: row.get(key) for key in ('sourceFamily', 'verdict', 'evidenceId', 'originId', 'predicate', 'sourceId', 'targetId', 'snapshotId', 'observedAt')}
+        copy = {key: row.get(key) if isinstance(row.get(key), str) and len(row[key]) <= 512 else None for key in ('sourceFamily', 'verdict', 'evidenceId', 'originId', 'predicate', 'sourceId', 'targetId', 'snapshotId', 'observedAt')}
         copy['eligible'] = bool(valid)
         verdicts.append(copy)
         if valid and row['verdict'] == 'CORROBORATES':
@@ -143,7 +151,7 @@ def cross_validate(candidate, inventory):
     disagreement = any(row['eligible'] and row['verdict'] == 'DISAGREES' for row in verdicts)
     accepted = not disagreement and len(families) >= 2 and len(origins) >= 2
     return {'accepted': accepted, 'sourceVerdicts': verdicts,
-            'reason': 'Two independent simulated sources corroborate this exact predicate and snapshot.' if accepted
+            'reason': ('Two independent ' + ('simulated ' if valid_fixture else 'AWS ') + 'sources corroborate this directed network-path predicate and snapshot; this does not prove an application session or approve an architectural change.') if accepted
             else 'Source disagreement or fewer than two independent, predicate-bound sources.',
             'simulated': valid_fixture}
 
@@ -163,7 +171,14 @@ def escalate(intent, inventory, evaluation, findings, client=None):
     except Exception:
         unavailable = True
     for candidate in pending[:MAX_CANDIDATES]:
-        validation = cross_validate(candidate, inventory)
+        source_verdicts = None
+        if not is_local() and inventory.get('meta', {}).get('simulated') is not True:
+            try:
+                from common.evidence_sources import collect_verdicts
+                source_verdicts = collect_verdicts(candidate, inventory)
+            except Exception:
+                source_verdicts = []
+        validation = cross_validate(candidate, inventory, source_verdicts)
         conclusion = None
         failure = 'UNAVAILABLE' if unavailable else None
         if not unavailable:

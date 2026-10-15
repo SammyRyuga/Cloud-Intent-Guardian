@@ -1,3 +1,84 @@
+## Live evidence adapters and deployment authorization (2026-10-16)
+
+The Phase 4 live collection gap is closed in code. Optional read-only adapters
+consume an existing default-format VPC Flow Logs group and existing Reachability
+Analyzer paths/results. `EnableEvidenceSources=false` remains the default;
+`FlowLogsGroupName` and `CrossValidationPathsJson` configure existing sources.
+No paths, analyses or logs are created. Reads are bounded to 20 log events and
+100 analyses per candidate, with a five-minute evidence window and exact
+resource/private-IP/protocol/port validation. Missing, inaccessible, malformed,
+stale or mismatched evidence yields UNKNOWN. Local mode cannot construct AWS
+clients. Reachability Analyzer models configuration, not actual application
+sessions; corroboration means a directed network path is possible, not that
+traffic traversed an intended application intermediary.
+
+Live verdicts come only from these adapters, never model/inventory metadata
+claims. Two independent families/origins must agree before a Tier 2 conclusion is
+accepted; disagreement still requires human review and no Tier 2 action is
+executable. Tests cover both native SDK-stubbed sources feeding cross-validation.
+All 143 backend tests passed. Earlier notes below describing unimplemented live
+collectors are superseded by this section.
+
+The user explicitly amended the original no-AWS/no-deployment restriction:
+profile `ryan`, ap-south-1, and a working AWS backend plus Render frontend are
+now authorized. The user confirmed `ryan's workspace` and the first admin email
+invitation. Existing real credentials are used only by the authorized deployment
+and readiness commands; credential values are never retrieved or logged. Local
+unit/persistence tests continue to use isolated dummy credentials.
+
+Read-only checks confirmed the selected account and found no existing Flow Logs
+or Reachability Analyzer paths in ap-south-1. Positive live cross-validation is
+therefore not verified. The S3 inventory IAM action was corrected to
+`s3:GetBucketPublicAccessBlock`, per the [S3 API reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetPublicAccessBlock.html).
+Pre-deploy IAM review also added the worker audit GetItem permission needed for
+idempotent retry recovery and the remediation ConditionCheckItem permission needed
+for atomic finding guards. Deployment results will be recorded after verification. Config,
+Bedrock/evidence-source activation and modifying remediation remain disabled.
+
+## Phase 6 - integrated frontend and final checks (2026-10-16)
+
+The React app now provides v2 JSON intent editing/viewing, immutable version
+selection/diff/rollback controls, INTENT/ACTUAL/DIFF graph classifications and
+component highlighting, async evaluation history/detail polling, finding severity
+factors and cross-validation evidence, proposal approval/dry-run execution and
+paginated audit history. Local controls follow explicit backend capabilities.
+Unsupported uploads, standalone drift events and on-demand explanation routes
+remain disabled in live mode. Existing styles and app structure are preserved.
+
+Mocks now use valid three-tier declarations, independent version snapshots and
+semantic diffs. Remediation mocks enforce status/revision/expiry/reason checks,
+show concrete diff/rollback plans and record the same terminal status, revision 4
+and audit transitions as the backend. All mock evidence stays visibly simulated.
+The local API e2e assertions now follow advertised features instead of assuming
+all new workflows are unavailable.
+
+Rendered smoke verification used Brave through CUA against an isolated loopback
+Vite mock server. Passed: v2 creation; v1-to-v2 relationship diff; new draft
+version; graph legend/component highlight; evaluation history/detail; simulated
+Tier 2 source evidence; proposal approval then DRY_RUN_COMPLETE at revision 4;
+and the corresponding audit rows. Screenshots were emitted in tool output;
+no screenshot file was saved. The mock server was stopped. This proves rendering
+with simulated responses, not a deployed or live AWS integration.
+
+Final hardening rejects malformed/unexpected source-record shapes, unknown or
+missing remediation confidence, legacy findings without a revision, and proposals
+whose resource/type/account/region differs from their finding. Target binding is
+checked before execution; regression cases cover altered stored target fields.
+
+Final gates: backend 130/130 tests, frontend 26/26 tests, 13/13 contract tests,
+frontend lint (two existing Fast Refresh warnings), production build, SAM
+`validate --lint`, SAM build and `git diff --check` passed. The architecture
+chunk is 84.97 kB gzip. The DynamoDB Local five-scenario/version/audit/approved
+dry-run verifier passed again (`local-evidence/phase6-topology.json`).
+
+Not run: automated Playwright e2e (Chromium executable unavailable), deployed
+Cognito/API Gateway, Academy IAM/service/region checks, real Bedrock, live
+independent-source collection/corroboration or modifying AWS calls. Live source
+collectors are not implemented; live ambiguous results therefore require human
+review. Bedrock, Config, optional inventory and cloud execution defaults remain
+off; local execution always stays dry-run. No deployment or real credentials
+were used. These boundaries also apply to the earlier phase reports below.
+
 ## Phase 5 - approved remediation proposals (2026-10-16)
 
 New routes: GET/POST `/v1/remediations`, GET `/v1/remediations/{proposalId}`,

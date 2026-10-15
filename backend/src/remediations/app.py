@@ -28,6 +28,8 @@ def _finding(db, finding_id, scope):
     item = db.Table(os.environ['FINDINGS_TABLE']).get_item(Key={'findingId': finding_id}, ConsistentRead=True).get('Item')
     if not item or item.get('scopeKey') != scope:
         raise ProposalError('FINDING_NOT_FOUND', 'No finding exists in this scope.', 404)
+    if item.get('revision') is None or not isinstance(item.get('evaluationId'), str):
+        raise ProposalError('FINDING_REEVALUATION_REQUIRED', 'Re-evaluate this legacy finding before proposing an action.')
     return item
 
 
@@ -56,6 +58,8 @@ def _validate_current(db, proposal, scope):
     if proposal['expiresAt'] <= utc_now():
         raise ProposalError('PROPOSAL_EXPIRED', 'This proposal expired; create a fresh proposal.')
     finding = _finding(db, proposal['findingId'], scope)
+    if any(proposal.get(key) != finding.get(key) for key in ('resourceId', 'resourceType', 'accountId', 'region')):
+        raise ProposalError('PROPOSAL_TARGET_MISMATCH', 'The proposal target differs from its finding; create a fresh proposal.')
     if fingerprint(finding) != proposal['findingHash'] or eligible_action(finding) != proposal['actionId']:
         raise ProposalError('FINDING_CHANGED', 'The finding changed; create a fresh proposal.')
     if build_plan(finding) != proposal['plan']:

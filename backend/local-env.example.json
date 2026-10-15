@@ -15,6 +15,9 @@
     "REMEDIATION_ENABLED": "false",
     "REMEDIATION_DRY_RUN": "true",
     "LLM_ENABLED": "false",
-    "LLM_PROVIDER": "mock"
+    "LLM_PROVIDER": "mock",
+    "CROSS_VALIDATION_ENABLED": "false",
+    "FLOW_LOGS_GROUP_NAME": "",
+    "CROSS_VALIDATION_PATHS_JSON": "{}"
   }
 }

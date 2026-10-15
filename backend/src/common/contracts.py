@@ -9,7 +9,7 @@ def is_local():
 
 def finding_view(item):
     from common.remediation import eligible_action, build_plan
-    action = eligible_action(item)
+    action = eligible_action(item) if item.get('revision') is not None and item.get('evaluationId') else None
     if action:
         try:
             build_plan(item)

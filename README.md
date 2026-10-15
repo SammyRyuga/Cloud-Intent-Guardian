@@ -1,6 +1,6 @@
 # Cloud Intent Guardian
 
-Cloud Intent Guardian compares approved architecture constraints with live AWS configuration and stores findings with severity and evidence. The current backend uses AWS SAM, Python 3.13 Lambda, API Gateway, Cognito and DynamoDB.
+Cloud Intent Guardian compares approved architectural intent - components, permitted paths, trust boundaries and criticality - with an evidence-bounded AWS graph, and stores findings with explainable severity and evidence. The current backend uses AWS SAM, Python 3.13 Lambda, API Gateway, Cognito and DynamoDB.
 
 **Start by proving local intent persistence. AWS Academy activation and deployment are separate steps requiring explicit authorization.** Local SAM/DynamoDB integration is verified; AWS deployment and Cognito authentication remain unverified. See [recorded validation](backend/VALIDATION.md).
 
@@ -16,10 +16,10 @@ backend/
   scripts/local_db.py            Probe, initialize missing tables, verify persistence
   scripts/diagnose-local.sh      Runtime-container and SAM diagnostic
   tests/                        SDK-stubbed contract tests
-  src/                          Eight handlers and shared helpers
+  src/                          API handlers, async worker and shared pure rule engines
 ```
 
-The backend implements v2 architectural intent, four attribute checks plus relationship/path/boundary rules, immutable approved versions, rollback, async evaluation/history, audit and finding lifecycle. INTENT/DIFF graphs and a guarded local fixture worker are available. Server roles use Cognito groups. Live collected edges are structural; network reachability remains unknown without adequate evidence. Severity scoring, cross-validated Bedrock escalation and gated remediation remain later phases. See [current integration](INTEGRATION.md) and [validation](backend/VALIDATION.md).
+The backend implements v2 architectural intent, four attribute checks plus relationship/path/boundary rules, immutable approved versions, rollback, async evaluation/history, audit and finding lifecycle. INTENT/DIFF graphs and a guarded local fixture worker are available. Server roles use Cognito groups. Live collected edges are structural; network reachability remains unknown without adequate evidence. Findings include numeric severity factors. Optional Bedrock escalation is advisory and validates output against a closed schema; optional read-only Flow Logs and existing Reachability Analyzer adapters corroborate independent evidence; missing or conflicting evidence requires human review. Human-approved remediation proposals support two reversible registry actions, with dry-run defaults and local execution permanently simulated. The frontend includes v2 editing, diff graphs, evaluation history, finding evidence, proposal approval and audit views. See [current integration](INTEGRATION.md) and [validation](backend/VALIDATION.md).
 
 The React frontend is in `frontend/`, together with its PRD and implementation specification. [Integration guide](INTEGRATION.md) documents the connected MVP, real local API mode and remaining AWS validation.
 

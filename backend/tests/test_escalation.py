@@ -84,6 +84,41 @@ class EscalationTests(unittest.TestCase):
             with self.subTest(mode=mode):
                 self.assertFalse(cross_validate(candidate, inventory)['accepted'])
 
+    def test_malformed_source_payload_is_not_accepted(self):
+        inventory = scenario_inventory('unruled-crossing')
+        candidate = candidates(self.intent, inventory)[0]
+        inventory['meta']['sourceVerdicts'] = {'untrusted': 'object'}
+        self.assertFalse(cross_validate(candidate, inventory)['accepted'])
+        inventory = scenario_inventory('unruled-crossing')
+        inventory['meta']['sourceVerdicts'][0]['execute'] = 'injected'
+        self.assertFalse(cross_validate(candidate, inventory)['accepted'])
+
+    def test_live_metadata_cannot_self_corroborate_but_adapter_records_can(self):
+        inventory = scenario_inventory('unruled-crossing')
+        inventory['meta']['simulated'] = False
+        candidate = candidates(self.intent, inventory)[0]
+        rows = [dict(row) for row in inventory['meta']['sourceVerdicts']]
+        rows[0]['sourceFamily'] = 'reachabilityAnalyzer'
+        with patch('common.escalation.is_local', return_value=False):
+            self.assertFalse(cross_validate(candidate, inventory)['accepted'])
+            self.assertTrue(cross_validate(candidate, inventory, rows)['accepted'])
+            rows[0]['verdict'] = 'DISAGREES'
+            self.assertFalse(cross_validate(candidate, inventory, rows)['accepted'])
+
+    def test_live_adapter_results_are_persisted_in_advisory_findings(self):
+        inventory = scenario_inventory('unruled-crossing')
+        inventory['meta']['simulated'] = False
+        records = [dict(row) for row in inventory['meta']['sourceVerdicts']]
+        records[0]['sourceFamily'] = 'reachabilityAnalyzer'
+        evaluation, findings = run_pinned_evaluation(self.intent, inventory, 'eval-live-stub')
+        with patch('common.escalation.is_local', return_value=False), patch('common.evidence_sources.collect_verdicts', return_value=records) as collect:
+            evaluation, findings = escalate(self.intent, inventory, evaluation, findings, client=MockLLMClient())
+        self.assertEqual(collect.call_count, 1)
+        self.assertEqual(findings[0]['reviewStatus'], 'CORROBORATED')
+        self.assertFalse(findings[0]['crossValidation']['simulated'])
+        self.assertEqual({r['sourceFamily'] for r in findings[0]['crossValidation']['sourceVerdicts']}, {'reachabilityAnalyzer', 'flowLogs'})
+        self.assertFalse(findings[0]['actionEligible'])
+
     def test_bedrock_converse_sdk_stubbed(self):
         import boto3
         from botocore.stub import Stubber, ANY

@@ -39,8 +39,8 @@ export function AuditTrailPage() {
                   <th className="py-2.5 px-4">Timestamp</th>
                   <th className="py-2.5 px-4">Actor</th>
                   <th className="py-2.5 px-4">Action</th>
-                  <th className="py-2.5 px-4">Details</th>
                   <th className="py-2.5 px-4">Result and target</th>
+                  <th className="py-2.5 px-4">Request</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-rule">

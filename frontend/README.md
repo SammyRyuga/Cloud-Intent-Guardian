@@ -32,7 +32,7 @@ Create a local `.env` file for a deployed backend. Only public configuration bel
 | `VITE_DEFAULT_REGION` | Region selected in the interface |
 | `VITE_FEATURES` | Comma-separated enabled frontend capabilities |
 
-The frontend follows the frontend PRD in `Cloud_Intent_Guardian_Frontend_PRD.md`. The connected MVP implements JSON intent creation/detail/approval, findings list/detail, stored dashboard data, system readiness, observed topology and synchronous evaluation. Unsupported later workflows remain disabled in live mode.
+The frontend follows the frontend PRD in `Cloud_Intent_Guardian_Frontend_PRD.md`. The app supports v2 JSON intent editing and immutable versions, INTENT/ACTUAL/DIFF topology, asynchronous evaluation history/status polling, finding severity factors and advisory cross-validation evidence, explicit remediation approval/dry-run execution, and paginated audit history. Optional workflows follow server-advertised local capabilities; backend Cognito group checks remain authoritative. File uploads, standalone drift events and on-demand explanation generation remain unavailable in live mode. Mock responses are explicitly simulated.
 
 For real local integration, copy `.env.local-api.example` to `.env.development.local` (preserve and edit an existing configuration), start the local SAM backend, and use `npm run dev -- --host localhost --port 5173 --strictPort`. This is explicit loopback-only local API mode, not Cognito authentication. See [integration instructions and evidence](../INTEGRATION.md).
 
@@ -46,4 +46,4 @@ For real local integration, copy `.env.local-api.example` to `.env.development.l
 - `src/auth/` — Cognito authentication client and route protection
 - `src/config/` — public runtime configuration and capability flags
 
-See the repository-level backend guide in `../backend/README.md` for AWS deployment details.
+See [backend local testing](../backend/LOCAL_TESTING.md) and [current validation](../backend/VALIDATION.md). No deployment is authorized by local setup instructions.

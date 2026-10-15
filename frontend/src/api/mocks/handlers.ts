@@ -12,23 +12,89 @@ import {
 import type { Manifest } from '@/api/backendSchemas';
 
 const now = new Date().toISOString();
+const initialManifest = {
+  schemaVersion: 2 as const,
+  name: 'Production Network Baseline',
+  description: 'Reviewed v2 topology for the bundled three-tier fixture.',
+  components: [
+    { id: 'web', resourceTypes: ['AWS::EC2::Instance'], selector: { resourceIds: ['i-fixture-web'] }, minMatches: 1 },
+    { id: 'api', resourceTypes: ['AWS::EC2::Instance'], selector: { resourceIds: ['i-fixture-api'] }, minMatches: 1 },
+    { id: 'worker', resourceTypes: ['AWS::Lambda::Function'], selector: { resourceIds: ['fixture-worker'] }, minMatches: 1 },
+    { id: 'db', resourceTypes: ['AWS::RDS::DBInstance'], selector: { resourceIds: ['fixture-db'] }, minMatches: 1 },
+  ],
+  relationships: [
+    { id: 'web-api', from: 'web', to: 'api', effect: 'ALLOW', relationshipType: 'NETWORK_REACHABILITY', protocol: 'tcp', ports: [443], required: true },
+    { id: 'api-db', from: 'api', to: 'db', effect: 'ALLOW', relationshipType: 'NETWORK_REACHABILITY', protocol: 'tcp', ports: [5432], required: true },
+  ],
+  trustBoundaries: [
+    { id: 'edge', members: ['web'], crossingRules: [{ id: 'web-service', to: 'services', effect: 'ALLOW', via: ['api'] }] },
+    { id: 'services', members: ['api', 'worker'], crossingRules: [{ id: 'service-data', to: 'data', effect: 'ALLOW', via: ['api'] }] },
+    { id: 'data', members: ['db'], crossingRules: [] },
+  ],
+  criticality: { db: 'CRITICAL', api: 'HIGH', web: 'MEDIUM', worker: 'MEDIUM' },
+  constraints: [
+    { id: 'ssh', type: 'SECURITY_GROUP_NO_OPEN_SSH', severity: 'HIGH', description: 'SSH must not be publicly reachable.', enabled: true },
+    { id: 'no-direct-worker-db', type: 'FORBIDDEN_PATH', from: 'worker', to: 'db', pathMode: 'DIRECT', edgeTypes: ['NETWORK_REACHABILITY'], severity: 'HIGH', description: 'The worker cannot connect directly to the database.', enabled: true },
+    { id: 'worker-via-api', type: 'REQUIRED_INTERMEDIARY', from: 'worker', to: 'db', via: ['api'], edgeTypes: ['NETWORK_REACHABILITY'], severity: 'HIGH', description: 'Database access from the worker must pass through the API.', enabled: true },
+  ],
+} satisfies Pick<Manifest, 'schemaVersion' | 'name' | 'description' | 'components' | 'relationships' | 'trustBoundaries' | 'criticality' | 'constraints'>;
 let mockManifest: Manifest = {
-  intentId: 'int-prod-net-01', name: 'Production Network Baseline',
-  description: 'Reviewed v2 architecture declarations for the local fixture scope.',
+  intentId: 'int-prod-net-01',
   version: 2, status: 'APPROVED', createdAt: now, updatedAt: now,
-  approvedAt: now, createdBy: 'local-fixture', sourceType: 'JSON', schemaVersion: 2,
-  components: [{ id: 'network', resourceTypes: ['AWS::EC2::VPC'], selector: { tags: { 'cig:tier': 'network' } }, minMatches: 1 }],
-  relationships: [{ id: 'network-api', from: 'network', to: 'api', effect: 'ALLOW', relationshipType: 'CONTAINS' }],
-  trustBoundaries: [{ id: 'production', members: ['network', 'api'] }],
-  criticality: { network: 'HIGH' },
-  constraints: [{ id: 'no-open-ssh', type: 'SECURITY_GROUP_NO_OPEN_SSH', severity: 'HIGH', description: 'SSH must not be public.', enabled: true }],
+  approvedAt: now, createdBy: 'local-fixture', sourceType: 'JSON',
+  ...initialManifest,
   activeVersion: 2, latestVersion: 2, revision: 2,
 };
-let mockVersions: Manifest[] = [
-  { ...mockManifest, version: 1, status: 'APPROVED' },
-  { ...mockManifest, version: 2, status: 'APPROVED' },
+type MockVersion = Manifest & { contentHash: string; parentVersion?: number };
+const snapshot = (manifest: Manifest, version: number, parentVersion?: number): MockVersion => ({
+  ...structuredClone(manifest), version, contentHash: `local-fixture-content-${version}`,
+  ...(parentVersion ? { parentVersion } : {}),
+});
+let mockVersions: MockVersion[] = [
+  snapshot({ ...mockManifest, relationships: mockManifest.relationships?.filter((row) => row.id !== 'web-api') }, 1),
+  snapshot(mockManifest, 2, 1),
 ];
+
+function diffSection(before: unknown[] = [], after: unknown[] = []) {
+  const key = (row: unknown) => String((row as { id?: unknown })?.id ?? '');
+  const oldRows = new Map(before.map((row) => [key(row), row]));
+  const newRows = new Map(after.map((row) => [key(row), row]));
+  return {
+    added: [...newRows].filter(([id]) => !oldRows.has(id)).map(([id, value]) => ({ id, value })),
+    removed: [...oldRows].filter(([id]) => !newRows.has(id)).map(([id, value]) => ({ id, value })),
+    changed: [...newRows].filter(([id, value]) => oldRows.has(id) && JSON.stringify(oldRows.get(id)) !== JSON.stringify(value))
+      .map(([id, afterValue]) => ({ id, before: oldRows.get(id), after: afterValue })),
+  };
+}
+
+function diffCriticality(before: Record<string, unknown> = {}, after: Record<string, unknown> = {}) {
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+  return {
+    added: [...keys].filter((id) => !(id in before)).map((id) => ({ id, value: after[id] })),
+    removed: [...keys].filter((id) => !(id in after)).map((id) => ({ id, value: before[id] })),
+    changed: [...keys].filter((id) => id in before && id in after && before[id] !== after[id])
+      .map((id) => ({ id, before: before[id], after: after[id] })),
+  };
+}
 let currentMockEvaluation = { ...mockEvaluation };
+
+function mockAudit(action: string, target: unknown, result: string, metadata: Record<string, unknown> = {}) {
+  mockAuditEvents.unshift({
+    auditId: `aud-local-${Date.now()}`,
+    timestamp: new Date().toISOString(),
+    actor: { sub: 'local-fixture-admin', displayName: 'Local fixture administrator' },
+    action,
+    target,
+    result,
+    requestId: `local-request-${Date.now()}`,
+    scopeKey: 'local:us-east-1:fixture',
+    metadata,
+  });
+}
+
+function mockApiError(status: number, code: string, message: string) {
+  return HttpResponse.json({ error: { code, message } }, { status });
+}
 
 export const handlers = [
   // System Status
@@ -171,7 +237,7 @@ export const handlers = [
       latestVersion: 1,
       revision: 1,
     } as Manifest;
-    mockVersions = [{ ...mockManifest, status: 'DRAFT' }];
+    mockVersions = [snapshot({ ...mockManifest, status: 'DRAFT' }, 1)];
     return HttpResponse.json({ item: mockManifest }, { status: 201 });
   }),
 
@@ -193,7 +259,7 @@ export const handlers = [
     const body = await request.json() as { manifest: Record<string, unknown>; expectedRevision: number };
     if (body.expectedRevision !== mockManifest.revision) return HttpResponse.json({ message: 'Revision conflict' }, { status: 409 });
     const version = (mockManifest.latestVersion || mockManifest.version) + 1;
-    const content = { ...mockManifest, ...body.manifest, version, status: 'DRAFT' as const, updatedAt: new Date().toISOString() };
+    const content = snapshot({ ...mockManifest, ...body.manifest, status: 'DRAFT' as const, updatedAt: new Date().toISOString() } as Manifest, version, version - 1);
     mockVersions = [...mockVersions, content];
     mockManifest = { ...mockManifest, latestVersion: version, revision: (mockManifest.revision || 0) + 1 };
     return HttpResponse.json({ item: content }, { status: 201 });
@@ -210,9 +276,12 @@ export const handlers = [
     if (body.expectedRevision !== mockManifest.revision) return HttpResponse.json({ message: 'Revision conflict' }, { status: 409 });
     const item = mockVersions.find((version) => version.version === versionNumber);
     if (!item) return HttpResponse.json({ message: 'Version not found' }, { status: 404 });
-    mockManifest = { ...item, status: 'APPROVED', activeVersion: versionNumber, revision: (mockManifest.revision || 0) + 1, approvedAt: new Date().toISOString() };
-    mockVersions = mockVersions.map((version) => ({ ...version, status: version.version === versionNumber ? 'APPROVED' : version.status }));
-    return HttpResponse.json({ item: mockVersions.find((version) => version.version === versionNumber) });
+    if (item.status !== 'DRAFT') return HttpResponse.json({ message: 'Only draft versions can be approved' }, { status: 409 });
+    const approvedAt = new Date().toISOString();
+    const approved = { ...item, status: 'APPROVED' as const, approvedAt };
+    mockManifest = { ...approved, activeVersion: versionNumber, latestVersion: mockManifest.latestVersion, revision: (mockManifest.revision || 0) + 1 };
+    mockVersions = mockVersions.map((version) => version.version === versionNumber ? approved : version);
+    return HttpResponse.json({ item: approved });
   }),
 
   http.post('/v1/intents/:id/rollback', async ({ params, request }) => {
@@ -227,12 +296,18 @@ export const handlers = [
 
   http.get('/v1/intents/:id/diff', async ({ params, request }) => {
     const url = new URL(request.url);
+    const fromVersion = Number(url.searchParams.get('fromVersion'));
+    const toVersion = Number(url.searchParams.get('toVersion'));
+    const before = mockVersions.find((version) => version.version === fromVersion);
+    const after = mockVersions.find((version) => version.version === toVersion);
+    if (!before || !after) return HttpResponse.json({ message: 'Version not found' }, { status: 404 });
     return HttpResponse.json({ item: {
-      intentId: String(params.id), fromVersion: Number(url.searchParams.get('fromVersion')),
-      toVersion: Number(url.searchParams.get('toVersion')),
-      components: { added: [], removed: [], changed: [] }, relationships: { added: [], removed: [], changed: [] },
-      trustBoundaries: { added: [], removed: [], changed: [] }, criticality: { added: [], removed: [], changed: [] },
-      constraints: { added: [], removed: [], changed: [] },
+      intentId: String(params.id), fromVersion, toVersion,
+      components: diffSection(before.components, after.components),
+      relationships: diffSection(before.relationships, after.relationships),
+      trustBoundaries: diffSection(before.trustBoundaries, after.trustBoundaries),
+      criticality: diffCriticality(before.criticality, after.criticality),
+      constraints: diffSection(before.constraints, after.constraints),
     } });
   }),
 
@@ -266,7 +341,7 @@ export const handlers = [
   http.get('/v1/remediations/:id', async ({ params }) => {
     await delay(100);
     const item = mockRemediations.find((row) => row.proposalId === params.id);
-    if (!item) return HttpResponse.json({ message: 'Proposal not found' }, { status: 404 });
+    if (!item) return mockApiError(404, 'PROPOSAL_NOT_FOUND', 'No proposal exists in this scope.');
     return HttpResponse.json({ item });
   }),
 
@@ -275,9 +350,11 @@ export const handlers = [
     const body = (await request.json()) as { findingId: string; actionId: 'REMOVE_OPEN_SSH' | 'ENABLE_S3_BLOCK_PUBLIC_ACCESS' };
     const finding = mockFindings.find((row) => row.id === body.findingId);
     if (!finding || !finding.remediationAvailable || finding.remediationActionId !== body.actionId || finding.tier === 'TIER_2') {
-      return HttpResponse.json({ message: 'Finding is not eligible for this action' }, { status: 409 });
+      return mockApiError(409, 'ACTION_NOT_ELIGIBLE', 'This finding is not eligible for that registry action.');
     }
+    if (!finding.resourceId || !finding.resourceType) return mockApiError(409, 'ACTION_NOT_ELIGIBLE', 'The finding does not include a supported resource.');
     const now = new Date().toISOString();
+    const sshPlan = body.actionId === 'REMOVE_OPEN_SSH';
     const item = {
       proposalId: `rem-${Date.now()}`,
       findingId: finding.id,
@@ -287,12 +364,16 @@ export const handlers = [
       dryRun: true,
       createdAt: now,
       expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
-      createdBy: { sub: 'local-user', role: 'operator', displayName: 'Local fixture user' },
+      createdBy: { sub: 'local-fixture-admin', role: 'admin', displayName: 'Local fixture administrator' },
       resourceId: finding.resourceId,
       resourceType: finding.resourceType,
-      plan: { before: {}, after: {}, rollback: {}, description: 'Local simulated proposal; no cloud action was performed.' },
+      plan: sshPlan
+        ? { before: { publicSshPermissions: [{ IpProtocol: 'tcp', FromPort: 22, ToPort: 22, IpRanges: [{ CidrIp: '0.0.0.0/0' }] }] }, after: { publicSshPermissions: [] }, rollback: { operation: 'authorize_security_group_ingress', permissions: [{ IpProtocol: 'tcp', FromPort: 22, ToPort: 22, IpRanges: [{ CidrIp: '0.0.0.0/0' }] }] }, description: 'Revoke only the evidenced public CIDR ingress permissions that include SSH.' }
+        : { before: { blockPublicAccess: false }, after: { blockPublicAccess: true }, rollback: { blockPublicAccess: false }, description: 'Enable all S3 Block Public Access settings for this bucket.' },
+      approvalRequired: true,
     };
     mockRemediations.unshift(item);
+    mockAudit('REMEDIATION_PROPOSED', { type: 'REMEDIATION', id: item.proposalId }, 'RECORDED', { findingId: item.findingId, actionId: item.actionId, status: item.status });
     return HttpResponse.json({ item }, { status: 201 });
   }),
 
@@ -300,13 +381,17 @@ export const handlers = [
     await delay(250);
     const body = (await request.json()) as { expectedRevision: number; reason: string };
     const item = mockRemediations.find((row) => row.proposalId === params.id);
-    if (!item) return HttpResponse.json({ message: 'Proposal not found' }, { status: 404 });
-    if (item.revision !== body.expectedRevision) return HttpResponse.json({ message: 'Revision conflict' }, { status: 409 });
+    if (!item) return mockApiError(404, 'PROPOSAL_NOT_FOUND', 'No proposal exists in this scope.');
+    if (item.revision !== body.expectedRevision) return mockApiError(409, 'STATE_CONFLICT', 'The proposal changed; refresh it.');
+    if (Date.parse(item.expiresAt) <= Date.now()) return mockApiError(409, 'PROPOSAL_EXPIRED', 'This proposal expired; create a fresh proposal.');
+    if (typeof body.reason !== 'string' || body.reason.trim().length < 1 || body.reason.trim().length > 1000) return mockApiError(400, 'APPROVAL_REASON_REQUIRED', 'Human approval requires a reason of 1-1000 characters.');
+    if (item.status !== 'PROPOSED') return mockApiError(409, 'STATE_CONFLICT', 'Only a proposed action can be approved.');
     item.status = 'APPROVED';
     item.revision += 1;
     item.approvedAt = new Date().toISOString();
-    item.approvedBy = { sub: 'local-approver', role: 'approver', displayName: 'Local fixture approver' };
-    item.reason = body.reason;
+    item.approvedBy = { sub: 'local-fixture-admin', role: 'admin', displayName: 'Local fixture administrator' };
+    item.reason = body.reason.trim();
+    mockAudit('REMEDIATION_APPROVED', { type: 'REMEDIATION', id: item.proposalId }, 'RECORDED', { findingId: item.findingId, actionId: item.actionId, status: item.status });
     return HttpResponse.json({ item });
   }),
 
@@ -314,12 +399,16 @@ export const handlers = [
     await delay(250);
     const body = (await request.json()) as { expectedRevision: number };
     const item = mockRemediations.find((row) => row.proposalId === params.id);
-    if (!item) return HttpResponse.json({ message: 'Proposal not found' }, { status: 404 });
-    if (item.revision !== body.expectedRevision) return HttpResponse.json({ message: 'Revision conflict' }, { status: 409 });
-    if (item.status !== 'APPROVED') return HttpResponse.json({ message: 'Proposal must be approved before execution' }, { status: 409 });
+    if (!item) return mockApiError(404, 'PROPOSAL_NOT_FOUND', 'No proposal exists in this scope.');
+    if (item.revision !== body.expectedRevision) return mockApiError(409, 'STATE_CONFLICT', 'The proposal changed; refresh it.');
+    if (Date.parse(item.expiresAt) <= Date.now()) return mockApiError(409, 'PROPOSAL_EXPIRED', 'This proposal expired; create a fresh proposal.');
+    if (item.status !== 'APPROVED' || !item.approvedBy) return mockApiError(409, 'APPROVAL_REQUIRED', 'Explicit human approval is required before execution.');
+    item.revision += 1;
+    item.status = 'EXECUTING';
     item.status = 'DRY_RUN_COMPLETE';
     item.revision += 1;
-    item.execution = { dryRun: true, status: 'COMPLETED', completedAt: new Date().toISOString() };
+    item.execution = { dryRun: true, status: 'DRY_RUN_COMPLETE', completedAt: new Date().toISOString() };
+    mockAudit('REMEDIATION_DRY_RUN_COMPLETE', { type: 'REMEDIATION', id: item.proposalId }, 'RECORDED', { findingId: item.findingId, actionId: item.actionId, status: item.status });
     return HttpResponse.json({ item });
   }),
 

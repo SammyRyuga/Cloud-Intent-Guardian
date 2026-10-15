@@ -86,35 +86,36 @@ test("real local API creates, retrieves and approves a manifest", async ({
   expect(errors).toEqual([]);
 });
 
-test("overview reports no evaluation and unsupported workflows do not call nonexistent endpoints", async ({
+test("local feature gates follow backend-advertised capabilities", async ({
   page,
 }) => {
   const failures: string[] = [];
+  let status: { features?: Record<string, boolean> } | undefined;
   page.on("response", (response) => {
     if (response.status() >= 400)
       failures.push(`${response.status()} ${response.url()}`);
   });
+  page.on("response", async (response) => {
+    if (response.url().endsWith("/v1/system/status") && response.ok()) {
+      status = await response.json();
+    }
+  });
   await page.goto("/overview");
-  await expect(
-    page.getByText("Not evaluated yet", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "AWS evaluation not enabled locally" }),
-  ).toBeDisabled();
+  await expect(page.getByRole("heading", { name: "Architecture Conformance Overview" })).toBeVisible();
+  await expect.poll(() => status?.features).toBeTruthy();
+  const features = status!.features!;
+  const evaluationButton = page.getByRole("button", { name: /Run evaluation|AWS evaluation not enabled locally/ });
+  if (features.evaluations) await expect(evaluationButton).toBeEnabled();
+  else await expect(evaluationButton).toBeDisabled();
   await page.goto("/findings");
-  await expect(
-    page.getByText("No findings match filter", { exact: true }),
-  ).toBeVisible();
-  for (const path of [
-    "/drift-events",
-    "/remediation",
-    "/audit-trail",
-    "/architecture",
-  ]) {
-    await page.goto(path);
-    await expect(
-      page.getByRole("heading", { name: "Not enabled" }),
-    ).toBeVisible();
-  }
+  await expect(page.getByRole("heading", { name: "Architecture Findings" })).toBeVisible();
+  await page.goto("/architecture");
+  if (features.topology) await expect(page.getByRole("heading", { name: "Architecture Explorer" })).toBeVisible();
+  else await expect(page.getByRole("heading", { name: "Not enabled" })).toBeVisible();
+  await page.goto("/remediation");
+  if (features.remediationProposals) await expect(page.getByRole("heading", { name: "Remediation proposals" })).toBeVisible();
+  else await expect(page.getByRole("heading", { name: "Not enabled" })).toBeVisible();
+  await page.goto("/audit-trail");
+  await expect(page.getByRole("heading", { name: "Immutable Audit Trail" })).toBeVisible();
   expect(failures).toEqual([]);
 });
