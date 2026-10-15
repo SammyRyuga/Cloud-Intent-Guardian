@@ -20,8 +20,18 @@ Frontend lint reports two existing Fast Refresh warnings. Tests cover scoped
 pending proposal counts, incomplete scans, backend conflict messages, the Intents
 link and unavailable-versus-disabled count labels. A deployed Lambda invocation
 with a synthetic admin event confirmed the exact NO_APPROVED_INTENT response;
-this bypasses API Gateway JWT authorization and does not establish a signed-in
-browser journey. Deployment verification will follow this record.
+this bypasses API Gateway JWT authorization. Subsequent verification in the
+owner's already signed-in browser confirmed the real protected API response,
+correct prerequisite message and Intents link, and Pending Remediations = 0.
+No password or token was accessed. No intent was created or approved.
+
+Released application commit: `0408d06`. AWS stack reached UPDATE_COMPLETE.
+Render deploy `dep-db8il2ks728c738rcm8g` is live on the same site. Render had not
+automatically built the pushed commit, so the existing service was deployed
+explicitly. A deployed ViewsFunction check returned HTTP 200, partial=false,
+openRemediations=0 and features.remediation=true. The signed-in browser showed
+those same values after refresh. Successful evaluation still requires an
+owner-approved intent; no successful live evaluation is claimed by this fix.
 
 ## Working prototype deployment (2026-10-16)
 
