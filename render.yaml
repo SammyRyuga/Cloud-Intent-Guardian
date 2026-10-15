@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: cloud-intent-guardian
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 22.19.0
+      - key: VITE_USE_MOCKS
+        value: "false"
+      - key: VITE_LOCAL_API
+        value: "false"
+      - key: VITE_DEFAULT_REGION
+        value: ap-south-1
+      - key: VITE_COGNITO_REGION
+        value: ap-south-1
+      - key: VITE_API_BASE_URL
+        sync: false
+      - key: VITE_COGNITO_USER_POOL_ID
+        sync: false
+      - key: VITE_COGNITO_CLIENT_ID
+        sync: false
+      - key: VITE_COGNITO_DOMAIN
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
