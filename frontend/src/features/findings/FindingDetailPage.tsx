@@ -80,6 +80,62 @@ export function FindingDetailPage() {
             {acknowledgeFinding.error && <p role="alert" className="text-sm text-sev-critical">{acknowledgeFinding.error.message}</p>}
 
             {finding.evidence && <Card><CardHeader title="Evaluation evidence" /><p className="text-sm mb-3">{finding.explanation}</p>{finding.evidence.map((entry, index) => <div key={index} className="border-t border-rule py-3"><p className="text-xs">{entry.source} - {formatDateTime(entry.observedAt)}</p><CopyableId id={entry.resourceId} /><pre className="text-xs whitespace-pre-wrap break-words mt-2">{JSON.stringify(entry.details, null, 2)}</pre></div>)}</Card>}
+            {(finding.severityScore !== undefined || finding.severityFactors || finding.confidence || finding.constraintSeverity) && (
+              <Card>
+                <CardHeader
+                  title="Server severity factors"
+                  subtitle={finding.severityScore !== undefined ? `Score ${finding.severityScore}` : `Severity ${finding.severity}`}
+                />
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <dt className="text-pencil text-xs">Displayed severity</dt>
+                    <dd className="mt-1"><SeverityBadge severity={finding.severity} /></dd>
+                  </div>
+                  {finding.constraintSeverity && <div>
+                    <dt className="text-pencil text-xs">Original constraint severity</dt>
+                    <dd className="mt-1">{finding.constraintSeverity}</dd>
+                  </div>}
+                  {(finding.confidence || finding.severityFactors?.confidence) && <div>
+                    <dt className="text-pencil text-xs">Evidence confidence</dt>
+                    <dd className="mt-1">{finding.confidence ?? finding.severityFactors?.confidence.label}</dd>
+                    {finding.severityFactors?.confidence && <p className="mt-1 text-xs text-graphite">{finding.severityFactors.confidence.explanation}</p>}
+                  </div>}
+                </dl>
+                {finding.severityFactors && <div className="mt-4 border-t border-rule pt-3 space-y-3">
+                  <p className="text-xs text-pencil">Formula version {finding.severityFactors.formulaVersion}</p>
+                  <p className="text-sm">{finding.severityFactors.explanation}</p>
+                  <dl className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <dt className="text-pencil text-xs">Base severity</dt>
+                      <dd>{finding.severityFactors.baseSeverity.label} · {finding.severityFactors.baseSeverity.points} points</dd>
+                    </div>
+                    <div>
+                      <dt className="text-pencil text-xs">Component criticality</dt>
+                      <dd>{finding.severityFactors.componentCriticality.label} · {finding.severityFactors.componentCriticality.points} points</dd>
+                      {finding.severityFactors.componentCriticality.defaulted && <p className="text-xs text-graphite">Default criticality was used.</p>}
+                      {finding.severityFactors.componentCriticality.componentIds.length > 0 && <div className="mt-1 flex flex-wrap gap-2">{finding.severityFactors.componentCriticality.componentIds.map((id) => <CopyableId key={id} id={id} />)}</div>}
+                    </div>
+                    <div>
+                      <dt className="text-pencil text-xs">Blast radius</dt>
+                      <dd>{finding.severityFactors.blastRadius.count} downstream resources · {finding.severityFactors.blastRadius.points} points</dd>
+                      <p className="mt-1 text-xs text-graphite">{finding.severityFactors.blastRadius.explanation}</p>
+                      <p className="text-xs text-graphite">Coverage: {finding.severityFactors.blastRadius.complete ? 'complete' : 'incomplete'}</p>
+                      {finding.severityFactors.blastRadius.downstreamResourceIds.length > 0 && <div className="mt-1 flex flex-wrap gap-2">{finding.severityFactors.blastRadius.downstreamResourceIds.map((id) => <CopyableId key={id} id={id} />)}</div>}
+                    </div>
+                    <div>
+                      <dt className="text-pencil text-xs">Exposure</dt>
+                      <dd>{finding.severityFactors.exposure.label} · {finding.severityFactors.exposure.points} points</dd>
+                      <p className="mt-1 text-xs text-graphite">{finding.severityFactors.exposure.explanation}</p>
+                    </div>
+                    <div>
+                      <dt className="text-pencil text-xs">Confidence factor</dt>
+                      <dd>{finding.severityFactors.confidence.label} · {finding.severityFactors.confidence.points} points</dd>
+                      <p className="mt-1 text-xs text-graphite">{finding.severityFactors.confidence.explanation}</p>
+                    </div>
+                  </dl>
+                </div>}
+              </Card>
+            )}
             {/* Finding Details Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card className="md:col-span-2">

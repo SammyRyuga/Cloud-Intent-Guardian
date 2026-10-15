@@ -15,6 +15,7 @@ from common.http import error, parse_body, query_params, response, utc_now
 from common.manifest import ATTRIBUTE_TYPES
 from common.attribute_rules import attribute_outcome
 from common.topology import evaluate_topology
+from common.severity import decorate_finding
 
 
 TARGET_TYPES = {
@@ -175,7 +176,7 @@ def run_pinned_evaluation(intent: dict, inventory: dict, evaluation_id: str) -> 
             for row in topology_results],
         "simulated": meta.get("simulated", False), "warnings": meta.get("warnings", []),
     }
-    return evaluation, findings
+    return evaluation, [decorate_finding(finding, intent, inventory) for finding in findings]
 
 
 def _response_error(exc: JobError):

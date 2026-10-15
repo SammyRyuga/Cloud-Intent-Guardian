@@ -100,6 +100,12 @@ test("finding adapter preserves IDs, observed timestamps and opaque pagination",
   assert.equal(detail.detectedAt, wire.finding.item.firstSeenAt);
   assert.equal(list.meta.nextCursor, wire.findings.nextToken);
   assert.equal(detail.remediationAvailable, false);
+  assert.equal(detail.severity, wire.finding.item.severity);
+  assert.equal(typeof detail.severityScore, "number");
+  assert.equal(detail.severityFactors.formulaVersion, "1");
+  assert.equal(typeof detail.severityFactors.blastRadius.complete, "boolean");
+  assert.ok(["HIGH", "MEDIUM", "LOW"].includes(detail.confidence));
+  assert.equal(detail.constraintSeverity, wire.finding.item.constraintSeverity);
 });
 test("dashboard and local readiness parse without inventing unavailable features", () => {
   const dashboard = S.DashboardSummarySchema.parse(wire.dashboard);

@@ -39,6 +39,18 @@ export interface Finding {
   ruleId: string;
   title: string;
   severity: Severity;
+  severityScore?: number;
+  severityFactors?: {
+    formulaVersion: '1';
+    baseSeverity: { label: string; points: number };
+    componentCriticality: { label: string; points: number; componentIds: string[]; defaulted: boolean };
+    blastRadius: { count: number; points: number; complete: boolean; downstreamResourceIds: string[]; explanation: string };
+    exposure: { label: string; points: number; explanation: string };
+    confidence: { label: 'HIGH' | 'MEDIUM' | 'LOW'; points: number; explanation: string };
+    explanation: string;
+  };
+  confidence?: 'HIGH' | 'MEDIUM' | 'LOW';
+  constraintSeverity?: Severity;
   status: FindingStatus;
   resourceId: string;
   resourceType: string;

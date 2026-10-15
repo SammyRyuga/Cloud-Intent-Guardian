@@ -1,3 +1,23 @@
+## Phase 3 - severity evidence (2026-10-16)
+
+Findings now include `constraintSeverity`, `confidence`, `severityScore` (0-100),
+and `severityFactors`, preserved by list/detail responses and displayed in finding
+detail. Formula v1 adds base severity (INFO 5, LOW 15, MEDIUM 35, HIGH 60,
+CRITICAL 80), component criticality (0/5/10/15), up to 10 points for unique
+observed downstream nodes, exposure (PUBLIC 10, INTERNAL 0, UNKNOWN 5), and
+confidence uncertainty uplift (HIGH 0, MEDIUM 2, LOW 5), capped at 100. Labels
+start at 10/30/60/85 for LOW/MEDIUM/HIGH/CRITICAL. Missing criticality defaults
+to MEDIUM; incomplete reachability is explicitly a lower bound. Structural or
+configured edges do not count as observed traffic. Scores never authorize action.
+
+Validation: backend 102 tests passed with the cached Python 3.14 dependencies;
+frontend lint passed (two existing fast-refresh warnings), 24 tests and 13
+contract tests passed, production build passed. SAM lint and build passed.
+The isolated DynamoDB Local async verifier passed all five seed scenarios,
+versioning and audit, recording `backend/local-evidence/phase3-topology.json`.
+These direct handler/worker checks do not verify API Gateway, real Cognito,
+Academy permissions, live reachability, Bedrock or modifying AWS actions.
+
 # Frontend/backend integration
 
 ## Phase 2 additions (2026-10-15)

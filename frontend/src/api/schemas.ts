@@ -39,6 +39,23 @@ export const FindingSchema = z.object({
   ruleId: z.string(),
   title: z.string(),
   severity: SeveritySchema,
+  severityScore: z.number().optional(),
+  severityFactors: z.object({
+    formulaVersion: z.literal('1'),
+    baseSeverity: z.object({ label: z.string(), points: z.number() }),
+    componentCriticality: z.object({
+      label: z.string(), points: z.number(), componentIds: z.array(z.string()), defaulted: z.boolean(),
+    }),
+    blastRadius: z.object({
+      count: z.number(), points: z.number(), complete: z.boolean(),
+      downstreamResourceIds: z.array(z.string()), explanation: z.string(),
+    }),
+    exposure: z.object({ label: z.string(), points: z.number(), explanation: z.string() }),
+    confidence: z.object({ label: z.enum(['HIGH', 'MEDIUM', 'LOW']), points: z.number(), explanation: z.string() }),
+    explanation: z.string(),
+  }).passthrough().optional(),
+  confidence: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
+  constraintSeverity: SeveritySchema.optional(),
   status: FindingStatusSchema,
   resourceId: z.string(),
   resourceType: z.string(),

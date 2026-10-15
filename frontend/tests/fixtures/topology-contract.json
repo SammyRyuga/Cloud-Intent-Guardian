@@ -1,7 +1,7 @@
 {
   "created": {
     "item": {
-      "intentId": "b1fc4caf-9569-4546-9ba9-637e178f1a15",
+      "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
       "schemaVersion": 2,
       "name": "Local three-tier intent",
       "description": "Simulated topology for local development",
@@ -161,15 +161,15 @@
         }
       ],
       "criticality": {
-        "db": "CRITICAL",
-        "web": "MEDIUM",
         "worker": "MEDIUM",
-        "api": "HIGH"
+        "api": "HIGH",
+        "db": "CRITICAL",
+        "web": "MEDIUM"
       },
       "version": 1,
       "status": "DRAFT",
-      "createdAt": "2026-10-15T18:24:18.650286Z",
-      "updatedAt": "2026-10-15T18:24:18.650286Z",
+      "createdAt": "2026-10-15T18:33:20.683745Z",
+      "updatedAt": "2026-10-15T18:33:20.683745Z",
       "approvedAt": null,
       "createdBy": "contract-user",
       "sourceType": "JSON_CONSTRAINT_MANIFEST",
@@ -180,7 +180,7 @@
   },
   "approved": {
     "item": {
-      "intentId": "b1fc4caf-9569-4546-9ba9-637e178f1a15",
+      "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
       "schemaVersion": 2,
       "name": "Local three-tier intent",
       "description": "Simulated topology for local development",
@@ -340,16 +340,16 @@
         }
       ],
       "criticality": {
-        "db": "CRITICAL",
-        "web": "MEDIUM",
         "worker": "MEDIUM",
-        "api": "HIGH"
+        "api": "HIGH",
+        "db": "CRITICAL",
+        "web": "MEDIUM"
       },
       "version": 1,
       "status": "APPROVED",
-      "createdAt": "2026-10-15T18:24:18.650286Z",
-      "updatedAt": "2026-10-15T18:24:18.663349Z",
-      "approvedAt": "2026-10-15T18:24:18.663349Z",
+      "createdAt": "2026-10-15T18:33:20.683745Z",
+      "updatedAt": "2026-10-15T18:33:20.697297Z",
+      "approvedAt": "2026-10-15T18:33:20.697297Z",
       "createdBy": "contract-user",
       "sourceType": "JSON_CONSTRAINT_MANIFEST",
       "scopeKey": "fixture-account#ap-south-1#dev",
@@ -362,7 +362,7 @@
     "view": "INTENT",
     "nodes": [
       {
-        "id": "intent:b1fc4caf-9569-4546-9ba9-637e178f1a15:component:api",
+        "id": "intent:f6919b22-9fcb-430f-aad9-c81f2dc465bc:component:api",
         "label": "api",
         "resourceType": "INTENT_COMPONENT",
         "diffState": "UNKNOWN",
@@ -383,7 +383,7 @@
         "evidence": []
       },
       {
-        "id": "intent:b1fc4caf-9569-4546-9ba9-637e178f1a15:component:db",
+        "id": "intent:f6919b22-9fcb-430f-aad9-c81f2dc465bc:component:db",
         "label": "db",
         "resourceType": "INTENT_COMPONENT",
         "diffState": "UNKNOWN",
@@ -404,7 +404,7 @@
         "evidence": []
       },
       {
-        "id": "intent:b1fc4caf-9569-4546-9ba9-637e178f1a15:component:web",
+        "id": "intent:f6919b22-9fcb-430f-aad9-c81f2dc465bc:component:web",
         "label": "web",
         "resourceType": "INTENT_COMPONENT",
         "diffState": "UNKNOWN",
@@ -425,7 +425,7 @@
         "evidence": []
       },
       {
-        "id": "intent:b1fc4caf-9569-4546-9ba9-637e178f1a15:component:worker",
+        "id": "intent:f6919b22-9fcb-430f-aad9-c81f2dc465bc:component:worker",
         "label": "worker",
         "resourceType": "INTENT_COMPONENT",
         "diffState": "UNKNOWN",
@@ -448,9 +448,9 @@
     ],
     "edges": [
       {
-        "id": "1a9e93e8a5059e41af434a52",
-        "source": "intent:b1fc4caf-9569-4546-9ba9-637e178f1a15:component:web",
-        "target": "intent:b1fc4caf-9569-4546-9ba9-637e178f1a15:component:api",
+        "id": "016859a8c6e8d97ceb5bdfba",
+        "source": "intent:f6919b22-9fcb-430f-aad9-c81f2dc465bc:component:web",
+        "target": "intent:f6919b22-9fcb-430f-aad9-c81f2dc465bc:component:api",
         "relationshipType": "NETWORK_REACHABILITY",
         "diffState": "UNKNOWN",
         "declarationId": "web-api",
@@ -458,9 +458,9 @@
         "evidence": []
       },
       {
-        "id": "6f85d25921ed94aa2fb40e9f",
-        "source": "intent:b1fc4caf-9569-4546-9ba9-637e178f1a15:component:api",
-        "target": "intent:b1fc4caf-9569-4546-9ba9-637e178f1a15:component:db",
+        "id": "a62637fe31eb35e35d6b002c",
+        "source": "intent:f6919b22-9fcb-430f-aad9-c81f2dc465bc:component:api",
+        "target": "intent:f6919b22-9fcb-430f-aad9-c81f2dc465bc:component:db",
         "relationshipType": "NETWORK_REACHABILITY",
         "diffState": "UNKNOWN",
         "declarationId": "api-db",
@@ -472,8 +472,8 @@
     "partial": false,
     "warnings": [],
     "totalNodeCount": 4,
-    "asOf": "2026-10-15T18:24:18.663349Z",
-    "intentId": "b1fc4caf-9569-4546-9ba9-637e178f1a15",
+    "asOf": "2026-10-15T18:33:20.697297Z",
+    "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
     "intentVersion": 1,
     "snapshotId": null,
     "coverage": {}
@@ -631,7 +631,7 @@
     "warnings": [],
     "totalNodeCount": 5,
     "asOf": "2026-10-15T00:00:00Z",
-    "intentId": "b1fc4caf-9569-4546-9ba9-637e178f1a15",
+    "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
     "intentVersion": 1,
     "snapshotId": "fixture-lambda-db-bypass",
     "coverage": {
@@ -648,9 +648,9 @@
   },
   "bypassEvaluation": {
     "evaluation": {
-      "evaluationId": "4c667bdd-c092-4b2d-9497-64cd8dbf0d58",
+      "evaluationId": "b0aca5bb-fd04-4ea5-9cca-076182b23b62",
       "status": "SUCCEEDED",
-      "intentId": "b1fc4caf-9569-4546-9ba9-637e178f1a15",
+      "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
       "intentName": "Local three-tier intent",
       "intentVersion": 1,
       "intentHash": "d4db8af6cfa8fd69060462a5a1aaf1a79f56225215f354850b545404c7dff206",
@@ -814,25 +814,25 @@
           }
         ],
         "criticality": {
-          "db": "CRITICAL",
-          "web": "MEDIUM",
           "worker": "MEDIUM",
-          "api": "HIGH"
+          "api": "HIGH",
+          "db": "CRITICAL",
+          "web": "MEDIUM"
         },
-        "intentId": "b1fc4caf-9569-4546-9ba9-637e178f1a15",
+        "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
         "version": 1,
         "activeVersion": 1,
         "contentHash": "d4db8af6cfa8fd69060462a5a1aaf1a79f56225215f354850b545404c7dff206",
         "status": "APPROVED"
       },
       "scopeKey": "fixture-account#ap-south-1#dev",
-      "createdAt": "2026-10-15T18:24:18.823964Z",
-      "createdOrder": "2026-10-15T18:24:18.823964Z#4c667bdd-c092-4b2d-9497-64cd8dbf0d58",
+      "createdAt": "2026-10-15T18:33:20.850884Z",
+      "createdOrder": "2026-10-15T18:33:20.850884Z#b0aca5bb-fd04-4ea5-9cca-076182b23b62",
       "startedAt": null,
-      "finishedAt": "2026-10-15T18:24:18.941581Z",
+      "finishedAt": "2026-10-15T18:33:20.963591Z",
       "progressStage": "SUCCEEDED",
       "attemptCount": 1,
-      "deadlineAt": "2026-10-15T18:39:18.824015Z",
+      "deadlineAt": "2026-10-15T18:48:20.850896Z",
       "summary": {
         "resourceCount": 5,
         "violationsFound": 3,
@@ -851,7 +851,7 @@
       "warnings": [],
       "reason": "",
       "createdBy": "contract-user",
-      "updatedAt": "2026-10-15T18:24:18.941581Z",
+      "updatedAt": "2026-10-15T18:33:20.963591Z",
       "simulated": true,
       "ruleResults": [
         {
@@ -942,7 +942,7 @@
     },
     "findings": [
       {
-        "findingId": "5db6bbef6a4cb0246563d2ea69b75b86",
+        "findingId": "01ea4e1eb3bcde8e1c84a1adb3825a1f",
         "title": "A source-to-target path bypasses the required intermediary sequence. - fixture-db",
         "description": "A source-to-target path bypasses the required intermediary sequence.",
         "explanation": "A source-to-target path bypasses the required intermediary sequence.",
@@ -954,7 +954,7 @@
         "resourceType": "AWS::RDS::DBInstance",
         "region": "ap-south-1",
         "accountId": "fixture-account",
-        "intentId": "b1fc4caf-9569-4546-9ba9-637e178f1a15",
+        "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
         "intentName": "Local three-tier intent",
         "intentVersion": 1,
         "constraintId": "constraint:worker-via-api",
@@ -1013,18 +1013,59 @@
             }
           }
         ],
-        "firstSeenAt": "2026-10-15T18:24:18.889329Z",
-        "lastSeenAt": "2026-10-15T18:24:18.914197Z",
-        "updatedAt": "2026-10-15T18:24:18.914197Z",
-        "evaluationId": "4c667bdd-c092-4b2d-9497-64cd8dbf0d58",
+        "firstSeenAt": "2026-10-15T18:33:20.905958Z",
+        "lastSeenAt": "2026-10-15T18:33:20.931997Z",
+        "updatedAt": "2026-10-15T18:33:20.931997Z",
+        "evaluationId": "b0aca5bb-fd04-4ea5-9cca-076182b23b62",
         "simulated": true,
+        "constraintSeverity": "HIGH",
+        "confidence": "HIGH",
+        "severityScore": 82,
+        "severityFactors": {
+          "formulaVersion": "1",
+          "baseSeverity": {
+            "label": "HIGH",
+            "points": 60
+          },
+          "componentCriticality": {
+            "label": "CRITICAL",
+            "points": 15,
+            "componentIds": [
+              "db",
+              "worker"
+            ],
+            "defaulted": false,
+            "explanation": "Highest implicated component criticality is CRITICAL."
+          },
+          "blastRadius": {
+            "count": 2,
+            "points": 2,
+            "complete": true,
+            "downstreamResourceIds": [
+              "fixture-db",
+              "i-fixture-api"
+            ],
+            "explanation": "Complete observed reachability evidence identifies 2 unique downstream nodes."
+          },
+          "exposure": {
+            "label": "UNKNOWN",
+            "points": 5,
+            "explanation": "Available attributes do not establish public exposure or an adequately evidenced internal state."
+          },
+          "confidence": {
+            "label": "HIGH",
+            "points": 0,
+            "explanation": "HIGH confidence adds 0 uncertainty-uplift points."
+          },
+          "explanation": "HIGH base severity (60) + 15 component criticality + 2 blast-radius points + 5 exposure points + 0 confidence points = 82/100 (HIGH)."
+        },
         "scopeKey": "fixture-account#ap-south-1#dev",
-        "scopeIntentKey": "fixture-account#ap-south-1#dev#b1fc4caf-9569-4546-9ba9-637e178f1a15",
-        "lastEvaluationOrder": "2026-10-15T18:24:18.823964Z#4c667bdd-c092-4b2d-9497-64cd8dbf0d58",
+        "scopeIntentKey": "fixture-account#ap-south-1#dev#f6919b22-9fcb-430f-aad9-c81f2dc465bc",
+        "lastEvaluationOrder": "2026-10-15T18:33:20.850884Z#b0aca5bb-fd04-4ea5-9cca-076182b23b62",
         "revision": 0
       },
       {
-        "findingId": "64696f191eff2b90f144b8765986ce08",
+        "findingId": "111ec2d4636205b0c2a5878cabb6e857",
         "title": "An explicit boundary DENY or bypassed required intermediary has a witnessed path. - fixture-db",
         "description": "An explicit boundary DENY or bypassed required intermediary has a witnessed path.",
         "explanation": "An explicit boundary DENY or bypassed required intermediary has a witnessed path.",
@@ -1036,7 +1077,7 @@
         "resourceType": "AWS::RDS::DBInstance",
         "region": "ap-south-1",
         "accountId": "fixture-account",
-        "intentId": "b1fc4caf-9569-4546-9ba9-637e178f1a15",
+        "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
         "intentName": "Local three-tier intent",
         "intentVersion": 1,
         "constraintId": "constraint:service-data",
@@ -1110,18 +1151,59 @@
             }
           }
         ],
-        "firstSeenAt": "2026-10-15T18:24:18.889321Z",
-        "lastSeenAt": "2026-10-15T18:24:18.908390Z",
-        "updatedAt": "2026-10-15T18:24:18.908390Z",
-        "evaluationId": "4c667bdd-c092-4b2d-9497-64cd8dbf0d58",
+        "firstSeenAt": "2026-10-15T18:33:20.905950Z",
+        "lastSeenAt": "2026-10-15T18:33:20.925613Z",
+        "updatedAt": "2026-10-15T18:33:20.925613Z",
+        "evaluationId": "b0aca5bb-fd04-4ea5-9cca-076182b23b62",
         "simulated": true,
+        "constraintSeverity": "MEDIUM",
+        "confidence": "HIGH",
+        "severityScore": 57,
+        "severityFactors": {
+          "formulaVersion": "1",
+          "baseSeverity": {
+            "label": "MEDIUM",
+            "points": 35
+          },
+          "componentCriticality": {
+            "label": "CRITICAL",
+            "points": 15,
+            "componentIds": [
+              "db",
+              "worker"
+            ],
+            "defaulted": false,
+            "explanation": "Highest implicated component criticality is CRITICAL."
+          },
+          "blastRadius": {
+            "count": 2,
+            "points": 2,
+            "complete": true,
+            "downstreamResourceIds": [
+              "fixture-db",
+              "i-fixture-api"
+            ],
+            "explanation": "Complete observed reachability evidence identifies 2 unique downstream nodes."
+          },
+          "exposure": {
+            "label": "UNKNOWN",
+            "points": 5,
+            "explanation": "Available attributes do not establish public exposure or an adequately evidenced internal state."
+          },
+          "confidence": {
+            "label": "HIGH",
+            "points": 0,
+            "explanation": "HIGH confidence adds 0 uncertainty-uplift points."
+          },
+          "explanation": "MEDIUM base severity (35) + 15 component criticality + 2 blast-radius points + 5 exposure points + 0 confidence points = 57/100 (MEDIUM)."
+        },
         "scopeKey": "fixture-account#ap-south-1#dev",
-        "scopeIntentKey": "fixture-account#ap-south-1#dev#b1fc4caf-9569-4546-9ba9-637e178f1a15",
-        "lastEvaluationOrder": "2026-10-15T18:24:18.823964Z#4c667bdd-c092-4b2d-9497-64cd8dbf0d58",
+        "scopeIntentKey": "fixture-account#ap-south-1#dev#f6919b22-9fcb-430f-aad9-c81f2dc465bc",
+        "lastEvaluationOrder": "2026-10-15T18:33:20.850884Z#b0aca5bb-fd04-4ea5-9cca-076182b23b62",
         "revision": 0
       },
       {
-        "findingId": "fa415c2361eeb22ccd55b99b3ed5e572",
+        "findingId": "8d1c1aaf6149b71bcfeb45e1f755cd83",
         "title": "A forbidden directed path is supported by the selected edge evidence. - fixture-db",
         "description": "A forbidden directed path is supported by the selected edge evidence.",
         "explanation": "A forbidden directed path is supported by the selected edge evidence.",
@@ -1133,7 +1215,7 @@
         "resourceType": "AWS::RDS::DBInstance",
         "region": "ap-south-1",
         "accountId": "fixture-account",
-        "intentId": "b1fc4caf-9569-4546-9ba9-637e178f1a15",
+        "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
         "intentName": "Local three-tier intent",
         "intentVersion": 1,
         "constraintId": "constraint:no-direct-worker-db",
@@ -1187,14 +1269,55 @@
             }
           }
         ],
-        "firstSeenAt": "2026-10-15T18:24:18.889310Z",
-        "lastSeenAt": "2026-10-15T18:24:18.903894Z",
-        "updatedAt": "2026-10-15T18:24:18.903894Z",
-        "evaluationId": "4c667bdd-c092-4b2d-9497-64cd8dbf0d58",
+        "firstSeenAt": "2026-10-15T18:33:20.905939Z",
+        "lastSeenAt": "2026-10-15T18:33:20.920402Z",
+        "updatedAt": "2026-10-15T18:33:20.920402Z",
+        "evaluationId": "b0aca5bb-fd04-4ea5-9cca-076182b23b62",
         "simulated": true,
+        "constraintSeverity": "HIGH",
+        "confidence": "HIGH",
+        "severityScore": 82,
+        "severityFactors": {
+          "formulaVersion": "1",
+          "baseSeverity": {
+            "label": "HIGH",
+            "points": 60
+          },
+          "componentCriticality": {
+            "label": "CRITICAL",
+            "points": 15,
+            "componentIds": [
+              "db",
+              "worker"
+            ],
+            "defaulted": false,
+            "explanation": "Highest implicated component criticality is CRITICAL."
+          },
+          "blastRadius": {
+            "count": 2,
+            "points": 2,
+            "complete": true,
+            "downstreamResourceIds": [
+              "fixture-db",
+              "i-fixture-api"
+            ],
+            "explanation": "Complete observed reachability evidence identifies 2 unique downstream nodes."
+          },
+          "exposure": {
+            "label": "UNKNOWN",
+            "points": 5,
+            "explanation": "Available attributes do not establish public exposure or an adequately evidenced internal state."
+          },
+          "confidence": {
+            "label": "HIGH",
+            "points": 0,
+            "explanation": "HIGH confidence adds 0 uncertainty-uplift points."
+          },
+          "explanation": "HIGH base severity (60) + 15 component criticality + 2 blast-radius points + 5 exposure points + 0 confidence points = 82/100 (HIGH)."
+        },
         "scopeKey": "fixture-account#ap-south-1#dev",
-        "scopeIntentKey": "fixture-account#ap-south-1#dev#b1fc4caf-9569-4546-9ba9-637e178f1a15",
-        "lastEvaluationOrder": "2026-10-15T18:24:18.823964Z#4c667bdd-c092-4b2d-9497-64cd8dbf0d58",
+        "scopeIntentKey": "fixture-account#ap-south-1#dev#f6919b22-9fcb-430f-aad9-c81f2dc465bc",
+        "lastEvaluationOrder": "2026-10-15T18:33:20.850884Z#b0aca5bb-fd04-4ea5-9cca-076182b23b62",
         "revision": 0
       }
     ],
@@ -1202,26 +1325,26 @@
   },
   "queuedEvaluation": {
     "evaluation": {
-      "evaluationId": "4c667bdd-c092-4b2d-9497-64cd8dbf0d58",
+      "evaluationId": "b0aca5bb-fd04-4ea5-9cca-076182b23b62",
       "status": "QUEUED",
-      "intentId": "b1fc4caf-9569-4546-9ba9-637e178f1a15",
+      "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
       "intentVersion": 1,
-      "createdAt": "2026-10-15T18:24:18.823964Z"
+      "createdAt": "2026-10-15T18:33:20.850884Z"
     },
-    "statusUrl": "/v1/evaluations/4c667bdd-c092-4b2d-9497-64cd8dbf0d58"
+    "statusUrl": "/v1/evaluations/b0aca5bb-fd04-4ea5-9cca-076182b23b62"
   },
   "evaluationDetail": {
     "item": {
-      "evaluationId": "4c667bdd-c092-4b2d-9497-64cd8dbf0d58",
+      "evaluationId": "b0aca5bb-fd04-4ea5-9cca-076182b23b62",
       "status": "SUCCEEDED",
-      "intentId": "b1fc4caf-9569-4546-9ba9-637e178f1a15",
+      "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
       "intentName": "Local three-tier intent",
       "intentVersion": 1,
       "scopeKey": "fixture-account#ap-south-1#dev",
-      "createdAt": "2026-10-15T18:24:18.823964Z",
-      "createdOrder": "2026-10-15T18:24:18.823964Z#4c667bdd-c092-4b2d-9497-64cd8dbf0d58",
+      "createdAt": "2026-10-15T18:33:20.850884Z",
+      "createdOrder": "2026-10-15T18:33:20.850884Z#b0aca5bb-fd04-4ea5-9cca-076182b23b62",
       "startedAt": null,
-      "finishedAt": "2026-10-15T18:24:18.941581Z",
+      "finishedAt": "2026-10-15T18:33:20.963591Z",
       "progressStage": "SUCCEEDED",
       "summary": {
         "resourceCount": 5,

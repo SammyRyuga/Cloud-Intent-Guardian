@@ -1,7 +1,7 @@
 {
   "created": {
     "item": {
-      "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+      "intentId": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
       "name": "Contract baseline",
       "description": "Test observation, not live AWS evidence",
       "constraints": [
@@ -15,8 +15,8 @@
       ],
       "version": 1,
       "status": "DRAFT",
-      "createdAt": "2026-10-15T18:24:17.066428Z",
-      "updatedAt": "2026-10-15T18:24:17.066428Z",
+      "createdAt": "2026-10-15T18:33:18.936816Z",
+      "updatedAt": "2026-10-15T18:33:18.936816Z",
       "approvedAt": null,
       "createdBy": "contract-user",
       "sourceType": "JSON_CONSTRAINT_MANIFEST",
@@ -28,7 +28,7 @@
   "intents": {
     "items": [
       {
-        "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+        "intentId": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
         "name": "Contract baseline",
         "description": "Test observation, not live AWS evidence",
         "constraints": [
@@ -42,8 +42,8 @@
         ],
         "version": 1,
         "status": "DRAFT",
-        "createdAt": "2026-10-15T18:24:17.066428Z",
-        "updatedAt": "2026-10-15T18:24:17.066428Z",
+        "createdAt": "2026-10-15T18:33:18.936816Z",
+        "updatedAt": "2026-10-15T18:33:18.936816Z",
         "approvedAt": null,
         "createdBy": "contract-user",
         "sourceType": "JSON_CONSTRAINT_MANIFEST",
@@ -58,7 +58,7 @@
   },
   "approved": {
     "item": {
-      "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+      "intentId": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
       "name": "Contract baseline",
       "description": "Test observation, not live AWS evidence",
       "constraints": [
@@ -72,9 +72,9 @@
       ],
       "version": 1,
       "status": "APPROVED",
-      "createdAt": "2026-10-15T18:24:17.066428Z",
-      "updatedAt": "2026-10-15T18:24:17.082992Z",
-      "approvedAt": "2026-10-15T18:24:17.082992Z",
+      "createdAt": "2026-10-15T18:33:18.936816Z",
+      "updatedAt": "2026-10-15T18:33:18.962436Z",
+      "approvedAt": "2026-10-15T18:33:18.962436Z",
       "createdBy": "contract-user",
       "sourceType": "JSON_CONSTRAINT_MANIFEST",
       "scopeKey": "123456789012#ap-south-1#dev",
@@ -86,7 +86,7 @@
   "findings": {
     "items": [
       {
-        "findingId": "5b771cf34901ebda4b197697b01a2af9",
+        "findingId": "00794914783cf550ce1a01d93e99c67d",
         "title": "ssh - Contract group",
         "description": "ssh",
         "explanation": "The security group permits SSH (TCP/22) from the public internet.",
@@ -99,7 +99,7 @@
         "region": "ap-south-1",
         "accountId": "123456789012",
         "simulated": false,
-        "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+        "intentId": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
         "intentName": "Contract baseline",
         "intentVersion": 1,
         "constraintId": "ssh",
@@ -135,13 +135,48 @@
             }
           }
         ],
-        "firstSeenAt": "2026-10-15T18:24:17.128424Z",
-        "lastSeenAt": "2026-10-15T18:24:17.138411Z",
-        "updatedAt": "2026-10-15T18:24:17.138411Z",
-        "evaluationId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+        "firstSeenAt": "2026-10-15T18:33:19.011333Z",
+        "lastSeenAt": "2026-10-15T18:33:19.022532Z",
+        "updatedAt": "2026-10-15T18:33:19.022532Z",
+        "evaluationId": "3792d9ee-c704-4f2e-a449-4b6d28813130",
+        "constraintSeverity": "HIGH",
+        "confidence": "HIGH",
+        "severityScore": 75,
+        "severityFactors": {
+          "formulaVersion": "1",
+          "baseSeverity": {
+            "label": "HIGH",
+            "points": 60
+          },
+          "componentCriticality": {
+            "label": "MEDIUM",
+            "points": 5,
+            "componentIds": [],
+            "defaulted": true,
+            "explanation": "No implicated resource resolved to a declared component; MEDIUM criticality was used by default."
+          },
+          "blastRadius": {
+            "count": 0,
+            "points": 0,
+            "complete": false,
+            "downstreamResourceIds": [],
+            "explanation": "At least 0 unique downstream nodes are evidenced; coverage is incomplete, so the count is a lower bound."
+          },
+          "exposure": {
+            "label": "PUBLIC",
+            "points": 10,
+            "explanation": "At least one implicated resource has explicit public exposure evidence."
+          },
+          "confidence": {
+            "label": "HIGH",
+            "points": 0,
+            "explanation": "HIGH confidence adds 0 uncertainty-uplift points."
+          },
+          "explanation": "HIGH base severity (60) + 5 component criticality + 0 blast-radius points + 10 exposure points + 0 confidence points = 75/100 (HIGH)."
+        },
         "scopeKey": "123456789012#ap-south-1#dev",
-        "scopeIntentKey": "123456789012#ap-south-1#dev#6434ae4f-b422-4dad-8d45-2246178d90c8",
-        "lastEvaluationOrder": "2026-10-15T18:24:17.096953Z#7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+        "scopeIntentKey": "123456789012#ap-south-1#dev#a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
+        "lastEvaluationOrder": "2026-10-15T18:33:18.978156Z#3792d9ee-c704-4f2e-a449-4b6d28813130",
         "revision": 0,
         "remediationAvailable": false
       }
@@ -152,7 +187,7 @@
   },
   "finding": {
     "item": {
-      "findingId": "5b771cf34901ebda4b197697b01a2af9",
+      "findingId": "00794914783cf550ce1a01d93e99c67d",
       "title": "ssh - Contract group",
       "description": "ssh",
       "explanation": "The security group permits SSH (TCP/22) from the public internet.",
@@ -165,7 +200,7 @@
       "region": "ap-south-1",
       "accountId": "123456789012",
       "simulated": false,
-      "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+      "intentId": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
       "intentName": "Contract baseline",
       "intentVersion": 1,
       "constraintId": "ssh",
@@ -201,13 +236,48 @@
           }
         }
       ],
-      "firstSeenAt": "2026-10-15T18:24:17.128424Z",
-      "lastSeenAt": "2026-10-15T18:24:17.138411Z",
-      "updatedAt": "2026-10-15T18:24:17.138411Z",
-      "evaluationId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+      "firstSeenAt": "2026-10-15T18:33:19.011333Z",
+      "lastSeenAt": "2026-10-15T18:33:19.022532Z",
+      "updatedAt": "2026-10-15T18:33:19.022532Z",
+      "evaluationId": "3792d9ee-c704-4f2e-a449-4b6d28813130",
+      "constraintSeverity": "HIGH",
+      "confidence": "HIGH",
+      "severityScore": 75,
+      "severityFactors": {
+        "formulaVersion": "1",
+        "baseSeverity": {
+          "label": "HIGH",
+          "points": 60
+        },
+        "componentCriticality": {
+          "label": "MEDIUM",
+          "points": 5,
+          "componentIds": [],
+          "defaulted": true,
+          "explanation": "No implicated resource resolved to a declared component; MEDIUM criticality was used by default."
+        },
+        "blastRadius": {
+          "count": 0,
+          "points": 0,
+          "complete": false,
+          "downstreamResourceIds": [],
+          "explanation": "At least 0 unique downstream nodes are evidenced; coverage is incomplete, so the count is a lower bound."
+        },
+        "exposure": {
+          "label": "PUBLIC",
+          "points": 10,
+          "explanation": "At least one implicated resource has explicit public exposure evidence."
+        },
+        "confidence": {
+          "label": "HIGH",
+          "points": 0,
+          "explanation": "HIGH confidence adds 0 uncertainty-uplift points."
+        },
+        "explanation": "HIGH base severity (60) + 5 component criticality + 0 blast-radius points + 10 exposure points + 0 confidence points = 75/100 (HIGH)."
+      },
       "scopeKey": "123456789012#ap-south-1#dev",
-      "scopeIntentKey": "123456789012#ap-south-1#dev#6434ae4f-b422-4dad-8d45-2246178d90c8",
-      "lastEvaluationOrder": "2026-10-15T18:24:17.096953Z#7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+      "scopeIntentKey": "123456789012#ap-south-1#dev#a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
+      "lastEvaluationOrder": "2026-10-15T18:33:18.978156Z#3792d9ee-c704-4f2e-a449-4b6d28813130",
       "revision": 0,
       "remediationAvailable": false
     }
@@ -232,7 +302,7 @@
     "totalFindings": 1,
     "activeDriftCount": null,
     "openRemediations": null,
-    "lastEvaluatedAt": "2026-10-15T18:24:17.154044Z",
+    "lastEvaluatedAt": "2026-10-15T18:33:19.040854Z",
     "evaluatedRegion": "ap-south-1",
     "partial": false,
     "evaluationStatus": "SUCCEEDED",
@@ -243,26 +313,26 @@
   },
   "evaluation": {
     "evaluation": {
-      "evaluationId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+      "evaluationId": "3792d9ee-c704-4f2e-a449-4b6d28813130",
       "status": "QUEUED",
-      "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+      "intentId": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
       "intentVersion": 1,
-      "createdAt": "2026-10-15T18:24:17.096953Z"
+      "createdAt": "2026-10-15T18:33:18.978156Z"
     },
-    "statusUrl": "/v1/evaluations/7f6ab8df-77d9-4d8f-92c6-e0afade17324"
+    "statusUrl": "/v1/evaluations/3792d9ee-c704-4f2e-a449-4b6d28813130"
   },
   "evaluationDetail": {
     "item": {
-      "evaluationId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+      "evaluationId": "3792d9ee-c704-4f2e-a449-4b6d28813130",
       "status": "SUCCEEDED",
-      "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+      "intentId": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
       "intentName": "Contract baseline",
       "intentVersion": 1,
       "scopeKey": "123456789012#ap-south-1#dev",
-      "createdAt": "2026-10-15T18:24:17.096953Z",
-      "createdOrder": "2026-10-15T18:24:17.096953Z#7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+      "createdAt": "2026-10-15T18:33:18.978156Z",
+      "createdOrder": "2026-10-15T18:33:18.978156Z#3792d9ee-c704-4f2e-a449-4b6d28813130",
       "startedAt": null,
-      "finishedAt": "2026-10-15T18:24:17.154044Z",
+      "finishedAt": "2026-10-15T18:33:19.040854Z",
       "progressStage": "SUCCEEDED",
       "summary": {
         "resourceCount": 1,
@@ -295,16 +365,16 @@
   "evaluations": {
     "items": [
       {
-        "evaluationId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+        "evaluationId": "3792d9ee-c704-4f2e-a449-4b6d28813130",
         "status": "SUCCEEDED",
-        "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+        "intentId": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
         "intentName": "Contract baseline",
         "intentVersion": 1,
         "scopeKey": "123456789012#ap-south-1#dev",
-        "createdAt": "2026-10-15T18:24:17.096953Z",
-        "createdOrder": "2026-10-15T18:24:17.096953Z#7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+        "createdAt": "2026-10-15T18:33:18.978156Z",
+        "createdOrder": "2026-10-15T18:33:18.978156Z#3792d9ee-c704-4f2e-a449-4b6d28813130",
         "startedAt": null,
-        "finishedAt": "2026-10-15T18:24:17.154044Z",
+        "finishedAt": "2026-10-15T18:33:19.040854Z",
         "progressStage": "SUCCEEDED",
         "summary": {
           "resourceCount": 1,
@@ -343,11 +413,11 @@
     "accountId": null,
     "region": "ap-south-1",
     "stage": "dev",
-    "checkedAt": "2026-10-15T18:24:17.188434Z",
+    "checkedAt": "2026-10-15T18:33:19.084117Z",
     "backendReachable": true,
     "awsSourcesConnected": false,
     "evaluatedRegion": "ap-south-1",
-    "lastSyncAt": "2026-10-15T18:24:17.188434Z",
+    "lastSyncAt": "2026-10-15T18:33:19.084117Z",
     "version": "0.2.0",
     "sources": {
       "awsIdentity": {
@@ -374,7 +444,7 @@
   "versions": {
     "items": [
       {
-        "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+        "intentId": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
         "version": 1,
         "name": "Contract baseline",
         "description": "Test observation, not live AWS evidence",
@@ -389,8 +459,8 @@
         ],
         "status": "APPROVED",
         "contentHash": "75bcd00cf276a3406e58110f3cf5adfd3296f270466ea79ef9d0338347d7ec6b",
-        "createdAt": "2026-10-15T18:24:17.066428Z",
-        "updatedAt": "2026-10-15T18:24:17.082992Z",
+        "createdAt": "2026-10-15T18:33:18.936816Z",
+        "updatedAt": "2026-10-15T18:33:18.962436Z",
         "createdBy": "contract-user",
         "author": {
           "sub": "contract-user",
@@ -398,7 +468,7 @@
         },
         "sourceType": "JSON_CONSTRAINT_MANIFEST",
         "scopeKey": "123456789012#ap-south-1#dev",
-        "approvedAt": "2026-10-15T18:24:17.082992Z",
+        "approvedAt": "2026-10-15T18:33:18.962436Z",
         "effectiveStatus": "APPROVED"
       }
     ],
@@ -408,7 +478,7 @@
   },
   "versionDetail": {
     "item": {
-      "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+      "intentId": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
       "version": 1,
       "name": "Contract baseline",
       "description": "Test observation, not live AWS evidence",
@@ -423,8 +493,8 @@
       ],
       "status": "APPROVED",
       "contentHash": "75bcd00cf276a3406e58110f3cf5adfd3296f270466ea79ef9d0338347d7ec6b",
-      "createdAt": "2026-10-15T18:24:17.066428Z",
-      "updatedAt": "2026-10-15T18:24:17.082992Z",
+      "createdAt": "2026-10-15T18:33:18.936816Z",
+      "updatedAt": "2026-10-15T18:33:18.962436Z",
       "createdBy": "contract-user",
       "author": {
         "sub": "contract-user",
@@ -432,13 +502,13 @@
       },
       "sourceType": "JSON_CONSTRAINT_MANIFEST",
       "scopeKey": "123456789012#ap-south-1#dev",
-      "approvedAt": "2026-10-15T18:24:17.082992Z",
+      "approvedAt": "2026-10-15T18:33:18.962436Z",
       "effectiveStatus": "APPROVED"
     }
   },
   "versionDiff": {
     "item": {
-      "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+      "intentId": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
       "fromVersion": 1,
       "toVersion": 1,
       "components": {
@@ -470,7 +540,7 @@
   },
   "findingAcknowledged": {
     "item": {
-      "findingId": "5b771cf34901ebda4b197697b01a2af9",
+      "findingId": "00794914783cf550ce1a01d93e99c67d",
       "title": "ssh - Contract group",
       "description": "ssh",
       "explanation": "The security group permits SSH (TCP/22) from the public internet.",
@@ -483,7 +553,7 @@
       "region": "ap-south-1",
       "accountId": "123456789012",
       "simulated": false,
-      "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+      "intentId": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
       "intentName": "Contract baseline",
       "intentVersion": 1,
       "constraintId": "ssh",
@@ -519,15 +589,50 @@
           }
         }
       ],
-      "firstSeenAt": "2026-10-15T18:24:17.128424Z",
-      "lastSeenAt": "2026-10-15T18:24:17.138411Z",
-      "updatedAt": "2026-10-15T18:24:17.234129Z",
-      "evaluationId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+      "firstSeenAt": "2026-10-15T18:33:19.011333Z",
+      "lastSeenAt": "2026-10-15T18:33:19.022532Z",
+      "updatedAt": "2026-10-15T18:33:19.137391Z",
+      "evaluationId": "3792d9ee-c704-4f2e-a449-4b6d28813130",
+      "constraintSeverity": "HIGH",
+      "confidence": "HIGH",
+      "severityScore": 75,
+      "severityFactors": {
+        "formulaVersion": "1",
+        "baseSeverity": {
+          "label": "HIGH",
+          "points": 60
+        },
+        "componentCriticality": {
+          "label": "MEDIUM",
+          "points": 5,
+          "componentIds": [],
+          "defaulted": true,
+          "explanation": "No implicated resource resolved to a declared component; MEDIUM criticality was used by default."
+        },
+        "blastRadius": {
+          "count": 0,
+          "points": 0,
+          "complete": false,
+          "downstreamResourceIds": [],
+          "explanation": "At least 0 unique downstream nodes are evidenced; coverage is incomplete, so the count is a lower bound."
+        },
+        "exposure": {
+          "label": "PUBLIC",
+          "points": 10,
+          "explanation": "At least one implicated resource has explicit public exposure evidence."
+        },
+        "confidence": {
+          "label": "HIGH",
+          "points": 0,
+          "explanation": "HIGH confidence adds 0 uncertainty-uplift points."
+        },
+        "explanation": "HIGH base severity (60) + 5 component criticality + 0 blast-radius points + 10 exposure points + 0 confidence points = 75/100 (HIGH)."
+      },
       "scopeKey": "123456789012#ap-south-1#dev",
-      "scopeIntentKey": "123456789012#ap-south-1#dev#6434ae4f-b422-4dad-8d45-2246178d90c8",
-      "lastEvaluationOrder": "2026-10-15T18:24:17.096953Z#7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+      "scopeIntentKey": "123456789012#ap-south-1#dev#a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
+      "lastEvaluationOrder": "2026-10-15T18:33:18.978156Z#3792d9ee-c704-4f2e-a449-4b6d28813130",
       "revision": 1,
-      "acknowledgedAt": "2026-10-15T18:24:17.234129Z",
+      "acknowledgedAt": "2026-10-15T18:33:19.137391Z",
       "acknowledgedBy": "contract-user",
       "remediationAvailable": false
     }
@@ -535,8 +640,8 @@
   "audit": {
     "items": [
       {
-        "auditId": "a555feba64b7009951f0541cb6cc223e",
-        "timestamp": "2026-10-15T18:24:17.234141Z",
+        "auditId": "bf70a5ad56d6caec037c5d1621911467",
+        "timestamp": "2026-10-15T18:33:19.137409Z",
         "actor": {
           "sub": "contract-user",
           "displayName": "contract-user"
@@ -544,20 +649,20 @@
         "action": "FINDING_ACKNOWLEDGED",
         "target": {
           "type": "FINDING",
-          "id": "5b771cf34901ebda4b197697b01a2af9"
+          "id": "00794914783cf550ce1a01d93e99c67d"
         },
         "result": "SUCCESS",
-        "requestId": "b27d6358-5694-4489-b426-8fcb113ff9fa",
+        "requestId": "3ce168e6-251a-4567-b2da-122dd4de87b5",
         "scopeKey": "123456789012#ap-south-1#dev",
-        "eventOrder": "2026-10-15T18:24:17.234141Z#a555feba64b7009951f0541cb6cc223e",
+        "eventOrder": "2026-10-15T18:33:19.137409Z#bf70a5ad56d6caec037c5d1621911467",
         "metadata": {
           "reason": "",
           "previousStatus": "OPEN"
         }
       },
       {
-        "auditId": "946cf902a62b0f1daa548b070ac5c701",
-        "timestamp": "2026-10-15T18:24:17.154065Z",
+        "auditId": "509068f6b414a5657e040b9e3c325dbf",
+        "timestamp": "2026-10-15T18:33:19.040864Z",
         "actor": {
           "sub": "evaluation-worker",
           "displayName": "Evaluation worker"
@@ -565,21 +670,21 @@
         "action": "EVALUATION_SUCCEEDED",
         "target": {
           "type": "EVALUATION",
-          "id": "7f6ab8df-77d9-4d8f-92c6-e0afade17324"
+          "id": "3792d9ee-c704-4f2e-a449-4b6d28813130"
         },
         "result": "SUCCESS",
-        "requestId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324:terminal:SUCCEEDED",
+        "requestId": "3792d9ee-c704-4f2e-a449-4b6d28813130:terminal:SUCCEEDED",
         "scopeKey": "123456789012#ap-south-1#dev",
-        "eventOrder": "2026-10-15T18:24:17.154065Z#946cf902a62b0f1daa548b070ac5c701",
+        "eventOrder": "2026-10-15T18:33:19.040864Z#509068f6b414a5657e040b9e3c325dbf",
         "metadata": {
-          "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+          "intentId": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
           "intentVersion": 1,
           "errorCode": null
         }
       },
       {
-        "auditId": "853ccbd6755824993f2d01889a8c79dc",
-        "timestamp": "2026-10-15T18:24:17.151858Z",
+        "auditId": "657a0f3d6c0a5d58a89671935a5f0693",
+        "timestamp": "2026-10-15T18:33:19.038394Z",
         "actor": {
           "sub": "evaluation-worker",
           "displayName": "Evaluation worker"
@@ -587,19 +692,19 @@
         "action": "EVALUATION_STAGE_CHANGED",
         "target": {
           "type": "EVALUATION",
-          "id": "7f6ab8df-77d9-4d8f-92c6-e0afade17324"
+          "id": "3792d9ee-c704-4f2e-a449-4b6d28813130"
         },
         "result": "SUCCESS",
-        "requestId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324:EVALUATION_STAGE_CHANGED:PUBLISHING",
+        "requestId": "3792d9ee-c704-4f2e-a449-4b6d28813130:EVALUATION_STAGE_CHANGED:PUBLISHING",
         "scopeKey": "123456789012#ap-south-1#dev",
-        "eventOrder": "2026-10-15T18:24:17.151858Z#853ccbd6755824993f2d01889a8c79dc",
+        "eventOrder": "2026-10-15T18:33:19.038394Z#657a0f3d6c0a5d58a89671935a5f0693",
         "metadata": {
           "stage": "PUBLISHING"
         }
       },
       {
-        "auditId": "aab355a980dea83dc5e09093a0a62f14",
-        "timestamp": "2026-10-15T18:24:17.138416Z",
+        "auditId": "0f5dc57a2a67a02dae4fe393b93b6850",
+        "timestamp": "2026-10-15T18:33:19.022538Z",
         "actor": {
           "sub": "evaluation-worker",
           "displayName": "Evaluation worker"
@@ -607,22 +712,22 @@
         "action": "FINDING_DETECTED",
         "target": {
           "type": "FINDING",
-          "id": "5b771cf34901ebda4b197697b01a2af9"
+          "id": "00794914783cf550ce1a01d93e99c67d"
         },
         "result": "SUCCESS",
-        "requestId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324:finding:5b771cf34901ebda4b197697b01a2af9",
+        "requestId": "3792d9ee-c704-4f2e-a449-4b6d28813130:finding:00794914783cf550ce1a01d93e99c67d",
         "scopeKey": "123456789012#ap-south-1#dev",
-        "eventOrder": "2026-10-15T18:24:17.138416Z#aab355a980dea83dc5e09093a0a62f14",
+        "eventOrder": "2026-10-15T18:33:19.022538Z#0f5dc57a2a67a02dae4fe393b93b6850",
         "metadata": {
-          "evaluationId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324",
-          "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+          "evaluationId": "3792d9ee-c704-4f2e-a449-4b6d28813130",
+          "intentId": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
           "intentVersion": 1,
           "status": "OPEN"
         }
       },
       {
-        "auditId": "aa30a54bde128f2e661758113ffe62a5",
-        "timestamp": "2026-10-15T18:24:17.131435Z",
+        "auditId": "d0e353cdaf9e760480c592528a27a812",
+        "timestamp": "2026-10-15T18:33:19.014395Z",
         "actor": {
           "sub": "evaluation-worker",
           "displayName": "Evaluation worker"
@@ -630,19 +735,19 @@
         "action": "EVALUATION_STAGE_CHANGED",
         "target": {
           "type": "EVALUATION",
-          "id": "7f6ab8df-77d9-4d8f-92c6-e0afade17324"
+          "id": "3792d9ee-c704-4f2e-a449-4b6d28813130"
         },
         "result": "SUCCESS",
-        "requestId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324:EVALUATION_STAGE_CHANGED:WRITING_ARTIFACTS",
+        "requestId": "3792d9ee-c704-4f2e-a449-4b6d28813130:EVALUATION_STAGE_CHANGED:WRITING_ARTIFACTS",
         "scopeKey": "123456789012#ap-south-1#dev",
-        "eventOrder": "2026-10-15T18:24:17.131435Z#aa30a54bde128f2e661758113ffe62a5",
+        "eventOrder": "2026-10-15T18:33:19.014395Z#d0e353cdaf9e760480c592528a27a812",
         "metadata": {
           "stage": "WRITING_ARTIFACTS"
         }
       },
       {
-        "auditId": "404ff650f761a178f77733213582653a",
-        "timestamp": "2026-10-15T18:24:17.126004Z",
+        "auditId": "3de3a0ac8ed6f85ad1dc2e9de78b1e84",
+        "timestamp": "2026-10-15T18:33:19.008870Z",
         "actor": {
           "sub": "evaluation-worker",
           "displayName": "Evaluation worker"
@@ -650,19 +755,19 @@
         "action": "EVALUATION_STAGE_CHANGED",
         "target": {
           "type": "EVALUATION",
-          "id": "7f6ab8df-77d9-4d8f-92c6-e0afade17324"
+          "id": "3792d9ee-c704-4f2e-a449-4b6d28813130"
         },
         "result": "SUCCESS",
-        "requestId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324:EVALUATION_STAGE_CHANGED:EVALUATING",
+        "requestId": "3792d9ee-c704-4f2e-a449-4b6d28813130:EVALUATION_STAGE_CHANGED:EVALUATING",
         "scopeKey": "123456789012#ap-south-1#dev",
-        "eventOrder": "2026-10-15T18:24:17.126004Z#404ff650f761a178f77733213582653a",
+        "eventOrder": "2026-10-15T18:33:19.008870Z#3de3a0ac8ed6f85ad1dc2e9de78b1e84",
         "metadata": {
           "stage": "EVALUATING"
         }
       },
       {
-        "auditId": "fcbdc11aa41760837fa34838648e4a3c",
-        "timestamp": "2026-10-15T18:24:17.119599Z",
+        "auditId": "b207acc2f938ea72f9d6273e9d050787",
+        "timestamp": "2026-10-15T18:33:19.002320Z",
         "actor": {
           "sub": "evaluation-worker",
           "displayName": "Evaluation worker"
@@ -670,19 +775,19 @@
         "action": "EVALUATION_STAGE_CHANGED",
         "target": {
           "type": "EVALUATION",
-          "id": "7f6ab8df-77d9-4d8f-92c6-e0afade17324"
+          "id": "3792d9ee-c704-4f2e-a449-4b6d28813130"
         },
         "result": "SUCCESS",
-        "requestId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324:EVALUATION_STAGE_CHANGED:COLLECTING",
+        "requestId": "3792d9ee-c704-4f2e-a449-4b6d28813130:EVALUATION_STAGE_CHANGED:COLLECTING",
         "scopeKey": "123456789012#ap-south-1#dev",
-        "eventOrder": "2026-10-15T18:24:17.119599Z#fcbdc11aa41760837fa34838648e4a3c",
+        "eventOrder": "2026-10-15T18:33:19.002320Z#b207acc2f938ea72f9d6273e9d050787",
         "metadata": {
           "stage": "COLLECTING"
         }
       },
       {
-        "auditId": "1c5f36a5d88cde3a286cfbe25058d91a",
-        "timestamp": "2026-10-15T18:24:17.110521Z",
+        "auditId": "d8f9909dd0b38e9aca84bd12cc2cad18",
+        "timestamp": "2026-10-15T18:33:18.992572Z",
         "actor": {
           "sub": "evaluation-worker",
           "displayName": "Evaluation worker"
@@ -690,19 +795,19 @@
         "action": "EVALUATION_STAGE_CHANGED",
         "target": {
           "type": "EVALUATION",
-          "id": "7f6ab8df-77d9-4d8f-92c6-e0afade17324"
+          "id": "3792d9ee-c704-4f2e-a449-4b6d28813130"
         },
         "result": "SUCCESS",
-        "requestId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324:EVALUATION_STAGE_CHANGED:CLAIMED",
+        "requestId": "3792d9ee-c704-4f2e-a449-4b6d28813130:EVALUATION_STAGE_CHANGED:CLAIMED",
         "scopeKey": "123456789012#ap-south-1#dev",
-        "eventOrder": "2026-10-15T18:24:17.110521Z#1c5f36a5d88cde3a286cfbe25058d91a",
+        "eventOrder": "2026-10-15T18:33:18.992572Z#d8f9909dd0b38e9aca84bd12cc2cad18",
         "metadata": {
           "stage": "CLAIMED"
         }
       },
       {
-        "auditId": "93f478090a350ea18eac30da56a27307",
-        "timestamp": "2026-10-15T18:24:17.096969Z",
+        "auditId": "c3ee57c43d2c075a009b83d80321fcaf",
+        "timestamp": "2026-10-15T18:33:18.978176Z",
         "actor": {
           "sub": "contract-user",
           "displayName": "contract-user"
@@ -710,21 +815,21 @@
         "action": "EVALUATION_QUEUED",
         "target": {
           "type": "EVALUATION",
-          "id": "7f6ab8df-77d9-4d8f-92c6-e0afade17324"
+          "id": "3792d9ee-c704-4f2e-a449-4b6d28813130"
         },
         "result": "SUCCESS",
-        "requestId": "20f82f3a-88b2-40b8-9af1-210328562114",
+        "requestId": "88aff400-090e-4d2d-bd01-8cdb3d4e3af8",
         "scopeKey": "123456789012#ap-south-1#dev",
-        "eventOrder": "2026-10-15T18:24:17.096969Z#93f478090a350ea18eac30da56a27307",
+        "eventOrder": "2026-10-15T18:33:18.978176Z#c3ee57c43d2c075a009b83d80321fcaf",
         "metadata": {
-          "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+          "intentId": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61",
           "intentVersion": 1,
           "intentHash": "75bcd00cf276a3406e58110f3cf5adfd3296f270466ea79ef9d0338347d7ec6b"
         }
       },
       {
-        "auditId": "d93a752c046bee9222ae339ff23af18e",
-        "timestamp": "2026-10-15T18:24:17.083009Z",
+        "auditId": "72696675720e18eb120c3a2c20931cb5",
+        "timestamp": "2026-10-15T18:33:18.962459Z",
         "actor": {
           "sub": "contract-user",
           "displayName": "contract-user"
@@ -732,20 +837,20 @@
         "action": "INTENT_VERSION_APPROVED",
         "target": {
           "type": "INTENT",
-          "id": "6434ae4f-b422-4dad-8d45-2246178d90c8"
+          "id": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61"
         },
         "result": "SUCCESS",
-        "requestId": "63e6dc7a-1d13-468c-a7b5-abdc92b0995f",
+        "requestId": "20e3deed-ced5-46d0-bfc3-8fe75c84fe7a",
         "scopeKey": "123456789012#ap-south-1#dev",
-        "eventOrder": "2026-10-15T18:24:17.083009Z#d93a752c046bee9222ae339ff23af18e",
+        "eventOrder": "2026-10-15T18:33:18.962459Z#72696675720e18eb120c3a2c20931cb5",
         "metadata": {
           "version": 1,
           "contentHash": "75bcd00cf276a3406e58110f3cf5adfd3296f270466ea79ef9d0338347d7ec6b"
         }
       },
       {
-        "auditId": "37124dbd05b73dad423ae25aaae9f083",
-        "timestamp": "2026-10-15T18:24:17.068387Z",
+        "auditId": "a5c6757d0901eef52a1087cb7f680b2d",
+        "timestamp": "2026-10-15T18:33:18.940929Z",
         "actor": {
           "sub": "contract-user",
           "displayName": "contract-user"
@@ -753,12 +858,12 @@
         "action": "INTENT_CREATED",
         "target": {
           "type": "INTENT",
-          "id": "6434ae4f-b422-4dad-8d45-2246178d90c8"
+          "id": "a3d6ffe6-bc9f-4240-ae91-2a565c73da61"
         },
         "result": "SUCCESS",
-        "requestId": "b1fb64b4-2503-415f-9a9a-a37131ab2fc4",
+        "requestId": "c91775cd-89f7-4e66-9c03-9c9117212e39",
         "scopeKey": "123456789012#ap-south-1#dev",
-        "eventOrder": "2026-10-15T18:24:17.068387Z#37124dbd05b73dad423ae25aaae9f083",
+        "eventOrder": "2026-10-15T18:33:18.940929Z#a5c6757d0901eef52a1087cb7f680b2d",
         "metadata": {
           "version": 1,
           "contentHash": "75bcd00cf276a3406e58110f3cf5adfd3296f270466ea79ef9d0338347d7ec6b"
