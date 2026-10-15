@@ -12,6 +12,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 
 from common.audit import audit_event, audit_put, transaction_write
 from common.auth import configured_scope
+from common.escalation import escalate
 from common.contracts import scan_all
 from common.dynamodb import dynamodb_resource
 from common.evaluation_jobs import (JobError, artifact_limit_check,
@@ -203,6 +204,12 @@ def _load_complete_artifacts(db, table_name, job_id):
 def _finding_write(db, finding_table, audit_table, job, finding, actor):
     order = job["createdOrder"]
     existing = finding_table.get_item(Key={"findingId": finding["findingId"]}, ConsistentRead=True).get("Item") or {}
+    if existing and (existing.get("scopeKey") != job["scopeKey"]
+                     or existing.get("intentId") != job["intentId"]):
+        raise JobError(
+            409, "FINDING_OWNERSHIP_MISMATCH",
+            "An existing finding with this identifier is not owned by the evaluation scope and intent.",
+        )
     if existing.get("lastEvaluationOrder", "") > order:
         return False
     now = utc_now()
@@ -448,6 +455,7 @@ def _process(db, evaluation_id: str) -> dict:
             inventory = observations(collect_inventory, os.environ.get("AWS_REGION"))
             _state_audit(db, job_table_name, audit_table, job, actor, "EVALUATION_STAGE_CHANGED", "EVALUATING")
             evaluation, findings = run_pinned_evaluation(snapshot, inventory, evaluation_id)
+            evaluation, findings = escalate(snapshot, inventory, evaluation, findings)
             evaluation["startedAt"] = job.get("startedAt") or evaluation["startedAt"]
             evaluation["finishedAt"] = utc_now()
             _state_audit(db, job_table_name, audit_table, job, actor, "EVALUATION_STAGE_CHANGED", "WRITING_ARTIFACTS")

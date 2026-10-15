@@ -185,7 +185,7 @@ def _response_error(exc: JobError):
 
 def _job_summary(item: dict) -> dict:
     fields = ("evaluationId", "status", "intentId", "intentName", "intentVersion", "scopeKey",
-              "createdAt", "createdOrder", "startedAt", "finishedAt", "progressStage",
+              "createdAt", "createdOrder", "startedAt", "finishedAt", "deadlineAt", "attemptCount", "progressStage",
               "summary", "conformance", "warnings", "error", "simulated", "accountId", "region", "ruleResults")
     return {key: item[key] for key in fields if key in item}
 
@@ -244,6 +244,14 @@ def lambda_handler(event, context):
             item = get_job(table, evaluation_id, scope)
             if not item:
                 return error(404, "EVALUATION_NOT_FOUND", "The requested evaluation does not exist.")
+            if item.get("status") in {"QUEUED", "RUNNING"}:
+                # Keep worker imports out of API initialization, and only
+                # reconcile after get_job has proved the row belongs to scope.
+                from evaluation_worker.app import reconcile_expired
+                reconcile_expired(db, evaluation_id)
+                item = get_job(table, evaluation_id, scope)
+                if not item:
+                    return error(404, "EVALUATION_NOT_FOUND", "The requested evaluation does not exist.")
             return response(200, {"item": _job_summary(item)})
         result = list_jobs(table, query_params(event), scope)
         result["items"] = [_job_summary(item) for item in result["items"]]

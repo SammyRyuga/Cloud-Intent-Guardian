@@ -1,0 +1,162 @@
+{
+  "findings": [
+    {
+      "findingId": "1a0fe04b036ea4dc52108c264677add4",
+      "intentId": "test-intent",
+      "intentVersion": 1,
+      "intentName": "Local three-tier intent",
+      "evaluationId": "eval-test",
+      "ruleId": "AMBIGUOUS_TOPOLOGY",
+      "constraintId": "constraint:boundary:data",
+      "tier": "TIER_2",
+      "title": "Undeclared topology requires review",
+      "description": "An observed boundary crossing has no explicit rule and remains an ambiguous candidate.",
+      "explanation": "An observed boundary crossing has no explicit rule and remains an ambiguous candidate.",
+      "category": "NETWORK_PATH",
+      "status": "OPEN",
+      "resourceId": "i-fixture-web",
+      "resourceName": "i-fixture-web",
+      "resourceType": "AWS::EC2::Instance",
+      "accountId": "fixture-account",
+      "region": "ap-south-1",
+      "sourceId": "fixture-db",
+      "targetId": "i-fixture-web",
+      "expected": {
+        "description": "Human-approved architecture intent"
+      },
+      "observed": {
+        "candidateId": "b2a6e8465db6d627add171ccc4dd01c1",
+        "ruleId": "constraint:boundary:data",
+        "sourceId": "fixture-db",
+        "targetId": "i-fixture-web",
+        "predicate": "DIRECTED_PATH_PRESENT",
+        "snapshotId": "fixture-unruled-crossing",
+        "observedAt": "2026-10-15T00:00:00Z",
+        "explanation": "An observed boundary crossing has no explicit rule and remains an ambiguous candidate."
+      },
+      "evidence": [
+        {
+          "source": "Cross-validation",
+          "resourceId": "i-fixture-web",
+          "observedAt": "2026-10-15T00:00:00Z",
+          "details": {
+            "accepted": true,
+            "sourceVerdicts": [
+              {
+                "sourceFamily": "inventory",
+                "verdict": "CORROBORATES",
+                "evidenceId": "simulated-inventory-unruled-crossing",
+                "originId": "simulated-independent-inventory",
+                "predicate": "DIRECTED_PATH_PRESENT",
+                "sourceId": "fixture-db",
+                "targetId": "i-fixture-web",
+                "snapshotId": "fixture-unruled-crossing",
+                "observedAt": "2026-10-15T00:00:00Z",
+                "eligible": true
+              },
+              {
+                "sourceFamily": "flowLogs",
+                "verdict": "CORROBORATES",
+                "evidenceId": "simulated-flowLogs-unruled-crossing",
+                "originId": "simulated-independent-flowLogs",
+                "predicate": "DIRECTED_PATH_PRESENT",
+                "sourceId": "fixture-db",
+                "targetId": "i-fixture-web",
+                "snapshotId": "fixture-unruled-crossing",
+                "observedAt": "2026-10-15T00:00:00Z",
+                "eligible": true
+              }
+            ],
+            "reason": "Two independent simulated sources corroborate this exact predicate and snapshot.",
+            "simulated": true
+          }
+        }
+      ],
+      "severity": "MEDIUM",
+      "confidence": "MEDIUM",
+      "reviewStatus": "CORROBORATED",
+      "actionEligible": false,
+      "crossValidation": {
+        "accepted": true,
+        "sourceVerdicts": [
+          {
+            "sourceFamily": "inventory",
+            "verdict": "CORROBORATES",
+            "evidenceId": "simulated-inventory-unruled-crossing",
+            "originId": "simulated-independent-inventory",
+            "predicate": "DIRECTED_PATH_PRESENT",
+            "sourceId": "fixture-db",
+            "targetId": "i-fixture-web",
+            "snapshotId": "fixture-unruled-crossing",
+            "observedAt": "2026-10-15T00:00:00Z",
+            "eligible": true
+          },
+          {
+            "sourceFamily": "flowLogs",
+            "verdict": "CORROBORATES",
+            "evidenceId": "simulated-flowLogs-unruled-crossing",
+            "originId": "simulated-independent-flowLogs",
+            "predicate": "DIRECTED_PATH_PRESENT",
+            "sourceId": "fixture-db",
+            "targetId": "i-fixture-web",
+            "snapshotId": "fixture-unruled-crossing",
+            "observedAt": "2026-10-15T00:00:00Z",
+            "eligible": true
+          }
+        ],
+        "reason": "Two independent simulated sources corroborate this exact predicate and snapshot.",
+        "simulated": true
+      },
+      "llmConclusion": {
+        "candidateId": "b2a6e8465db6d627add171ccc4dd01c1",
+        "verdict": "CONCERN",
+        "explanation": "Simulated advisory assessment of an undeclared directed crossing."
+      },
+      "llmStatus": "VALIDATED",
+      "firstSeenAt": "2026-10-15T18:37:41.470837Z",
+      "lastSeenAt": "2026-10-15T18:37:41.470837Z",
+      "updatedAt": "2026-10-15T18:37:41.470837Z",
+      "simulated": true,
+      "constraintSeverity": "MEDIUM",
+      "severityScore": 54,
+      "severityFactors": {
+        "formulaVersion": "1",
+        "baseSeverity": {
+          "label": "MEDIUM",
+          "points": 35
+        },
+        "componentCriticality": {
+          "label": "CRITICAL",
+          "points": 15,
+          "componentIds": [
+            "db",
+            "web"
+          ],
+          "defaulted": false,
+          "explanation": "Highest implicated component criticality is CRITICAL."
+        },
+        "blastRadius": {
+          "count": 2,
+          "points": 2,
+          "complete": true,
+          "downstreamResourceIds": [
+            "i-fixture-api",
+            "i-fixture-web"
+          ],
+          "explanation": "Complete observed reachability evidence identifies 2 unique downstream nodes."
+        },
+        "exposure": {
+          "label": "INTERNAL",
+          "points": 0,
+          "explanation": "Every implicated resource has an explicit negative exposure observation adequate for its resource type."
+        },
+        "confidence": {
+          "label": "MEDIUM",
+          "points": 2,
+          "explanation": "MEDIUM confidence adds 2 uncertainty-uplift points."
+        },
+        "explanation": "MEDIUM base severity (35) + 15 component criticality + 2 blast-radius points + 0 exposure points + 2 confidence points = 54/100 (MEDIUM)."
+      }
+    }
+  ]
+}

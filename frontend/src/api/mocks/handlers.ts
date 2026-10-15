@@ -254,22 +254,73 @@ export const handlers = [
     if (status && status !== 'ALL') {
       items = items.filter((r) => r.status === status);
     }
+    const limit = Number(url.searchParams.get('limit') || 25);
     return HttpResponse.json({
       items,
-      meta: { nextCursor: null },
+      count: items.length,
+      nextToken: null,
+      limit,
     });
   }),
 
-  // Remediation Decision
-  http.post('/v1/remediations/:id/decision', async ({ params, request }) => {
+  http.get('/v1/remediations/:id', async ({ params }) => {
+    await delay(100);
+    const item = mockRemediations.find((row) => row.proposalId === params.id);
+    if (!item) return HttpResponse.json({ message: 'Proposal not found' }, { status: 404 });
+    return HttpResponse.json({ item });
+  }),
+
+  http.post('/v1/remediations', async ({ request }) => {
     await delay(250);
-    const body = (await request.json()) as { decision: 'APPROVE' | 'REJECT'; note?: string };
-    const item = mockRemediations.find((r) => r.id === params.id);
-    if (item) {
-      item.status = body.decision === 'APPROVE' ? 'APPROVED' : 'REJECTED';
-      item.decisionNote = body.note;
+    const body = (await request.json()) as { findingId: string; actionId: 'REMOVE_OPEN_SSH' | 'ENABLE_S3_BLOCK_PUBLIC_ACCESS' };
+    const finding = mockFindings.find((row) => row.id === body.findingId);
+    if (!finding || !finding.remediationAvailable || finding.remediationActionId !== body.actionId || finding.tier === 'TIER_2') {
+      return HttpResponse.json({ message: 'Finding is not eligible for this action' }, { status: 409 });
     }
-    return HttpResponse.json({ success: true, remediationId: params.id });
+    const now = new Date().toISOString();
+    const item = {
+      proposalId: `rem-${Date.now()}`,
+      findingId: finding.id,
+      actionId: body.actionId,
+      status: 'PROPOSED' as const,
+      revision: 1,
+      dryRun: true,
+      createdAt: now,
+      expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+      createdBy: { sub: 'local-user', role: 'operator', displayName: 'Local fixture user' },
+      resourceId: finding.resourceId,
+      resourceType: finding.resourceType,
+      plan: { before: {}, after: {}, rollback: {}, description: 'Local simulated proposal; no cloud action was performed.' },
+    };
+    mockRemediations.unshift(item);
+    return HttpResponse.json({ item }, { status: 201 });
+  }),
+
+  http.post('/v1/remediations/:id/approve', async ({ params, request }) => {
+    await delay(250);
+    const body = (await request.json()) as { expectedRevision: number; reason: string };
+    const item = mockRemediations.find((row) => row.proposalId === params.id);
+    if (!item) return HttpResponse.json({ message: 'Proposal not found' }, { status: 404 });
+    if (item.revision !== body.expectedRevision) return HttpResponse.json({ message: 'Revision conflict' }, { status: 409 });
+    item.status = 'APPROVED';
+    item.revision += 1;
+    item.approvedAt = new Date().toISOString();
+    item.approvedBy = { sub: 'local-approver', role: 'approver', displayName: 'Local fixture approver' };
+    item.reason = body.reason;
+    return HttpResponse.json({ item });
+  }),
+
+  http.post('/v1/remediations/:id/execute', async ({ params, request }) => {
+    await delay(250);
+    const body = (await request.json()) as { expectedRevision: number };
+    const item = mockRemediations.find((row) => row.proposalId === params.id);
+    if (!item) return HttpResponse.json({ message: 'Proposal not found' }, { status: 404 });
+    if (item.revision !== body.expectedRevision) return HttpResponse.json({ message: 'Revision conflict' }, { status: 409 });
+    if (item.status !== 'APPROVED') return HttpResponse.json({ message: 'Proposal must be approved before execution' }, { status: 409 });
+    item.status = 'DRY_RUN_COMPLETE';
+    item.revision += 1;
+    item.execution = { dryRun: true, status: 'COMPLETED', completedAt: new Date().toISOString() };
+    return HttpResponse.json({ item });
   }),
 
   // Audit Events

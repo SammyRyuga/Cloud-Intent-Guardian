@@ -56,6 +56,18 @@ export const FindingSchema = z.object({
   }).passthrough().optional(),
   confidence: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
   constraintSeverity: SeveritySchema.optional(),
+  tier: z.literal('TIER_2').optional(),
+  reviewStatus: z.enum(['NEEDS_HUMAN_REVIEW', 'CORROBORATED']).optional(),
+  crossValidation: z.object({
+    accepted: z.boolean(), simulated: z.boolean().optional(), reason: z.string(),
+    sourceVerdicts: z.array(z.object({
+      sourceFamily: z.string(), verdict: z.string(), evidenceId: z.string(), originId: z.string().optional(),
+      predicate: z.string(), sourceId: z.string().optional(), targetId: z.string().optional(),
+      snapshotId: z.string().optional(), observedAt: z.string(), eligible: z.boolean().optional(),
+    }).passthrough()),
+  }).passthrough().optional(),
+  llmConclusion: z.object({ candidateId: z.string(), verdict: z.enum(['CONCERN', 'BENIGN', 'UNCERTAIN']), explanation: z.string() }).nullable().optional(),
+  actionEligible: z.boolean().optional(),
   status: FindingStatusSchema,
   resourceId: z.string(),
   resourceType: z.string(),
@@ -65,7 +77,7 @@ export const FindingSchema = z.object({
   revision: z.number().optional(),
   description: z.string(),
   remediationAvailable: z.boolean(),
-  remediationActionId: z.string().optional(),
+  remediationActionId: z.enum(['REMOVE_OPEN_SSH', 'ENABLE_S3_BLOCK_PUBLIC_ACCESS']).optional(),
   aiExplanation: z.object({
     summary: z.string(),
     rationale: z.string(),

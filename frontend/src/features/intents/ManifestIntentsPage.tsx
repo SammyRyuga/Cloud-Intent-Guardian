@@ -10,6 +10,7 @@ import {
   useCreateIntentVersion,
   useApproveIntentVersion,
   useRollbackIntent,
+  useIntentDiff,
 } from "@/hooks/apiHooks";
 import { StateBoundary } from "@/components/common/StateBoundary";
 import { Card, CardHeader } from "@/components/ui/Card";
@@ -20,14 +21,25 @@ import { hasCapability } from "@/config/capabilities";
 
 const starter = JSON.stringify(
   {
+    schemaVersion: 2,
     name: "AWS baseline",
     description: "Reviewed architecture constraints",
+    components: [
+      { id: "network", resourceTypes: ["AWS::EC2::VPC"], selector: { tags: { "cig:tier": "network" } }, minMatches: 1 },
+      { id: "api", resourceTypes: ["AWS::ApiGateway::RestApi"], selector: { tags: { "cig:tier": "api" } }, minMatches: 1 },
+    ],
+    relationships: [
+      { id: "network-api", from: "network", to: "api", effect: "ALLOW", relationshipType: "CONTAINS" },
+    ],
+    trustBoundaries: [{ id: "production", members: ["network", "api"] }],
+    criticality: { network: "HIGH", api: "CRITICAL" },
     constraints: [
       {
         id: "no-open-ssh",
         type: "SECURITY_GROUP_NO_OPEN_SSH",
         severity: "HIGH",
         description: "SSH must not be open to the public internet",
+        enabled: true,
       },
     ],
   },
@@ -53,6 +65,9 @@ export function ManifestIntentsPage() {
   const versions = useIntentVersions(selectedId, versionCursor);
   const selectedVersionNumber = Number(params.get("version")) || null;
   const versionDetail = useIntentVersion(selectedId, selectedVersionNumber);
+  const diffFrom = Number(params.get("diffFrom")) || null;
+  const diffTo = Number(params.get("diffTo")) || null;
+  const versionDiff = useIntentDiff(selectedId, diffFrom, diffTo);
   const createVersion = useCreateIntentVersion();
   const approveVersion = useApproveIntentVersion();
   const rollback = useRollbackIntent();
@@ -69,6 +84,8 @@ export function ManifestIntentsPage() {
     const next = new URLSearchParams(params);
     next.set("intent", id);
     next.delete("version");
+    next.delete("diffFrom");
+    next.delete("diffTo");
     setParams(next);
   }
   function submit() {
@@ -104,9 +121,7 @@ export function ManifestIntentsPage() {
           Architecture intents
         </h1>
         <p className="text-sm text-graphite">
-          Create a JSON constraint manifest, retrieve it, then approve the
-          reviewed draft. File upload and historical version editing are not
-          enabled.
+          Create and review versioned JSON manifests. Schema version 2 topology declarations are preserved in each immutable version.
         </p>
       </div>
       <Card>
@@ -235,9 +250,19 @@ export function ManifestIntentsPage() {
                 ))}
               </ul>
               {selected.schemaVersion === 2 && (
-                <p className="text-sm text-graphite">
-                  Manifest schema version 2 declarations are retained in the stored response.
-                </p>
+                <section className="my-4 space-y-3 border-t border-rule pt-4">
+                  <h3 className="font-title text-sm font-semibold">Topology declarations · schema v2</h3>
+                  {(["components", "relationships", "trustBoundaries"] as const).map((field) => (
+                    <details key={field} className="border border-rule rounded p-3">
+                      <summary className="cursor-pointer text-sm font-medium">{field} ({selected[field]?.length ?? 0})</summary>
+                      <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-words font-mono text-xs">{JSON.stringify(selected[field] ?? [], null, 2)}</pre>
+                    </details>
+                  ))}
+                  <div className="border border-rule rounded p-3">
+                    <h4 className="text-sm font-medium">Component criticality</h4>
+                    <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs">{JSON.stringify(selected.criticality ?? {}, null, 2)}</pre>
+                  </div>
+                </section>
               )}
               <details className="mt-4 border border-rule rounded p-3">
                 <summary className="cursor-pointer text-sm font-medium">Stored manifest JSON</summary>
@@ -275,6 +300,31 @@ export function ManifestIntentsPage() {
                       <span>{version.effectiveStatus ?? version.status}</span>
                     </li>)}
                   </ul>}
+                  {versions.data && versions.data.items.length > 1 && <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
+                    <label className="text-xs">Compare from
+                      <select aria-label="Diff from version" value={diffFrom ?? ""} onChange={(event) => { const next = new URLSearchParams(params); if (event.target.value) next.set("diffFrom", event.target.value); else next.delete("diffFrom"); setParams(next); }} className="mt-1 block w-full border border-rule rounded p-2 bg-sheet">
+                        <option value="">Choose version</option>{versions.data.items.map((row) => <option key={row.version} value={row.version}>Version {row.version}</option>)}
+                      </select>
+                    </label>
+                    <label className="text-xs">Compare to
+                      <select aria-label="Diff to version" value={diffTo ?? ""} onChange={(event) => { const next = new URLSearchParams(params); if (event.target.value) next.set("diffTo", event.target.value); else next.delete("diffTo"); setParams(next); }} className="mt-1 block w-full border border-rule rounded p-2 bg-sheet">
+                        <option value="">Choose version</option>{versions.data.items.map((row) => <option key={row.version} value={row.version}>Version {row.version}</option>)}
+                      </select>
+                    </label>
+                    <span className="text-xs text-graphite">The server reports added, removed, and changed declarations.</span>
+                  </div>}
+                  {versionDiff.isLoading && <p className="mt-2 text-xs text-graphite">Loading server version diff.</p>}
+                  {versionDiff.error && <p role="alert" className="mt-2 text-xs text-sev-critical">Version diff unavailable: {versionDiff.error.message}</p>}
+                  {versionDiff.data && <div className="mt-3 space-y-2">
+                    <h4 className="text-sm font-semibold">Version {versionDiff.data.item.fromVersion} → {versionDiff.data.item.toVersion}</h4>
+                    {(["components", "relationships", "trustBoundaries", "criticality", "constraints"] as const).map((section) => {
+                      const rows = versionDiff.data!.item[section];
+                      return <details key={section} className="border border-rule rounded p-3">
+                        <summary className="cursor-pointer text-sm font-medium">{section}: +{rows.added.length} −{rows.removed.length} ~{rows.changed.length}</summary>
+                        <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words font-mono text-xs">{JSON.stringify(rows, null, 2)}</pre>
+                      </details>;
+                    })}
+                  </div>}
                   {versionDetail.data && <details open className="border border-rule rounded p-3">
                     <summary className="cursor-pointer text-sm font-medium">Version {versionDetail.data.item.version}: {versionDetail.data.item.effectiveStatus ?? versionDetail.data.item.status}</summary>
                     <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-words font-mono text-xs">{JSON.stringify(versionDetail.data.item, null, 2)}</pre>

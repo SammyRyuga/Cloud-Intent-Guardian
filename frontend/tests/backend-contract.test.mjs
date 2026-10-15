@@ -17,6 +17,12 @@ const topology = JSON.parse(
     "utf8",
   ),
 );
+const escalation = JSON.parse(
+  readFileSync(
+    new URL("./fixtures/escalation-contract.json", import.meta.url),
+    "utf8",
+  ),
+);
 test("created, listed and approved manifests keep their original backend IDs", () => {
   const created = B.ManifestDetailSchema.parse(wire.created).item;
   const listed = B.ManifestsSchema.parse(wire.intents);
@@ -137,4 +143,16 @@ test("audit, finding lifecycle and numeric version handlers match their envelope
   assert.ok(versions.items.some((item) => item.version === diff.fromVersion));
   assert.ok(versions.items.some((item) => item.version === diff.toVersion));
   assert.deepEqual(diff.components, wire.versionDiff.item.components);
+});
+test("real escalation findings preserve cross-validation evidence and advisory conclusion", () => {
+  assert.ok(escalation.findings.length > 0);
+  const findings = escalation.findings;
+  assert.ok(findings.every((finding) => finding.tier === "TIER_2"));
+  assert.ok(findings.every((finding) => finding.actionEligible === false));
+  assert.ok(findings.every((finding) => ["NEEDS_HUMAN_REVIEW", "CORROBORATED"].includes(finding.reviewStatus)));
+  assert.ok(findings.every((finding) => B.CrossValidationSchema.parse(finding.crossValidation).reason.length > 0));
+  assert.ok(findings.every((finding) => finding.crossValidation.sourceVerdicts.every((row) =>
+    typeof row.evidenceId === "string" && typeof row.predicate === "string" && typeof row.observedAt === "string")));
+  assert.ok(findings.every((finding) => finding.llmConclusion === null ||
+    B.LlmConclusionSchema.parse(finding.llmConclusion).candidateId === finding.observed.candidateId));
 });

@@ -70,6 +70,10 @@ def scenario_inventory(name='benign'):
         'snapshotId': 'fixture-' + name, 'scenario': name,
         'coverage': {'resourceTypes': {kind: 'COMPLETE' for _, kind in kinds},
                      'relationshipTypes': {'NETWORK_REACHABILITY': 'COMPLETE'}},
-        'sourceVerdicts': [{'sourceFamily': 'inventory', 'verdict': 'CORROBORATES'},
-                           {'sourceFamily': 'flowLogs', 'verdict': 'DISAGREES' if name == 'source-disagreement' else 'CORROBORATES'}],
+        'sourceVerdicts': [
+            {'sourceFamily': family, 'verdict': 'DISAGREES' if name == 'source-disagreement' and family == 'flowLogs' else 'CORROBORATES',
+             'sourceId': 'fixture-db', 'targetId': 'i-fixture-web', 'predicate': 'DIRECTED_PATH_PRESENT',
+             'snapshotId': 'fixture-' + name, 'observedAt': TIME,
+             'evidenceId': 'simulated-' + family + '-' + name, 'originId': 'simulated-independent-' + family}
+            for family in ('inventory', 'flowLogs')],
     }})

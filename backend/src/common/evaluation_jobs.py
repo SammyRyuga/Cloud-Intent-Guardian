@@ -140,6 +140,10 @@ def list_jobs(table: Any, params: dict[str, str], scope: str) -> dict[str, Any]:
         options = page_options(params, scope, "evaluations", filters)
     except ValueError as exc:
         raise JobError(400, "INVALID_PAGINATION", str(exc)) from exc
+    # A GSI omits legacy items that lack either key. Check the base table with a
+    # bounded scan so an existing index cannot make history look complete while
+    # silently hiding rows that still need the explicit backfill.
+    _require_migrated_history(table, scope)
     query = {"IndexName": INDEX_NAME, "KeyConditionExpression": Key("scopeKey").eq(scope),
              "ScanIndexForward": False, **options}
     if filters:
@@ -158,6 +162,39 @@ def list_jobs(table: Any, params: dict[str, str], scope: str) -> dict[str, Any]:
     return {"items": items, "count": len(items), "nextToken": next_token, "limit": options["Limit"]}
 
 
+def _require_migrated_history(table: Any, scope: str) -> None:
+    names = {"#id": "evaluationId", "#scope": "scopeKey", "#order": "createdOrder",
+             "#account": "accountId", "#region": "region"}
+    rows, truncated = scan_all(
+        table, max_pages=20, ConsistentRead=True,
+        ProjectionExpression="#id, #scope, #order, #account, #region",
+        ExpressionAttributeNames=names,
+    )
+    parts = scope.split("#")
+    account, region = (parts[0], parts[1]) if len(parts) >= 2 else (None, None)
+    unmigrated = False
+    for row in rows:
+        row_scope = row.get("scopeKey")
+        if row_scope == scope and not row.get("createdOrder"):
+            unmigrated = True
+            break
+        if row_scope:
+            continue
+        row_account, row_region = row.get("accountId"), row.get("region")
+        # Rows with no legacy scope clues are ambiguous and must be migrated
+        # explicitly before any tenant can claim a complete history view.
+        if not row_account or not row_region or (row_account == account and row_region == region):
+            unmigrated = True
+            break
+    if unmigrated or truncated:
+        raise JobError(
+            409, "EVALUATION_HISTORY_MIGRATION_REQUIRED",
+            "Evaluation history is incomplete until legacy rows are assigned scope and ordering keys.",
+            {"requiredIndex": INDEX_NAME,
+             "remediation": "Run the explicit, resumable evaluation history backfill; do not recreate the table."},
+        )
+
+
 def get_job(table: Any, evaluation_id: str, scope: str) -> dict[str, Any] | None:
     item = table.get_item(Key={"evaluationId": evaluation_id}, ConsistentRead=True).get("Item")
     if item and item.get("scopeKey") != scope:
@@ -168,7 +205,9 @@ def get_job(table: Any, evaluation_id: str, scope: str) -> dict[str, Any] | None
 def chunk_artifacts(evaluation_id: str, artifacts: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Split canonical JSON artifacts into bounded, independently hashed chunks."""
     chunks: list[dict[str, Any]] = []
-    content = json.dumps(artifacts, sort_keys=True, separators=(",", ":"), default=_json_default).encode("utf-8")
+    # ensure_ascii keeps UTF-8 boundaries safe when chunks are byte-sliced.
+    content = json.dumps(artifacts, sort_keys=True, separators=(",", ":"), default=_json_default,
+                         ensure_ascii=True).encode("utf-8")
     for offset in range(0, len(content), ARTIFACT_CHUNK_BYTES):
         data = content[offset:offset + ARTIFACT_CHUNK_BYTES]
         chunks.append({"evaluationId": evaluation_id, "artifactKey": f"chunk#{len(chunks):06d}",

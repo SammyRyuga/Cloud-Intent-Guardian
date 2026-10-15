@@ -1,3 +1,37 @@
+## Phase 4 - advisory escalation (2026-10-16)
+
+`EnableLLM=false` is the default. Optional worker escalation uses an `LLMClient`
+interface, deterministic local mock, or bounded Bedrock Converse text call with an
+explicit model ID/ARN. No model is selected automatically. An exact closed JSON
+schema rejects unknown keys, duplicate keys, invalid verdicts and mismatched IDs.
+Only ambiguous witnessed topology candidates are escalated; clear Tier 1 results
+make no model call. At most three candidates are assessed per evaluation.
+
+Tier 2 findings add `tier`, `reviewStatus`, `confidence`, `crossValidation`,
+`llmConclusion`, `llmStatus` and `actionEligible=false`. Two independent source
+families and origins must agree on the same predicate, path, snapshot and time.
+Disagreement or insufficient evidence yields `NEEDS_HUMAN_REVIEW` and LOW
+confidence. Corroboration confirms evidence, not permission to modify architecture.
+Flag-off, denied access, missing model, timeout and invalid output degrade safely.
+
+Live source collectors are **not implemented**. Only explicitly simulated local
+fixture records can currently pass corroboration; live candidates always need
+human review. CloudTrail events alone cannot prove current path reachability.
+Academy Bedrock access/region and existing-role permission remain unverified.
+The implementation follows the public [Converse reference](https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html).
+
+Async hardening: scoped status polling reconciles expired jobs; history reads
+refuse silently incomplete legacy indexes with a migration error; finding writes
+reject pre-existing records outside their scope/intent. No periodic cloud
+reconciler is enabled, so an abandoned job becomes FAILED on status polling.
+
+Validation: 114 backend tests passed, including an SDK-stubbed Converse call,
+malicious output, source disagreement/duplication/staleness and Unicode artifact
+round trips. The isolated DynamoDB Local verifier with `--escalation` passed and
+persisted both corroborated and human-review findings. SAM lint/build and frontend
+lint/test/contract/build gates passed. No real credentials, deployment, Bedrock
+invocation, API Gateway or live Cognito verification occurred.
+
 ## Phase 3 - severity evidence (2026-10-16)
 
 Findings now include `constraintSeverity`, `confidence`, `severityScore` (0-100),

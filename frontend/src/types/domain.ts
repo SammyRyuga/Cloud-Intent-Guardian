@@ -51,6 +51,26 @@ export interface Finding {
   };
   confidence?: 'HIGH' | 'MEDIUM' | 'LOW';
   constraintSeverity?: Severity;
+  tier?: 'TIER_2';
+  reviewStatus?: 'NEEDS_HUMAN_REVIEW' | 'CORROBORATED';
+  crossValidation?: {
+    accepted: boolean;
+    simulated?: boolean;
+    sourceVerdicts: Array<{
+      sourceFamily: string;
+      verdict: string;
+      evidenceId: string;
+      originId?: string;
+      predicate: string;
+      sourceId?: string;
+      targetId?: string;
+      snapshotId?: string;
+      observedAt: string;
+      eligible?: boolean;
+    }>;
+    reason: string;
+  };
+  llmConclusion?: { candidateId: string; verdict: 'CONCERN' | 'BENIGN' | 'UNCERTAIN'; explanation: string } | null;
   status: FindingStatus;
   resourceId: string;
   resourceType: string;
@@ -60,7 +80,8 @@ export interface Finding {
   revision?: number;
   description: string;
   remediationAvailable: boolean;
-  remediationActionId?: string;
+  remediationActionId?: 'REMOVE_OPEN_SSH' | 'ENABLE_S3_BLOCK_PUBLIC_ACCESS';
+  actionEligible?: boolean;
   aiExplanation?: {
     summary: string;
     rationale: string;
@@ -176,24 +197,28 @@ export interface DriftEventsResponse {
 }
 
 export interface RemediationRequest {
-  id: string;
+  proposalId: string;
   findingId: string;
-  findingTitle: string;
-  severity: Severity;
+  actionId: 'REMOVE_OPEN_SSH' | 'ENABLE_S3_BLOCK_PUBLIC_ACCESS';
+  status: 'PROPOSED' | 'APPROVED' | 'EXECUTED' | 'DRY_RUN_COMPLETE' | 'FAILED';
+  revision: number;
+  dryRun: boolean;
+  createdAt: string;
+  expiresAt: string;
+  createdBy: { sub: string; role?: string; [key: string]: unknown };
+  approvedBy?: { sub: string; role?: string; [key: string]: unknown };
+  approvedAt?: string;
+  reason?: string;
   resourceId: string;
-  status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'EXECUTING' | 'COMPLETED' | 'FAILED';
-  requestedAt: string;
-  requestedBy: string;
-  plannedAction: string;
-  dryRunOutput?: string;
-  decisionNote?: string;
+  resourceType: string;
+  plan: { before?: unknown; after?: unknown; rollback?: unknown; description: string };
+  execution?: { dryRun: boolean; status: string; completedAt?: string };
 }
 
 export interface RemediationsResponse {
   items: RemediationRequest[];
-  meta: {
-    nextCursor?: string | null;
-  };
+  count: number;
+  nextToken: string | null;
 }
 
 export interface AuditEvent {

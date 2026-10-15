@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { z } from 'zod';
 import { apiClient } from '@/api/apiClient';
 import { endpoints } from '@/api/endpoints';
 import { queryKeys } from '@/api/queryKeys';
@@ -109,31 +108,61 @@ export function useDriftEvents() {
   });
 }
 
-export function useRemediations(status?: string) {
+export function useRemediations(filters?: { status?: string; cursor?: string }) {
+  const params = new URLSearchParams({ limit: '25' });
+  if (filters?.status) params.set('status', filters.status);
+  if (filters?.cursor) params.set('nextToken', filters.cursor);
   return useQuery({
-    queryKey: queryKeys.remediations(status),
-    queryFn: () => apiClient<T.RemediationsResponse>(endpoints.remediations(status), S.RemediationsResponseSchema),
+    queryKey: queryKeys.remediations(filters),
+    queryFn: () => apiClient(endpoints.remediations(params.toString()), B.RemediationsSchema),
     staleTime: 30000,
     enabled: hasCapability('remediation'),
   });
 }
 
-export function useRemediationDecision() {
+export function useRemediation(id: string) {
+  return useQuery({
+    queryKey: queryKeys.remediation(id),
+    queryFn: () => apiClient(endpoints.remediation(id), B.RemediationDetailSchema),
+    enabled: Boolean(id) && hasCapability('remediation.detail'),
+  });
+}
+
+function useRemediationMutation<TBody>(path: (id: string) => string, method: 'POST', body: (data: TBody) => unknown) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, decision, note }: { id: string; decision: 'APPROVE' | 'REJECT'; note?: string }) =>
-      apiClient<{ success: boolean; remediationId: string }>(
-        endpoints.remediationDecision(id),
-        z.object({ success: z.boolean(), remediationId: z.string() }),
-        { method: 'POST', body: { decision, note } }
+    mutationFn: ({ id, data }: { id: string; data: TBody }) =>
+      apiClient(path(id), B.RemediationDetailSchema,
+        { method, body: body(data) }
       ),
-    onSuccess: (_, { id }) => {
+    onSuccess: (result) => {
+      const id = result.item.proposalId;
       queryClient.invalidateQueries({ queryKey: queryKeys.remediation(id) });
       queryClient.invalidateQueries({ queryKey: ['remediations'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
       queryClient.invalidateQueries({ queryKey: ['audit'] });
     },
   });
+}
+
+export function useCreateRemediation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { findingId: string; actionId: T.RemediationRequest['actionId'] }) =>
+      apiClient(endpoints.remediations(), B.RemediationDetailSchema, { method: 'POST', body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['remediations'] });
+      queryClient.invalidateQueries({ queryKey: ['audit'] });
+    },
+  });
+}
+
+export function useApproveRemediation() {
+  return useRemediationMutation(endpoints.remediationApprove, 'POST', (data: { expectedRevision: number; reason: string }) => data);
+}
+
+export function useExecuteRemediation() {
+  return useRemediationMutation(endpoints.remediationExecute, 'POST', (data: { expectedRevision: number }) => data);
 }
 
 export function useAuditEvents(cursor?: string) {

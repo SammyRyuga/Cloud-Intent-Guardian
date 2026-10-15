@@ -78,21 +78,55 @@ export const IntentVersionsSchema = z.object({
   count: z.number(),
   limit: z.number(),
 });
+const IntentDiffEntrySchema = z.object({
+  id: z.string(),
+  value: z.unknown().optional(),
+  before: z.unknown().optional(),
+  after: z.unknown().optional(),
+}).passthrough();
+const IntentDiffSectionSchema = z.object({
+  added: z.array(IntentDiffEntrySchema),
+  removed: z.array(IntentDiffEntrySchema),
+  changed: z.array(IntentDiffEntrySchema),
+});
 export const IntentDiffSchema = z.object({
   item: z.object({
     intentId: z.string(),
     fromVersion: z.number(),
     toVersion: z.number(),
-    components: z.record(z.unknown()),
-    relationships: z.record(z.unknown()),
-    trustBoundaries: z.record(z.unknown()),
-    criticality: z.record(z.unknown()),
-    constraints: z.record(z.unknown()),
+    components: IntentDiffSectionSchema,
+    relationships: IntentDiffSectionSchema,
+    trustBoundaries: IntentDiffSectionSchema,
+    criticality: IntentDiffSectionSchema,
+    constraints: IntentDiffSectionSchema,
   }).passthrough(),
 });
 export type IntentVersion = z.infer<typeof VersionManifestSchema>;
 export type IntentDiff = z.infer<typeof IntentDiffSchema>["item"];
 
+export const RemediationActionIdSchema = z.enum(["REMOVE_OPEN_SSH", "ENABLE_S3_BLOCK_PUBLIC_ACCESS"]);
+export const CrossValidationSchema = z.object({
+  accepted: z.boolean(),
+  simulated: z.boolean().optional(),
+  sourceVerdicts: z.array(z.object({
+    sourceFamily: z.string(),
+    verdict: z.string(),
+    evidenceId: z.string(),
+    originId: z.string().optional(),
+    predicate: z.string(),
+    sourceId: z.string().optional(),
+    targetId: z.string().optional(),
+    snapshotId: z.string().optional(),
+    observedAt: z.string(),
+    eligible: z.boolean().optional(),
+  }).passthrough()),
+  reason: z.string(),
+}).passthrough();
+export const LlmConclusionSchema = z.object({
+  candidateId: z.string(),
+  verdict: z.enum(["CONCERN", "BENIGN", "UNCERTAIN"]),
+  explanation: z.string(),
+});
 export const BackendFindingSchema = z
   .object({
     findingId: z.string(),
@@ -117,6 +151,10 @@ export const BackendFindingSchema = z
     }).passthrough().optional(),
     confidence: z.enum(["HIGH", "MEDIUM", "LOW"]).optional(),
     constraintSeverity: z.enum(["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]).optional(),
+    tier: z.literal("TIER_2").optional(),
+    reviewStatus: z.enum(["NEEDS_HUMAN_REVIEW", "CORROBORATED"]).optional(),
+    crossValidation: CrossValidationSchema.optional(),
+    llmConclusion: LlmConclusionSchema.nullable().optional(),
     status: z.enum(["OPEN", "ACKNOWLEDGED", "RESOLVED", "SUPPRESSED"]),
     resourceId: z.string(),
     resourceType: z.string(),
@@ -124,7 +162,9 @@ export const BackendFindingSchema = z
     firstSeenAt: z.string(),
     updatedAt: z.string(),
     revision: z.number().optional(),
-    remediationAvailable: z.literal(false),
+    remediationAvailable: z.boolean(),
+    remediationActionId: RemediationActionIdSchema.optional(),
+    actionEligible: z.boolean().optional(),
     evidence: z
       .array(
         z.object({
@@ -218,3 +258,28 @@ export type AuditEvents = z.infer<typeof AuditEventsSchema>;
 
 export const FindingLifecycleActionSchema = z.enum(["ACKNOWLEDGE", "SUPPRESS", "REOPEN"]);
 export const FindingLifecycleResponseSchema = z.object({ item: BackendFindingSchema });
+
+export const RemediationItemSchema = z.object({
+  proposalId: z.string(),
+  findingId: z.string(),
+  actionId: RemediationActionIdSchema,
+  status: z.enum(["PROPOSED", "APPROVED", "EXECUTED", "DRY_RUN_COMPLETE", "FAILED"]),
+  revision: z.number(),
+  dryRun: z.boolean(),
+  createdAt: z.string(),
+  expiresAt: z.string(),
+  createdBy: z.object({ sub: z.string(), displayName: z.string().optional(), role: z.string().optional() }).passthrough(),
+  approvedBy: z.object({ sub: z.string(), displayName: z.string().optional(), role: z.string().optional() }).passthrough().optional(),
+  approvedAt: z.string().optional(),
+  reason: z.string().optional(),
+  resourceId: z.string(),
+  resourceType: z.string(),
+  plan: z.object({ before: z.unknown(), after: z.unknown(), rollback: z.unknown(), description: z.string() }).passthrough(),
+  execution: z.object({ dryRun: z.boolean(), status: z.string(), completedAt: z.string().optional() }).passthrough().optional(),
+}).passthrough();
+export const RemediationDetailSchema = z.object({ item: RemediationItemSchema });
+export const RemediationsSchema = z.object({
+  items: z.array(RemediationItemSchema),
+  count: z.number(),
+  nextToken: z.string().nullable(),
+});

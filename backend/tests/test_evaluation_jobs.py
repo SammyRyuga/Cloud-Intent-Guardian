@@ -107,6 +107,37 @@ class EvaluationJobsTests(unittest.TestCase):
             hidden = module.lambda_handler(get_event, None)
         self.assertEqual(hidden["statusCode"], 404)
 
+    def test_history_list_rejects_legacy_rows_omitted_from_existing_gsi(self):
+        module = importlib.import_module("evaluations.app")
+        self.db.Table("jobs-evaluations").put_item(Item={
+            "evaluationId": "legacy-evaluation", "accountId": "123456789012",
+            "region": "ap-south-1", "createdAt": "2026-10-01T00:00:00Z",
+        })
+        event = {"requestContext": {"http": {"method": "GET"}, **self.claims("viewer")}}
+        with patch.object(module, "dynamodb_resource", return_value=self.db):
+            result = module.lambda_handler(event, None)
+        self.assertEqual(result["statusCode"], 409)
+        self.assertEqual(decoded(result)["error"]["code"], "EVALUATION_HISTORY_MIGRATION_REQUIRED")
+        self.assertIn("backfill", decoded(result)["error"]["details"]["remediation"])
+
+    def test_get_status_reconciles_expired_job_and_returns_retry_bounds(self):
+        module = importlib.import_module("evaluations.app")
+        scope = "123456789012#ap-south-1#dev"
+        job = new_job(self.db, {"sub": "actor-1", "displayName": "Test Actor"}, self.intent, scope)
+        self.db.Table("jobs-evaluations").update_item(
+            Key={"evaluationId": job["evaluationId"]},
+            UpdateExpression="SET deadlineAt = :past",
+            ExpressionAttributeValues={":past": "2000-01-01T00:00:00Z"},
+        )
+        event = {"requestContext": {"http": {"method": "GET"}, **self.claims("viewer")},
+                 "pathParameters": {"evaluationId": job["evaluationId"]}}
+        with patch.object(module, "dynamodb_resource", return_value=self.db):
+            result = module.lambda_handler(event, None)
+        item = decoded(result)["item"]
+        self.assertEqual(item["status"], "FAILED")
+        self.assertEqual(item["attemptCount"], 0)
+        self.assertEqual(item["deadlineAt"], "2000-01-01T00:00:00Z")
+
     def test_queue_requires_worker_and_fixture_mode_never_contacts_cloud(self):
         module = importlib.import_module("evaluations.app")
         event = {"requestContext": {"http": {"method": "POST"}, **self.claims()}, "body": "{}"}
@@ -190,6 +221,37 @@ class EvaluationJobsTests(unittest.TestCase):
             artifact_limit_check(chunk)
             self.assertEqual(hashlib.sha256(chunk["data"].encode()).hexdigest(), chunk["sha256"])
         self.assertTrue(manifest["complete"])
+
+    def test_chunking_roundtrips_unicode_across_chunk_boundaries(self):
+        from common.evaluation_jobs import ARTIFACT_CHUNK_BYTES, chunk_artifacts
+        artifacts = [{"kind": "snapshot", "value": "é🛰" * (ARTIFACT_CHUNK_BYTES // 3)}]
+        chunks, manifest = chunk_artifacts("unicode-evaluation", artifacts)
+        combined = "".join(chunk["data"] for chunk in chunks)
+        self.assertGreater(len(chunks), 1)
+        self.assertEqual(json.loads(combined), artifacts)
+        self.assertEqual(hashlib.sha256(combined.encode("utf-8")).hexdigest(), manifest["sha256"])
+
+    def test_finding_write_never_adopts_other_or_unscoped_ownership(self):
+        from common.evaluation_jobs import JobError
+        from evaluation_worker.app import _finding_write
+        job = {"createdOrder": "2026-10-15T00:00:00Z#job", "evaluationId": "job",
+               "scopeKey": "123456789012#ap-south-1#dev", "intentId": self.intent_id,
+               "intentVersion": 1}
+        rows = [
+            {"findingId": "foreign-scope", "scopeKey": "999999999999#ap-south-1#dev", "intentId": self.intent_id},
+            {"findingId": "foreign-intent", "scopeKey": job["scopeKey"], "intentId": "other-intent"},
+            {"findingId": "legacy-unscoped", "intentId": self.intent_id},
+        ]
+        for existing in rows:
+            self.db.Table("jobs-findings").put_item(Item=existing)
+            proposed = {"findingId": existing["findingId"], "intentId": self.intent_id,
+                        "status": "OPEN", "title": "test"}
+            with self.subTest(finding_id=existing["findingId"]):
+                with self.assertRaisesRegex(JobError, "not owned"):
+                    _finding_write(self.db, self.db.Table("jobs-findings"), "jobs-audit", job,
+                                   proposed, {"sub": "worker", "displayName": "Worker"})
+            persisted = self.db.Table("jobs-findings").get_item(Key={"findingId": existing["findingId"]})["Item"]
+            self.assertEqual(persisted, existing)
 
 
 if __name__ == "__main__":

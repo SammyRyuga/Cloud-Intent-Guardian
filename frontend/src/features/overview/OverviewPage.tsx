@@ -17,8 +17,9 @@ export function OverviewPage() {
   const queryClient = useQueryClient();
   const runEvaluation = useRunEvaluation();
   const [activeEvaluationId, setActiveEvaluationId] = useState<string | null>(null);
+  const [historyCursor, setHistoryCursor] = useState<string | undefined>();
   const activeEvaluation = useEvaluation(activeEvaluationId);
-  const history = useEvaluations();
+  const history = useEvaluations({ cursor: historyCursor });
   const currentStatus = activeEvaluation.data?.item.status;
   const isEvaluationActive = currentStatus === 'QUEUED' || currentStatus === 'RUNNING';
 
@@ -178,7 +179,7 @@ export function OverviewPage() {
                   <ul className="divide-y divide-rule">
                     {history.data.items.map((item) => (
                       <li key={item.evaluationId} className="py-2 flex flex-wrap items-center justify-between gap-2 text-sm">
-                        <span className="font-mono text-xs">{item.evaluationId}</span>
+                        <button className="font-mono text-xs underline text-left" onClick={() => setActiveEvaluationId(item.evaluationId)} aria-label={`Inspect evaluation ${item.evaluationId}`}>{item.evaluationId}</button>
                         <span>{item.status}</span>
                         <span className="text-pencil">{item.createdAt ? formatDateTime(item.createdAt) : 'Not recorded'}</span>
                         {item.intentVersion !== undefined && item.intentVersion !== null && <span className="text-pencil">Intent version {item.intentVersion}</span>}
@@ -187,6 +188,10 @@ export function OverviewPage() {
                   </ul>
                 )}
                 {history.error && <Button variant="secondary" size="sm" onClick={() => history.refetch()}>Retry history</Button>}
+                <div className="mt-3 flex gap-2">
+                  {historyCursor && <Button variant="secondary" size="sm" onClick={() => setHistoryCursor(undefined)}>First page</Button>}
+                  {history.data?.nextToken && <Button variant="secondary" size="sm" onClick={() => setHistoryCursor(history.data!.nextToken!)}>Next page</Button>}
+                </div>
               </Card>
             )}
           </>

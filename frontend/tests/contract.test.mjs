@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as fixtures from '../src/api/mocks/fixtures.ts';
 import * as schemas from '../src/api/schemas.ts';
+import * as backendSchemas from '../src/api/backendSchemas.ts';
 
 for (const [name, schema, value] of [
   ['system status', schemas.SystemStatusSchema, fixtures.mockSystemStatus],
@@ -10,7 +11,6 @@ for (const [name, schema, value] of [
   ['architecture', schemas.ArchitectureGraphSchema, fixtures.mockArchitectureGraph],
   ['intents', schemas.IntentSchema.array(), fixtures.mockIntents],
   ['drift events', schemas.DriftEventSchema.array(), fixtures.mockDriftEvents],
-  ['remediation', schemas.RemediationRequestSchema.array(), fixtures.mockRemediations],
   ['audit events', schemas.AuditEventsResponseSchema, fixtures.mockAuditResponse],
   ['accepted evaluation', schemas.EvaluationAcceptedSchema, fixtures.mockEvaluationAccepted],
   ['evaluation detail', schemas.EvaluationDetailSchema, { item: fixtures.mockEvaluation }],
@@ -20,6 +20,10 @@ for (const [name, schema, value] of [
     schema.parse(value);
   });
 }
+
+test('remediation mock fixture matches the backend proposal envelope', () => {
+  backendSchemas.RemediationsSchema.parse({ items: fixtures.mockRemediations, count: fixtures.mockRemediations.length, nextToken: null });
+});
 
 test('architecture fixture includes Phase 1 classifications and optional transport fields', () => {
   const graph = schemas.ArchitectureGraphSchema.parse(fixtures.mockArchitectureGraph);

@@ -12,6 +12,19 @@ Metadata:
         scope: project
 
 Parameters:
+  EnableLLM:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  BedrockModelId:
+    Type: String
+    Default: ''
+    Description: Explicit region-supported model ID. No default model or cross-region inference.
+  BedrockModelArn:
+    Type: String
+    Default: arn:aws:bedrock:us-east-1::foundation-model/NOTCONFIGURED
+    AllowedPattern: '^arn:aws[a-zA-Z-]*:bedrock:[a-z0-9-]+:[0-9]*:(foundation-model|inference-profile)/[a-zA-Z0-9.:-]+$'
+    Description: Exact reviewed model ARN for optional InvokeModel permission.
   EnableAsyncWorker:
     Type: String
     Default: 'false'
@@ -55,7 +68,17 @@ Parameters:
     Default: http://localhost:5173/login
     Description: Exact frontend OAuth sign-out return URL.
 
+Rules:
+  BedrockConfigurationRequired:
+    RuleCondition: !Equals [!Ref EnableLLM, 'true']
+    Assertions:
+      - Assert: !Not [!Equals [!Ref BedrockModelId, '']]
+        AssertDescription: Optional Bedrock escalation requires an explicit reviewed model ID.
+      - Assert: !Not [!Equals [!Ref BedrockModelArn, 'arn:aws:bedrock:us-east-1::foundation-model/NOTCONFIGURED']]
+        AssertDescription: Optional Bedrock escalation requires an exact model permission ARN.
+
 Conditions:
+  LLMEnabled: !Equals [!Ref EnableLLM, 'true']
   AsyncWorkerEnabled: !Equals [!Ref EnableAsyncWorker, 'true']
   UseExistingRole: !Not [!Equals [!Ref ExistingExecutionRoleArn, 'arn:aws:iam::000000000000:role/NOT_CONFIGURED']]
   ConfigEnabled: !Equals [!Ref EnableConfig, 'true']
@@ -80,6 +103,9 @@ Globals:
         TOPOLOGY_ENABLED: 'true'
         CIG_ACCOUNT_ID: !Ref AWS::AccountId
         CIG_LOCAL_ROLE: admin
+        LLM_ENABLED: !Ref EnableLLM
+        LLM_PROVIDER: bedrock
+        BEDROCK_MODEL_ID: !Ref BedrockModelId
         ASYNC_WORKER_ENABLED: !Ref EnableAsyncWorker
         INTENT_VERSIONS_TABLE: !Ref IntentVersionsTable
         AUDIT_TABLE: !Ref AuditEventsTable
@@ -659,6 +685,13 @@ Resources:
           FINDINGS_TABLE: !Ref FindingsTable
           EVALUATIONS_TABLE: !Ref EvaluationsTable
       Policies:
+        - !If
+          - LLMEnabled
+          - Statement:
+              - Effect: Allow
+                Action: bedrock:InvokeModel
+                Resource: !Ref BedrockModelArn
+          - !Ref AWS::NoValue
         - DynamoDBCrudPolicy: {TableName: !Ref IntentsTable}
         - DynamoDBReadPolicy: {TableName: !Ref IntentVersionsTable}
         - DynamoDBCrudPolicy: {TableName: !Ref FindingsTable}

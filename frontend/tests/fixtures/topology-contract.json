@@ -1,7 +1,7 @@
 {
   "created": {
     "item": {
-      "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
+      "intentId": "9307df0a-cb59-4546-a25f-13f6de2f9f1a",
       "schemaVersion": 2,
       "name": "Local three-tier intent",
       "description": "Simulated topology for local development",
@@ -161,15 +161,15 @@
         }
       ],
       "criticality": {
-        "worker": "MEDIUM",
         "api": "HIGH",
-        "db": "CRITICAL",
-        "web": "MEDIUM"
+        "worker": "MEDIUM",
+        "web": "MEDIUM",
+        "db": "CRITICAL"
       },
       "version": 1,
       "status": "DRAFT",
-      "createdAt": "2026-10-15T18:33:20.683745Z",
-      "updatedAt": "2026-10-15T18:33:20.683745Z",
+      "createdAt": "2026-10-15T18:36:47.897694Z",
+      "updatedAt": "2026-10-15T18:36:47.897694Z",
       "approvedAt": null,
       "createdBy": "contract-user",
       "sourceType": "JSON_CONSTRAINT_MANIFEST",
@@ -180,7 +180,7 @@
   },
   "approved": {
     "item": {
-      "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
+      "intentId": "9307df0a-cb59-4546-a25f-13f6de2f9f1a",
       "schemaVersion": 2,
       "name": "Local three-tier intent",
       "description": "Simulated topology for local development",
@@ -340,16 +340,16 @@
         }
       ],
       "criticality": {
-        "worker": "MEDIUM",
         "api": "HIGH",
-        "db": "CRITICAL",
-        "web": "MEDIUM"
+        "worker": "MEDIUM",
+        "web": "MEDIUM",
+        "db": "CRITICAL"
       },
       "version": 1,
       "status": "APPROVED",
-      "createdAt": "2026-10-15T18:33:20.683745Z",
-      "updatedAt": "2026-10-15T18:33:20.697297Z",
-      "approvedAt": "2026-10-15T18:33:20.697297Z",
+      "createdAt": "2026-10-15T18:36:47.897694Z",
+      "updatedAt": "2026-10-15T18:36:47.911693Z",
+      "approvedAt": "2026-10-15T18:36:47.911693Z",
       "createdBy": "contract-user",
       "sourceType": "JSON_CONSTRAINT_MANIFEST",
       "scopeKey": "fixture-account#ap-south-1#dev",
@@ -362,7 +362,7 @@
     "view": "INTENT",
     "nodes": [
       {
-        "id": "intent:f6919b22-9fcb-430f-aad9-c81f2dc465bc:component:api",
+        "id": "intent:9307df0a-cb59-4546-a25f-13f6de2f9f1a:component:api",
         "label": "api",
         "resourceType": "INTENT_COMPONENT",
         "diffState": "UNKNOWN",
@@ -383,7 +383,7 @@
         "evidence": []
       },
       {
-        "id": "intent:f6919b22-9fcb-430f-aad9-c81f2dc465bc:component:db",
+        "id": "intent:9307df0a-cb59-4546-a25f-13f6de2f9f1a:component:db",
         "label": "db",
         "resourceType": "INTENT_COMPONENT",
         "diffState": "UNKNOWN",
@@ -404,7 +404,7 @@
         "evidence": []
       },
       {
-        "id": "intent:f6919b22-9fcb-430f-aad9-c81f2dc465bc:component:web",
+        "id": "intent:9307df0a-cb59-4546-a25f-13f6de2f9f1a:component:web",
         "label": "web",
         "resourceType": "INTENT_COMPONENT",
         "diffState": "UNKNOWN",
@@ -425,7 +425,7 @@
         "evidence": []
       },
       {
-        "id": "intent:f6919b22-9fcb-430f-aad9-c81f2dc465bc:component:worker",
+        "id": "intent:9307df0a-cb59-4546-a25f-13f6de2f9f1a:component:worker",
         "label": "worker",
         "resourceType": "INTENT_COMPONENT",
         "diffState": "UNKNOWN",
@@ -448,9 +448,9 @@
     ],
     "edges": [
       {
-        "id": "016859a8c6e8d97ceb5bdfba",
-        "source": "intent:f6919b22-9fcb-430f-aad9-c81f2dc465bc:component:web",
-        "target": "intent:f6919b22-9fcb-430f-aad9-c81f2dc465bc:component:api",
+        "id": "1fee3fad6e1f030bb8a8fb0d",
+        "source": "intent:9307df0a-cb59-4546-a25f-13f6de2f9f1a:component:web",
+        "target": "intent:9307df0a-cb59-4546-a25f-13f6de2f9f1a:component:api",
         "relationshipType": "NETWORK_REACHABILITY",
         "diffState": "UNKNOWN",
         "declarationId": "web-api",
@@ -458,9 +458,9 @@
         "evidence": []
       },
       {
-        "id": "a62637fe31eb35e35d6b002c",
-        "source": "intent:f6919b22-9fcb-430f-aad9-c81f2dc465bc:component:api",
-        "target": "intent:f6919b22-9fcb-430f-aad9-c81f2dc465bc:component:db",
+        "id": "4b730b6b581f8a8996fd1880",
+        "source": "intent:9307df0a-cb59-4546-a25f-13f6de2f9f1a:component:api",
+        "target": "intent:9307df0a-cb59-4546-a25f-13f6de2f9f1a:component:db",
         "relationshipType": "NETWORK_REACHABILITY",
         "diffState": "UNKNOWN",
         "declarationId": "api-db",
@@ -472,8 +472,8 @@
     "partial": false,
     "warnings": [],
     "totalNodeCount": 4,
-    "asOf": "2026-10-15T18:33:20.697297Z",
-    "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
+    "asOf": "2026-10-15T18:36:47.911693Z",
+    "intentId": "9307df0a-cb59-4546-a25f-13f6de2f9f1a",
     "intentVersion": 1,
     "snapshotId": null,
     "coverage": {}
@@ -631,7 +631,7 @@
     "warnings": [],
     "totalNodeCount": 5,
     "asOf": "2026-10-15T00:00:00Z",
-    "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
+    "intentId": "9307df0a-cb59-4546-a25f-13f6de2f9f1a",
     "intentVersion": 1,
     "snapshotId": "fixture-lambda-db-bypass",
     "coverage": {
@@ -648,9 +648,9 @@
   },
   "bypassEvaluation": {
     "evaluation": {
-      "evaluationId": "b0aca5bb-fd04-4ea5-9cca-076182b23b62",
+      "evaluationId": "85044b1a-3ef6-4b99-9a0c-27c98eb4e5cb",
       "status": "SUCCEEDED",
-      "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
+      "intentId": "9307df0a-cb59-4546-a25f-13f6de2f9f1a",
       "intentName": "Local three-tier intent",
       "intentVersion": 1,
       "intentHash": "d4db8af6cfa8fd69060462a5a1aaf1a79f56225215f354850b545404c7dff206",
@@ -814,25 +814,25 @@
           }
         ],
         "criticality": {
-          "worker": "MEDIUM",
           "api": "HIGH",
-          "db": "CRITICAL",
-          "web": "MEDIUM"
+          "worker": "MEDIUM",
+          "web": "MEDIUM",
+          "db": "CRITICAL"
         },
-        "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
+        "intentId": "9307df0a-cb59-4546-a25f-13f6de2f9f1a",
         "version": 1,
         "activeVersion": 1,
         "contentHash": "d4db8af6cfa8fd69060462a5a1aaf1a79f56225215f354850b545404c7dff206",
         "status": "APPROVED"
       },
       "scopeKey": "fixture-account#ap-south-1#dev",
-      "createdAt": "2026-10-15T18:33:20.850884Z",
-      "createdOrder": "2026-10-15T18:33:20.850884Z#b0aca5bb-fd04-4ea5-9cca-076182b23b62",
+      "createdAt": "2026-10-15T18:36:48.089241Z",
+      "createdOrder": "2026-10-15T18:36:48.089241Z#85044b1a-3ef6-4b99-9a0c-27c98eb4e5cb",
       "startedAt": null,
-      "finishedAt": "2026-10-15T18:33:20.963591Z",
+      "finishedAt": "2026-10-15T18:36:48.223502Z",
       "progressStage": "SUCCEEDED",
       "attemptCount": 1,
-      "deadlineAt": "2026-10-15T18:48:20.850896Z",
+      "deadlineAt": "2026-10-15T18:51:48.089257Z",
       "summary": {
         "resourceCount": 5,
         "violationsFound": 3,
@@ -851,7 +851,7 @@
       "warnings": [],
       "reason": "",
       "createdBy": "contract-user",
-      "updatedAt": "2026-10-15T18:33:20.963591Z",
+      "updatedAt": "2026-10-15T18:36:48.223502Z",
       "simulated": true,
       "ruleResults": [
         {
@@ -942,10 +942,10 @@
     },
     "findings": [
       {
-        "findingId": "01ea4e1eb3bcde8e1c84a1adb3825a1f",
-        "title": "A source-to-target path bypasses the required intermediary sequence. - fixture-db",
-        "description": "A source-to-target path bypasses the required intermediary sequence.",
-        "explanation": "A source-to-target path bypasses the required intermediary sequence.",
+        "findingId": "244147e1a4d64907e2a84039979b8397",
+        "title": "A forbidden directed path is supported by the selected edge evidence. - fixture-db",
+        "description": "A forbidden directed path is supported by the selected edge evidence.",
+        "explanation": "A forbidden directed path is supported by the selected edge evidence.",
         "severity": "HIGH",
         "category": "NETWORK_PATH",
         "status": "OPEN",
@@ -954,14 +954,14 @@
         "resourceType": "AWS::RDS::DBInstance",
         "region": "ap-south-1",
         "accountId": "fixture-account",
-        "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
+        "intentId": "9307df0a-cb59-4546-a25f-13f6de2f9f1a",
         "intentName": "Local three-tier intent",
         "intentVersion": 1,
-        "constraintId": "constraint:worker-via-api",
-        "ruleId": "REQUIRED_INTERMEDIARY",
+        "constraintId": "constraint:no-direct-worker-db",
+        "ruleId": "FORBIDDEN_PATH",
         "expected": {
-          "constraintType": "REQUIRED_INTERMEDIARY",
-          "description": "A source-to-target path bypasses the required intermediary sequence."
+          "constraintType": "FORBIDDEN_PATH",
+          "description": "A forbidden directed path is supported by the selected edge evidence."
         },
         "observed": {
           "resourceId": "fixture-db",
@@ -991,12 +991,7 @@
               ],
               "relationshipType": "NETWORK_REACHABILITY"
             }
-          ],
-          "observed": {
-            "requiredIntermediaries": [
-              "api"
-            ]
-          }
+          ]
         },
         "evidence": [
           {
@@ -1013,10 +1008,10 @@
             }
           }
         ],
-        "firstSeenAt": "2026-10-15T18:33:20.905958Z",
-        "lastSeenAt": "2026-10-15T18:33:20.931997Z",
-        "updatedAt": "2026-10-15T18:33:20.931997Z",
-        "evaluationId": "b0aca5bb-fd04-4ea5-9cca-076182b23b62",
+        "firstSeenAt": "2026-10-15T18:36:48.159818Z",
+        "lastSeenAt": "2026-10-15T18:36:48.175501Z",
+        "updatedAt": "2026-10-15T18:36:48.175501Z",
+        "evaluationId": "85044b1a-3ef6-4b99-9a0c-27c98eb4e5cb",
         "simulated": true,
         "constraintSeverity": "HIGH",
         "confidence": "HIGH",
@@ -1060,12 +1055,12 @@
           "explanation": "HIGH base severity (60) + 15 component criticality + 2 blast-radius points + 5 exposure points + 0 confidence points = 82/100 (HIGH)."
         },
         "scopeKey": "fixture-account#ap-south-1#dev",
-        "scopeIntentKey": "fixture-account#ap-south-1#dev#f6919b22-9fcb-430f-aad9-c81f2dc465bc",
-        "lastEvaluationOrder": "2026-10-15T18:33:20.850884Z#b0aca5bb-fd04-4ea5-9cca-076182b23b62",
+        "scopeIntentKey": "fixture-account#ap-south-1#dev#9307df0a-cb59-4546-a25f-13f6de2f9f1a",
+        "lastEvaluationOrder": "2026-10-15T18:36:48.089241Z#85044b1a-3ef6-4b99-9a0c-27c98eb4e5cb",
         "revision": 0
       },
       {
-        "findingId": "111ec2d4636205b0c2a5878cabb6e857",
+        "findingId": "46681d79da3651d5f15fa3ba5c60575b",
         "title": "An explicit boundary DENY or bypassed required intermediary has a witnessed path. - fixture-db",
         "description": "An explicit boundary DENY or bypassed required intermediary has a witnessed path.",
         "explanation": "An explicit boundary DENY or bypassed required intermediary has a witnessed path.",
@@ -1077,7 +1072,7 @@
         "resourceType": "AWS::RDS::DBInstance",
         "region": "ap-south-1",
         "accountId": "fixture-account",
-        "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
+        "intentId": "9307df0a-cb59-4546-a25f-13f6de2f9f1a",
         "intentName": "Local three-tier intent",
         "intentVersion": 1,
         "constraintId": "constraint:service-data",
@@ -1151,10 +1146,10 @@
             }
           }
         ],
-        "firstSeenAt": "2026-10-15T18:33:20.905950Z",
-        "lastSeenAt": "2026-10-15T18:33:20.925613Z",
-        "updatedAt": "2026-10-15T18:33:20.925613Z",
-        "evaluationId": "b0aca5bb-fd04-4ea5-9cca-076182b23b62",
+        "firstSeenAt": "2026-10-15T18:36:48.159828Z",
+        "lastSeenAt": "2026-10-15T18:36:48.180830Z",
+        "updatedAt": "2026-10-15T18:36:48.180830Z",
+        "evaluationId": "85044b1a-3ef6-4b99-9a0c-27c98eb4e5cb",
         "simulated": true,
         "constraintSeverity": "MEDIUM",
         "confidence": "HIGH",
@@ -1198,15 +1193,15 @@
           "explanation": "MEDIUM base severity (35) + 15 component criticality + 2 blast-radius points + 5 exposure points + 0 confidence points = 57/100 (MEDIUM)."
         },
         "scopeKey": "fixture-account#ap-south-1#dev",
-        "scopeIntentKey": "fixture-account#ap-south-1#dev#f6919b22-9fcb-430f-aad9-c81f2dc465bc",
-        "lastEvaluationOrder": "2026-10-15T18:33:20.850884Z#b0aca5bb-fd04-4ea5-9cca-076182b23b62",
+        "scopeIntentKey": "fixture-account#ap-south-1#dev#9307df0a-cb59-4546-a25f-13f6de2f9f1a",
+        "lastEvaluationOrder": "2026-10-15T18:36:48.089241Z#85044b1a-3ef6-4b99-9a0c-27c98eb4e5cb",
         "revision": 0
       },
       {
-        "findingId": "8d1c1aaf6149b71bcfeb45e1f755cd83",
-        "title": "A forbidden directed path is supported by the selected edge evidence. - fixture-db",
-        "description": "A forbidden directed path is supported by the selected edge evidence.",
-        "explanation": "A forbidden directed path is supported by the selected edge evidence.",
+        "findingId": "b464520529192c6419f2de1b3951473a",
+        "title": "A source-to-target path bypasses the required intermediary sequence. - fixture-db",
+        "description": "A source-to-target path bypasses the required intermediary sequence.",
+        "explanation": "A source-to-target path bypasses the required intermediary sequence.",
         "severity": "HIGH",
         "category": "NETWORK_PATH",
         "status": "OPEN",
@@ -1215,14 +1210,14 @@
         "resourceType": "AWS::RDS::DBInstance",
         "region": "ap-south-1",
         "accountId": "fixture-account",
-        "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
+        "intentId": "9307df0a-cb59-4546-a25f-13f6de2f9f1a",
         "intentName": "Local three-tier intent",
         "intentVersion": 1,
-        "constraintId": "constraint:no-direct-worker-db",
-        "ruleId": "FORBIDDEN_PATH",
+        "constraintId": "constraint:worker-via-api",
+        "ruleId": "REQUIRED_INTERMEDIARY",
         "expected": {
-          "constraintType": "FORBIDDEN_PATH",
-          "description": "A forbidden directed path is supported by the selected edge evidence."
+          "constraintType": "REQUIRED_INTERMEDIARY",
+          "description": "A source-to-target path bypasses the required intermediary sequence."
         },
         "observed": {
           "resourceId": "fixture-db",
@@ -1252,7 +1247,12 @@
               ],
               "relationshipType": "NETWORK_REACHABILITY"
             }
-          ]
+          ],
+          "observed": {
+            "requiredIntermediaries": [
+              "api"
+            ]
+          }
         },
         "evidence": [
           {
@@ -1269,10 +1269,10 @@
             }
           }
         ],
-        "firstSeenAt": "2026-10-15T18:33:20.905939Z",
-        "lastSeenAt": "2026-10-15T18:33:20.920402Z",
-        "updatedAt": "2026-10-15T18:33:20.920402Z",
-        "evaluationId": "b0aca5bb-fd04-4ea5-9cca-076182b23b62",
+        "firstSeenAt": "2026-10-15T18:36:48.159835Z",
+        "lastSeenAt": "2026-10-15T18:36:48.186762Z",
+        "updatedAt": "2026-10-15T18:36:48.186762Z",
+        "evaluationId": "85044b1a-3ef6-4b99-9a0c-27c98eb4e5cb",
         "simulated": true,
         "constraintSeverity": "HIGH",
         "confidence": "HIGH",
@@ -1316,8 +1316,8 @@
           "explanation": "HIGH base severity (60) + 15 component criticality + 2 blast-radius points + 5 exposure points + 0 confidence points = 82/100 (HIGH)."
         },
         "scopeKey": "fixture-account#ap-south-1#dev",
-        "scopeIntentKey": "fixture-account#ap-south-1#dev#f6919b22-9fcb-430f-aad9-c81f2dc465bc",
-        "lastEvaluationOrder": "2026-10-15T18:33:20.850884Z#b0aca5bb-fd04-4ea5-9cca-076182b23b62",
+        "scopeIntentKey": "fixture-account#ap-south-1#dev#9307df0a-cb59-4546-a25f-13f6de2f9f1a",
+        "lastEvaluationOrder": "2026-10-15T18:36:48.089241Z#85044b1a-3ef6-4b99-9a0c-27c98eb4e5cb",
         "revision": 0
       }
     ],
@@ -1325,26 +1325,26 @@
   },
   "queuedEvaluation": {
     "evaluation": {
-      "evaluationId": "b0aca5bb-fd04-4ea5-9cca-076182b23b62",
+      "evaluationId": "85044b1a-3ef6-4b99-9a0c-27c98eb4e5cb",
       "status": "QUEUED",
-      "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
+      "intentId": "9307df0a-cb59-4546-a25f-13f6de2f9f1a",
       "intentVersion": 1,
-      "createdAt": "2026-10-15T18:33:20.850884Z"
+      "createdAt": "2026-10-15T18:36:48.089241Z"
     },
-    "statusUrl": "/v1/evaluations/b0aca5bb-fd04-4ea5-9cca-076182b23b62"
+    "statusUrl": "/v1/evaluations/85044b1a-3ef6-4b99-9a0c-27c98eb4e5cb"
   },
   "evaluationDetail": {
     "item": {
-      "evaluationId": "b0aca5bb-fd04-4ea5-9cca-076182b23b62",
+      "evaluationId": "85044b1a-3ef6-4b99-9a0c-27c98eb4e5cb",
       "status": "SUCCEEDED",
-      "intentId": "f6919b22-9fcb-430f-aad9-c81f2dc465bc",
+      "intentId": "9307df0a-cb59-4546-a25f-13f6de2f9f1a",
       "intentName": "Local three-tier intent",
       "intentVersion": 1,
       "scopeKey": "fixture-account#ap-south-1#dev",
-      "createdAt": "2026-10-15T18:33:20.850884Z",
-      "createdOrder": "2026-10-15T18:33:20.850884Z#b0aca5bb-fd04-4ea5-9cca-076182b23b62",
+      "createdAt": "2026-10-15T18:36:48.089241Z",
+      "createdOrder": "2026-10-15T18:36:48.089241Z#85044b1a-3ef6-4b99-9a0c-27c98eb4e5cb",
       "startedAt": null,
-      "finishedAt": "2026-10-15T18:33:20.963591Z",
+      "finishedAt": "2026-10-15T18:36:48.223502Z",
       "progressStage": "SUCCEEDED",
       "summary": {
         "resourceCount": 5,

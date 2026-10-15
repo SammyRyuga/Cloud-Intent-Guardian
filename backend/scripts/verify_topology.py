@@ -24,7 +24,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--endpoint', default='http://127.0.0.1:18000')
     parser.add_argument('--evidence', default='local-evidence/phase1-topology.json')
+    parser.add_argument('--escalation', action='store_true', help='Use the deterministic local LLM mock and simulated corroboration.')
     args = parser.parse_args()
+    os.environ.update(LLM_ENABLED='true' if args.escalation else 'false', LLM_PROVIDER='mock')
     os.environ.update(CIG_LOCAL='true', DYNAMODB_ENDPOINT_URL=args.endpoint, AWS_REGION='ap-south-1',
         INVENTORY_PROVIDER='fixture', CIG_FIXTURE_SCENARIO='benign')
     for key, (default, _) in TABLES.items():
@@ -63,6 +65,13 @@ def main():
             if name in {'unruled-crossing', 'source-disagreement'}:
                 assert stored['status'] == 'PARTIAL'
                 assert stored['conformance']['percent'] is None
+                if args.escalation:
+                    candidates = [f for f in rows if f.get('tier') == 'TIER_2']
+                    assert candidates, rows
+                    expected = 'NEEDS_HUMAN_REVIEW' if name == 'source-disagreement' else 'CORROBORATED'
+                    assert all(f['reviewStatus'] == expected and not f['actionEligible'] for f in candidates)
+                    if name == 'source-disagreement':
+                        assert all(f['confidence'] == 'LOW' for f in candidates)
             results[name] = {'evaluationId': stored['evaluationId'], 'status': stored['status'],
                              'findingTypes': sorted({row['ruleId'] for row in result['findings']})}
     with patch.object(graph, 'collect_inventory', side_effect=AssertionError('Live collector must not run')):

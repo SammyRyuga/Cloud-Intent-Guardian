@@ -80,6 +80,46 @@ export function FindingDetailPage() {
             {acknowledgeFinding.error && <p role="alert" className="text-sm text-sev-critical">{acknowledgeFinding.error.message}</p>}
 
             {finding.evidence && <Card><CardHeader title="Evaluation evidence" /><p className="text-sm mb-3">{finding.explanation}</p>{finding.evidence.map((entry, index) => <div key={index} className="border-t border-rule py-3"><p className="text-xs">{entry.source} - {formatDateTime(entry.observedAt)}</p><CopyableId id={entry.resourceId} /><pre className="text-xs whitespace-pre-wrap break-words mt-2">{JSON.stringify(entry.details, null, 2)}</pre></div>)}</Card>}
+            {(finding.tier || finding.reviewStatus || finding.crossValidation || finding.llmConclusion) && (
+              <Card>
+                <CardHeader
+                  title="Cross-validation review"
+                  subtitle={[finding.tier, finding.reviewStatus].filter(Boolean).join(' · ')}
+                />
+                {finding.crossValidation && <div className="space-y-3 text-sm">
+                  <p>{finding.crossValidation.reason}</p>
+                  <p className="text-xs text-graphite">
+                    {finding.crossValidation.accepted ? 'Cross-validation accepted' : 'Cross-validation not accepted'}
+                    {finding.crossValidation.simulated ? ' · simulated evidence' : ''}
+                  </p>
+                  {finding.crossValidation.sourceVerdicts.length > 0 ? (
+                    <ul className="divide-y divide-rule border-y border-rule">
+                      {finding.crossValidation.sourceVerdicts.map((verdict, index) => <li key={`${verdict.evidenceId}-${index}`} className="py-3 space-y-1">
+                        <div className="flex flex-wrap gap-x-2 text-xs font-medium">
+                          <span>{verdict.sourceFamily}</span><span>{verdict.verdict}</span>
+                          {verdict.eligible !== undefined && <span>{verdict.eligible ? 'Eligible' : 'Not eligible'}</span>}
+                        </div>
+                        <p className="text-xs">{verdict.predicate}</p>
+                        <div className="flex flex-wrap gap-2 text-[11px] text-graphite">
+                          <span>Observed {formatDateTime(verdict.observedAt)}</span>
+                          {verdict.evidenceId && <span>Evidence <CopyableId id={verdict.evidenceId} /></span>}
+                          {verdict.originId && <span>Origin <CopyableId id={verdict.originId} /></span>}
+                          {verdict.sourceId && <span>Source <CopyableId id={verdict.sourceId} /></span>}
+                          {verdict.targetId && <span>Target <CopyableId id={verdict.targetId} /></span>}
+                          {verdict.snapshotId && <span>Snapshot <CopyableId id={verdict.snapshotId} /></span>}
+                        </div>
+                      </li>)}
+                    </ul>
+                  ) : <p className="text-xs text-graphite">The server returned no source verdicts for this finding.</p>}
+                </div>}
+                {finding.llmConclusion && <div className="mt-4 border-t border-rule pt-3 space-y-1">
+                  <h3 className="text-xs font-semibold">Advisory model conclusion · {finding.llmConclusion.verdict}</h3>
+                  <p className="text-sm">{finding.llmConclusion.explanation}</p>
+                  <p className="text-xs text-graphite">Candidate {finding.llmConclusion.candidateId}; this conclusion does not change the finding or its eligibility.</p>
+                </div>}
+                {finding.tier === 'TIER_2' && <p className="mt-3 border-t border-rule pt-3 text-xs text-graphite">Tier 2 findings require human review. Automated remediation is unavailable for this tier.</p>}
+              </Card>
+            )}
             {(finding.severityScore !== undefined || finding.severityFactors || finding.confidence || finding.constraintSeverity) && (
               <Card>
                 <CardHeader
