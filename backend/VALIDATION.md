@@ -1,3 +1,45 @@
+## Working prototype deployment (2026-10-16)
+
+User-authorized deployment is live at **https://cloud-intent-guardian.onrender.com**.
+Source: https://github.com/SammyRyuga/Cloud-Intent-Guardian, application commit
+`d081ac1` (Phase 6 code: `cbc11c9`). Render service
+`srv-db8ibed9fdbs73edk180`, verified deploy `dep-db8idgei0phs73fpl62g`.
+The existing DBTHON service was not changed.
+
+AWS stack `cloud-intent-guardian-demo` reached CREATE_COMPLETE in ap-south-1
+using the user-confirmed profile. API:
+https://psqyc1ltj1.execute-api.ap-south-1.amazonaws.com . Cognito pool
+`ap-south-1_1KdLuvAmM`, public web client `39n4qosui6478c7ar8tsr6g8fj`.
+These identifiers are public frontend configuration, not secrets. The worker's
+DynamoDB event source mapping is Enabled. Config, Bedrock, optional evidence
+reads and modifying remediation are disabled; remediation remains dry-run.
+
+Verified live: health HTTP 200; unauthenticated intent request HTTP 401; exact
+Render-origin CORS preflight HTTP 204; root, /login and /overview HTTP 200 with
+the current production bundle. A fresh browser tab reached the configured
+Cognito hosted sign-in form with the correct callback, client and PKCE S256.
+No password or token was entered or retrieved. An initial admin invitation was
+accepted by Cognito, and group membership was confirmed as `admin`. The first
+sign-in requires the owner to change the temporary password sent by Cognito.
+
+Direct IAM-authorized deployed Lambda readiness checks (synthetic viewer event,
+not a Cognito JWT request) returned status 200: source readiness CONNECTED and
+25 inventory resources with partial=false. No intents were created/approved by
+these live checks. A successful real JWT sign-in and protected end-to-end write,
+evaluation and approval journey remain unverified until the owner signs in.
+The local five-scenario/DynamoDB workflow and all 143 backend, 26 frontend and
+13 contract tests passed separately; SAM lint/build and frontend build passed.
+
+The initially open browser tab retained an old pre-configuration bundle and tried
+the placeholder auth domain. Automatic review blocked that attempt. Inspection
+proved the current bundle contains the actual API/pool/domain and no placeholder;
+a fresh tab then reached the correct Cognito UI. No blocked navigation was bypassed.
+
+No Flow Logs or Reachability Analyzer paths existed in the selected region when
+checked. The live adapters are implemented and SDK-stubbed, but positive live
+cross-validation and Bedrock runtime access are unverified. Academy restrictions
+are not established by this deployment to the user's normal AWS account.
+
 ## Live evidence adapters and deployment authorization (2026-10-16)
 
 The Phase 4 live collection gap is closed in code. Optional read-only adapters

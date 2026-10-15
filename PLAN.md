@@ -1,6 +1,6 @@
 # Cloud Intent Guardian development plan
 
-Status: approved by the user; Phases 1-6 implemented and locally validated, including optional live evidence adapters. User-authorized AWS/Render prototype deployment is in progress.
+Status: approved by the user; Phases 1-6 implemented and locally validated, including optional live evidence adapters. User-authorized AWS/Render prototype deployment is live; see INTEGRATION.md for verification and remaining limits.
 Review date: 2026-10-15. Source baseline: `14dea4a`.
 
 This document proposes Phases 1 and 2 in detail and defines the dependencies for

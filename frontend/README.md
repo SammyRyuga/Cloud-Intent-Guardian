@@ -1,6 +1,6 @@
 # Cloud Intent Guardian frontend
 
-React 18, TypeScript, and Vite single-page application for the Cloud Intent Guardian project.
+React 18, TypeScript, and Vite single-page application for the Cloud Intent Guardian project. The authenticated prototype is hosted at [cloud-intent-guardian.onrender.com](https://cloud-intent-guardian.onrender.com); see [deployment evidence](../INTEGRATION.md).
 
 ## Run locally
 

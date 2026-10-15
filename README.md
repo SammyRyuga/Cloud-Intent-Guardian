@@ -2,7 +2,7 @@
 
 Cloud Intent Guardian compares approved architectural intent - components, permitted paths, trust boundaries and criticality - with an evidence-bounded AWS graph, and stores findings with explainable severity and evidence. The current backend uses AWS SAM, Python 3.13 Lambda, API Gateway, Cognito and DynamoDB.
 
-**Start by proving local intent persistence. AWS Academy activation and deployment are separate steps requiring explicit authorization.** Local SAM/DynamoDB integration is verified; AWS deployment and Cognito authentication remain unverified. See [recorded validation](backend/VALIDATION.md).
+**Prototype:** [cloud-intent-guardian.onrender.com](https://cloud-intent-guardian.onrender.com). The user-authorized AWS backend is deployed in ap-south-1 with Cognito sign-in, an enabled evaluation worker, and dry-run remediation. The owner receives the initial admin invitation directly from Cognito. Local/stubbed workflows and live readiness checks are recorded in [validation](backend/VALIDATION.md); the first real authenticated write journey remains unverified. AWS Academy permissions and optional Bedrock/evidence access remain separate checks.
 
 ## Files and current scope
 
