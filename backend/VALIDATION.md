@@ -28,6 +28,11 @@ Checks run against this phase:
 - **SAM lint/validation and build passed** using SAM CLI 1.168.0. Build targets
   Python 3.13/x86_64; dependencies were resolved from public wheels downloaded to
   `/private/tmp/cig-phase-wheels`, with `PIP_NO_INDEX=1`. No cloud API was used.
+- **Frontend gates passed**: `npm run lint` (three existing warnings), `npm test`
+  (20/20), `npm run test:contract` (10/10) and `npm run build`. Generated real
+  handler responses validate in both languages. The architecture chunk is
+  83,476 bytes gzip, within the documented 250 kB gzip budget. No new rendered
+  browser journey was run in this phase; the earlier browser evidence remains dated.
 - `git diff --check` and Python compilation passed. `local-env.json` remains
   ignored. No existing database/container was replaced.
 
