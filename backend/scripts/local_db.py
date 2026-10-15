@@ -19,10 +19,11 @@ TABLES = {
     'EVALUATIONS_TABLE': ('cloud-intent-guardian-dev-evaluations', 'evaluationId'),
     'INTENT_VERSIONS_TABLE': ('cloud-intent-guardian-dev-intent-versions', 'intentId'),
     'AUDIT_TABLE': ('cloud-intent-guardian-dev-audit', 'auditId'),
+    'REMEDIATIONS_TABLE': ('cloud-intent-guardian-dev-remediations', 'proposalId'),
     'EVALUATION_ARTIFACTS_TABLE': ('cloud-intent-guardian-dev-evaluation-artifacts', 'evaluationId'),
 }
 SORT_KEYS = {'INTENT_VERSIONS_TABLE': ('version', 'N'), 'EVALUATION_ARTIFACTS_TABLE': ('artifactKey', 'S')}
-INDEXES = {'FINDINGS_TABLE': ('scope-intent', 'scopeIntentKey', 'findingId'),
+INDEXES = {'REMEDIATIONS_TABLE': ('scope-created', 'scopeKey', 'createdOrder'), 'FINDINGS_TABLE': ('scope-intent', 'scopeIntentKey', 'findingId'),
            'EVALUATIONS_TABLE': ('scope-created', 'scopeKey', 'createdOrder'),
            'AUDIT_TABLE': ('scope-time', 'scopeKey', 'eventOrder')}
 

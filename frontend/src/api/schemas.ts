@@ -240,7 +240,14 @@ export const SystemStatusSchema = z.object({
   evaluatedRegion: z.string(),
   lastSyncAt: z.string(),
   version: z.string(),
-});
+  features: z.object({
+    fixtureInventory: z.boolean().optional(),
+    topology: z.boolean().optional(),
+    evaluations: z.boolean().optional(),
+    remediationProposals: z.boolean().optional(),
+    remediationExecution: z.boolean().optional(),
+  }).passthrough().optional(),
+}).passthrough();
 
 export const EvaluationSchema = z.object({
   evaluationId: z.string(),

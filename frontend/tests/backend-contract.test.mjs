@@ -23,6 +23,12 @@ const escalation = JSON.parse(
     "utf8",
   ),
 );
+const remediation = JSON.parse(
+  readFileSync(
+    new URL("./fixtures/remediation-contract.json", import.meta.url),
+    "utf8",
+  ),
+);
 test("created, listed and approved manifests keep their original backend IDs", () => {
   const created = B.ManifestDetailSchema.parse(wire.created).item;
   const listed = B.ManifestsSchema.parse(wire.intents);
@@ -105,7 +111,8 @@ test("finding adapter preserves IDs, observed timestamps and opaque pagination",
   assert.equal(list.items[0].id, wire.findings.items[0].findingId);
   assert.equal(detail.detectedAt, wire.finding.item.firstSeenAt);
   assert.equal(list.meta.nextCursor, wire.findings.nextToken);
-  assert.equal(detail.remediationAvailable, false);
+  assert.equal(detail.remediationAvailable, wire.finding.item.remediationAvailable);
+  assert.equal(detail.remediationActionId, wire.finding.item.remediationActionId);
   assert.equal(detail.severity, wire.finding.item.severity);
   assert.equal(typeof detail.severityScore, "number");
   assert.equal(detail.severityFactors.formulaVersion, "1");
@@ -155,4 +162,19 @@ test("real escalation findings preserve cross-validation evidence and advisory c
     typeof row.evidenceId === "string" && typeof row.predicate === "string" && typeof row.observedAt === "string")));
   assert.ok(findings.every((finding) => finding.llmConclusion === null ||
     B.LlmConclusionSchema.parse(finding.llmConclusion).candidateId === finding.observed.candidateId));
+});
+test("real remediation handlers preserve approval, revision and dry-run lifecycle", () => {
+  const created = B.RemediationDetailSchema.parse(remediation.created).item;
+  const approved = B.RemediationDetailSchema.parse(remediation.approved).item;
+  const executed = B.RemediationDetailSchema.parse(remediation.executed).item;
+  const listed = B.RemediationsSchema.parse(remediation.list);
+  assert.equal(created.status, "PROPOSED");
+  assert.equal(created.dryRun, true);
+  assert.equal(approved.status, "APPROVED");
+  assert.ok(approved.revision > created.revision);
+  assert.equal(executed.status, "DRY_RUN_COMPLETE");
+  assert.equal(executed.execution.dryRun, true);
+  assert.equal(listed.items[0].proposalId, executed.proposalId);
+  assert.ok(["REMOVE_OPEN_SSH", "ENABLE_S3_BLOCK_PUBLIC_ACCESS"].includes(created.actionId));
+  assert.ok(created.plan.before !== undefined && created.plan.after !== undefined && created.plan.rollback !== undefined);
 });

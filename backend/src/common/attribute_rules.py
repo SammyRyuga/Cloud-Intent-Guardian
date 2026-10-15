@@ -7,7 +7,7 @@ def _violates(constraint, resource):
     attrs = resource.get("attributes") or {}
     if ctype == "S3_BLOCK_PUBLIC_ACCESS" and resource["resourceType"] == "AWS::S3::Bucket":
         value = attrs.get("publicAccessBlockEnabled")
-        return value is False, {"publicAccessBlockEnabled": value, "bucketPolicyPublic": attrs.get("bucketPolicyPublic")}, "All four S3 Block Public Access settings must be enabled."
+        return value is False, {"publicAccessBlockEnabled": value, "bucketPolicyPublic": attrs.get("bucketPolicyPublic"), "publicAccessBlock": attrs.get("publicAccessBlock"), "publicAccessBlockMissing": attrs.get("publicAccessBlockMissing", False)}, "All four S3 Block Public Access settings must be enabled."
     if ctype == "EC2_NO_PUBLIC_IP" and resource["resourceType"] == "AWS::EC2::Instance":
         value = attrs.get("publicIpAddress")
         return bool(value), {"publicIpAddress": value}, "The EC2 instance has a public IPv4 address."

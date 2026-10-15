@@ -68,7 +68,8 @@ class IntegrationContracts(unittest.TestCase):
         finding_id = found['items'][0]['findingId']
         finding = decoded(views.lambda_handler(authed({'pathParameters': {'findingId': finding_id}}), None))
         self.assertEqual(finding['item']['findingId'], finding_id)
-        self.assertFalse(finding['item']['remediationAvailable'])
+        self.assertTrue(finding['item']['remediationAvailable'])
+        self.assertEqual(finding['item']['remediationActionId'], 'REMOVE_OPEN_SSH')
         dashboard = decoded(views.lambda_handler(authed({}), None))
         self.assertEqual(dashboard['totalFindings'], 1)
         self.assertEqual(dashboard['severityCounts']['high'], 1)

@@ -1,6 +1,6 @@
 # Cloud Intent Guardian development plan
 
-Status: approved by the user; Phases 1 and 2 implemented and locally validated.
+Status: approved by the user; Phases 1-5 implemented and locally validated; Phase 6 browser verification in progress.
 Review date: 2026-10-15. Source baseline: `14dea4a`.
 
 This document proposes Phases 1 and 2 in detail and defines the dependencies for
@@ -509,7 +509,7 @@ Update `INTEGRATION.md` and `backend/VALIDATION.md` on every behavior change wit
 the exact commands, outcomes and scope. Keep historical results dated. A required
 check that cannot run is explicitly unverified; do not call a phase fully validated
 or quietly omit it. Commit each completed phase separately with its docs/tests;
-leave unrelated `.DS_Store` files untouched. No phase commit has been made yet.
+leave unrelated `.DS_Store` files untouched. Phase commits and current validation results are recorded in INTEGRATION.md.
 
 Planning verification: read-only source/document review, case-study text extraction,
 Git baseline/status, local tool discovery and ignore check. `sam` was not found on

@@ -74,11 +74,12 @@ export function useArchitectureGraph(
   selection: { intentId?: string; version?: string } = {},
 ) {
   const filters = { intentId: selection.intentId, version: selection.version };
+  const systemStatus = useSystemStatus();
   return useQuery({
     queryKey: queryKeys.architecture(view, filters),
     queryFn: () => apiClient<T.ArchitectureGraph>(endpoints.architecture(view, selection), S.ArchitectureGraphSchema),
     staleTime: 60000,
-    enabled: hasCapability('architecture'),
+    enabled: hasCapability('architecture', systemStatus.data),
   });
 }
 
@@ -109,6 +110,7 @@ export function useDriftEvents() {
 }
 
 export function useRemediations(filters?: { status?: string; cursor?: string }) {
+  const systemStatus = useSystemStatus();
   const params = new URLSearchParams({ limit: '25' });
   if (filters?.status) params.set('status', filters.status);
   if (filters?.cursor) params.set('nextToken', filters.cursor);
@@ -116,15 +118,16 @@ export function useRemediations(filters?: { status?: string; cursor?: string }) 
     queryKey: queryKeys.remediations(filters),
     queryFn: () => apiClient(endpoints.remediations(params.toString()), B.RemediationsSchema),
     staleTime: 30000,
-    enabled: hasCapability('remediation'),
+    enabled: hasCapability('remediation', systemStatus.data),
   });
 }
 
 export function useRemediation(id: string) {
+  const systemStatus = useSystemStatus();
   return useQuery({
     queryKey: queryKeys.remediation(id),
     queryFn: () => apiClient(endpoints.remediation(id), B.RemediationDetailSchema),
-    enabled: Boolean(id) && hasCapability('remediation.detail'),
+    enabled: Boolean(id) && hasCapability('remediation.detail', systemStatus.data),
   });
 }
 
@@ -166,13 +169,14 @@ export function useExecuteRemediation() {
 }
 
 export function useAuditEvents(cursor?: string) {
+  const systemStatus = useSystemStatus();
   const params = new URLSearchParams({ limit: '25' });
   if (cursor) params.set('nextToken', cursor);
   return useQuery({
     queryKey: queryKeys.audit({ cursor }),
     queryFn: () => apiClient(endpoints.audit(params.toString()), B.AuditEventsSchema),
     staleTime: 30000,
-    enabled: hasCapability('auditTrail'),
+    enabled: hasCapability('auditTrail', systemStatus.data),
   });
 }
 
@@ -193,6 +197,7 @@ export function useRunEvaluation() {
 }
 
 export function useEvaluations(filters?: { cursor?: string; intentId?: string; status?: string }) {
+  const systemStatus = useSystemStatus();
   const params = new URLSearchParams({ limit: '25' });
   if (filters?.cursor) params.set('nextToken', filters.cursor);
   if (filters?.intentId) params.set('intentId', filters.intentId);
@@ -201,7 +206,7 @@ export function useEvaluations(filters?: { cursor?: string; intentId?: string; s
     queryKey: queryKeys.evaluations(filters),
     queryFn: () => apiClient(endpoints.evaluations(params.toString()), B.EvaluationsSchema),
     staleTime: 10000,
-    enabled: hasCapability('evaluations'),
+    enabled: hasCapability('evaluations', systemStatus.data),
   });
 }
 

@@ -1,4 +1,4 @@
-import { hasCapability } from '@/config/capabilities';
+import { useCapability } from '@/hooks/useCapability';
 import { env } from '@/config/env';
 import React, { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -16,6 +16,7 @@ export function OverviewPage() {
   const { data: summary, isLoading, isError, error, refetch } = useDashboardSummary();
   const queryClient = useQueryClient();
   const runEvaluation = useRunEvaluation();
+  const evaluationsEnabled = useCapability('evaluations');
   const [activeEvaluationId, setActiveEvaluationId] = useState<string | null>(null);
   const [historyCursor, setHistoryCursor] = useState<string | undefined>();
   const activeEvaluation = useEvaluation(activeEvaluationId);
@@ -51,10 +52,10 @@ export function OverviewPage() {
           variant="primary"
           onClick={handleRunEvaluation}
           isLoading={runEvaluation.isPending || isEvaluationActive}
-          disabled={runEvaluation.isPending || isEvaluationActive || !hasCapability('evaluations')}
+          disabled={runEvaluation.isPending || isEvaluationActive || !evaluationsEnabled}
         >
           <Play className="w-3.5 h-3.5 mr-2 stroke-[1.5]" />
-          {hasCapability('evaluations') ? 'Run evaluation' : 'AWS evaluation not enabled locally'}
+          {evaluationsEnabled ? 'Run evaluation' : 'AWS evaluation not enabled locally'}
         </Button>
       </div>
 
@@ -169,7 +170,7 @@ export function OverviewPage() {
               <span>Region: {summary.evaluatedRegion}</span>
             </div>
 
-            {hasCapability('evaluations') && (
+            {evaluationsEnabled && (
               <Card>
                 <CardHeader title="Evaluation history" subtitle="Server-reported runs in the configured scope" />
                 {history.isLoading && <p className="text-sm text-graphite">Loading evaluation history.</p>}

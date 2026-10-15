@@ -200,7 +200,7 @@ export interface RemediationRequest {
   proposalId: string;
   findingId: string;
   actionId: 'REMOVE_OPEN_SSH' | 'ENABLE_S3_BLOCK_PUBLIC_ACCESS';
-  status: 'PROPOSED' | 'APPROVED' | 'EXECUTED' | 'DRY_RUN_COMPLETE' | 'FAILED';
+  status: 'PROPOSED' | 'APPROVED' | 'EXECUTING' | 'EXECUTED' | 'DRY_RUN_COMPLETE' | 'FAILED';
   revision: number;
   dryRun: boolean;
   createdAt: string;
@@ -247,6 +247,14 @@ export interface SystemStatus {
   evaluatedRegion: string;
   lastSyncAt: string;
   version: string;
+  features?: {
+    fixtureInventory?: boolean;
+    topology?: boolean;
+    evaluations?: boolean;
+    remediationProposals?: boolean;
+    remediationExecution?: boolean;
+    [key: string]: unknown;
+  };
 }
 
 export interface EvaluationRecord {

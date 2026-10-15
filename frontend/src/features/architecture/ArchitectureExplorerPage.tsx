@@ -1,5 +1,5 @@
 import { env } from '@/config/env';
-import { hasCapability } from '@/config/capabilities';
+import { useCapability } from '@/hooks/useCapability';
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -123,6 +123,7 @@ export function ArchitectureExplorerPage() {
   const intentId = searchParams.get('intentId') || undefined;
   const version = searchParams.get('version') || undefined;
   const componentId = searchParams.get('componentId') || '';
+  const architectureEnabled = useCapability('architecture');
   const intents = useManifestIntents();
   const versions = useIntentVersions(intentId || '', undefined);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
@@ -198,7 +199,7 @@ export function ArchitectureExplorerPage() {
 
         {/* View Switcher */}
         <div className="inline-flex rounded-md border border-rule bg-sheet p-1 text-xs font-medium">
-          {(hasCapability('architecture') ? ['DIFF', 'INTENT', 'ACTUAL'] as const : ['ACTUAL'] as const).map((view) => (
+          {(architectureEnabled ? ['DIFF', 'INTENT', 'ACTUAL'] as const : ['ACTUAL'] as const).map((view) => (
             <button
               key={view}
               type="button"
@@ -214,7 +215,7 @@ export function ArchitectureExplorerPage() {
         </div>
       </div>
 
-      {hasCapability('architecture') && currentView !== 'ACTUAL' && <div className="flex flex-wrap gap-3 items-end pb-3">
+      {architectureEnabled && currentView !== 'ACTUAL' && <div className="flex flex-wrap gap-3 items-end pb-3">
         <label className="text-xs">Intent
           <select aria-label="Architecture intent" value={intentId ?? ''} onChange={(event) => setSelectionParam('intentId', event.target.value)} className="mt-1 block min-w-56 border border-rule rounded p-2 bg-sheet">
             <option value="">Choose intent</option>{intents.data?.items.map((item) => <option key={item.intentId} value={item.intentId}>{item.name} · {item.status}</option>)}
@@ -244,7 +245,7 @@ export function ArchitectureExplorerPage() {
 
       {!env.useMocks && graphData && <p className="text-xs text-graphite mb-3">Showing {graphData.nodes.length} resources in the {currentView.toLowerCase()} view.</p>}
       {graphData?.partial && <p role="status" className="text-sm text-sev-medium">Inventory is partial: {graphData.warnings?.map(row => row.message).join('; ')}</p>}
-      <StateBoundary isNotEnabled={!hasCapability('architecture')} isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
+      <StateBoundary isNotEnabled={!architectureEnabled} isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
         <div className="flex-1 rounded-[12px] border border-rule bg-sheet overflow-hidden relative">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 p-3 border-b border-rule text-xs" aria-label="Diff state legend">
             {diffStateLegend.map(({ state, swatch }) => (

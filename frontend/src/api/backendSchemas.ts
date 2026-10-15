@@ -263,7 +263,7 @@ export const RemediationItemSchema = z.object({
   proposalId: z.string(),
   findingId: z.string(),
   actionId: RemediationActionIdSchema,
-  status: z.enum(["PROPOSED", "APPROVED", "EXECUTED", "DRY_RUN_COMPLETE", "FAILED"]),
+  status: z.enum(["PROPOSED", "APPROVED", "EXECUTING", "EXECUTED", "DRY_RUN_COMPLETE", "FAILED"]),
   revision: z.number(),
   dryRun: z.boolean(),
   createdAt: z.string(),

@@ -25,6 +25,7 @@ def main():
     parser.add_argument('--endpoint', default='http://127.0.0.1:18000')
     parser.add_argument('--evidence', default='local-evidence/phase1-topology.json')
     parser.add_argument('--escalation', action='store_true', help='Use the deterministic local LLM mock and simulated corroboration.')
+    parser.add_argument('--remediation', action='store_true', help='Verify proposal, approval and dry-run execution.')
     args = parser.parse_args()
     os.environ.update(LLM_ENABLED='true' if args.escalation else 'false', LLM_PROVIDER='mock')
     os.environ.update(CIG_LOCAL='true', DYNAMODB_ENDPOINT_URL=args.endpoint, AWS_REGION='ap-south-1',
@@ -60,6 +61,22 @@ def main():
                 assert not result['findings'], result
             if name == 'open-ssh':
                 assert any(row['ruleId'] == 'SECURITY_GROUP_NO_OPEN_SSH' for row in result['findings'])
+                if args.remediation:
+                    remediation = importlib.import_module('remediations.app')
+                    target = next(row for row in rows if row['ruleId'] == 'SECURITY_GROUP_NO_OPEN_SSH')
+                    with patch('boto3.client', side_effect=AssertionError('Dry run must not construct AWS clients')):
+                        proposal = decoded(remediation.lambda_handler({'rawPath': '/v1/remediations',
+                            'requestContext': {'http': {'method': 'POST'}},
+                            'body': json.dumps({'findingId': target['findingId'], 'actionId': 'REMOVE_OPEN_SSH'})}, None), 201)['item']
+                        pid = proposal['proposalId']
+                        for op, payload in [('approve', {'expectedRevision': 1, 'reason': 'Explicit local dry-run approval'}),
+                                            ('execute', {'expectedRevision': 2})]:
+                            proposal = decoded(remediation.lambda_handler({'rawPath': '/v1/remediations/' + pid + '/' + op,
+                                'pathParameters': {'proposalId': pid}, 'requestContext': {'http': {'method': 'POST'}},
+                                'body': json.dumps(payload)}, None))['item']
+                        assert proposal['status'] == 'DRY_RUN_COMPLETE' and proposal['dryRun']
+                        stored_proposal = db.Table(os.environ['REMEDIATIONS_TABLE']).get_item(Key={'proposalId': pid}, ConsistentRead=True)['Item']
+                        assert stored_proposal['revision'] == 4 and stored_proposal['execution']['dryRun']
             if name == 'lambda-db-bypass':
                 assert any(row['ruleId'] == 'REQUIRED_INTERMEDIARY' and row['severity'] == 'HIGH' for row in result['findings'])
             if name in {'unruled-crossing', 'source-disagreement'}:
@@ -100,7 +117,7 @@ def main():
     page = decoded(audit.lambda_handler({'queryStringParameters': {'limit': '100'}}, None))
     assert any(row['target'].get('id') == created['intentId'] for row in page['items'])
     evidence = {'scope': 'DynamoDB Local + direct async Lambda handlers/worker, not API Gateway/Cognito',
-                'intentId': created['intentId'], 'simulated': True, 'scenarios': results, 'versioningPassed': True, 'auditPassed': True, 'passed': True}
+                'intentId': created['intentId'], 'simulated': True, 'scenarios': results, 'versioningPassed': True, 'auditPassed': True, 'remediationPassed': bool(args.remediation), 'passed': True}
     destination = Path(args.evidence)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(evidence, indent=2, default=_json_default) + '\n')

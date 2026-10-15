@@ -272,6 +272,8 @@ def collect_inventory(region: str | None = None) -> dict[str, Any]:
     for bucket in bucket_list:
         name = bucket["Name"]
         bucket_region = None
+        pab = None
+        pab_missing = False
         public_access_block_enabled = None
         bucket_policy_public = None
         try:
@@ -291,6 +293,7 @@ def collect_inventory(region: str | None = None) -> dict[str, Any]:
         except ClientError as exc:
             code = exc.response.get("Error", {}).get("Code", "")
             if code in {"NoSuchPublicAccessBlockConfiguration", "NoSuchConfiguration"}:
+                pab_missing = True
                 public_access_block_enabled = False
             else:
                 _warn(warnings, f"s3:public-access-block:{name}", exc)
@@ -328,7 +331,7 @@ def collect_inventory(region: str | None = None) -> dict[str, Any]:
         nodes[arn] = {
             "resourceId": arn, "resourceType": RESOURCE_TYPES["s3"], "name": name,
             "region": bucket_region or region, "accountId": account_id, "tags": tags,
-            "attributes": {"createdAt": bucket.get("CreationDate"), "publicAccessBlockEnabled": public_access_block_enabled, "bucketPolicyPublic": bucket_policy_public},
+            "attributes": {"createdAt": bucket.get("CreationDate"), "publicAccessBlockEnabled": public_access_block_enabled, "publicAccessBlock": pab, "publicAccessBlockMissing": pab_missing, "bucketPolicyPublic": bucket_policy_public},
             "relationships": [], "source": "S3 ListBuckets + bucket security metadata", "lastObservedAt": collected_at,
         }
 

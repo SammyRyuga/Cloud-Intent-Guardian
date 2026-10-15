@@ -1,15 +1,29 @@
 import { env } from './env';
+import type { SystemStatus } from '@/types/domain';
 
 /**
  * Capability flags per AGENTS.md §8
- * In mock mode or dev, all flags are supported/enabled.
+ * Mock mode supports fixtures; the local API uses only advertised server features.
  */
-export function hasCapability(feature: string): boolean {
+export function hasCapability(feature: string, status?: SystemStatus): boolean {
   if (env.useMocks) {
     return true;
   }
-  // Only implemented live capabilities are available, even if a future flag is supplied.
-  return feature === 'intents' || (!env.localApi && ['architecture', 'evaluations'].includes(feature));
+  // Live controls are exposed only for handlers wired in this API version.
+  // Role and scope authorization remains authoritative on the backend.
+  const implementedLive = [
+    'architecture', 'evaluations', 'auditTrail', 'remediation', 'remediation.detail',
+    'remediation.approve', 'remediation.execute', 'findings.update', 'intents.approve', 'intents.diff',
+  ];
+  if (!env.localApi) return feature === 'intents' || implementedLive.includes(feature);
+  if (feature === 'intents' || feature === 'auditTrail' || feature === 'findings.update') return true;
+  if (['intents.approve', 'intents.diff'].includes(feature)) return status?.features?.fixtureInventory === true;
+  if (feature === 'architecture') return status?.features?.topology === true;
+  if (['remediation', 'remediation.detail', 'remediation.approve', 'remediation.execute'].includes(feature)) {
+    return status?.features?.remediationProposals === true;
+  }
+  // Local evaluation remains unavailable until the backend exposes an explicit capability.
+  return feature === 'evaluations' && status?.features?.evaluations === true;
 }
 
 export const CAPABILITIES = {

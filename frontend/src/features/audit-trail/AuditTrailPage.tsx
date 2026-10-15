@@ -1,4 +1,4 @@
-import { hasCapability } from '@/config/capabilities';
+import { useCapability } from '@/hooks/useCapability';
 import { useAuditEvents } from '@/hooks/apiHooks';
 import { StateBoundary } from '@/components/common/StateBoundary';
 import { formatDateTime } from '@/utils/dates';
@@ -7,6 +7,7 @@ import type { AuditEvent } from '@/api/backendSchemas';
 import { Button } from '@/components/ui/Button';
 
 export function AuditTrailPage() {
+  const auditEnabled = useCapability('auditTrail');
   const [params, setParams] = useSearchParams();
   const cursor = params.get('nextToken') || undefined;
   const { data, isLoading, isError, error, refetch } = useAuditEvents(cursor);
@@ -21,7 +22,7 @@ export function AuditTrailPage() {
       </div>
 
       <StateBoundary
-        isNotEnabled={!hasCapability('auditTrail')}
+        isNotEnabled={!auditEnabled}
         isLoading={isLoading}
         isError={isError}
         error={error}

@@ -1,3 +1,45 @@
+## Phase 5 - approved remediation proposals (2026-10-16)
+
+New routes: GET/POST `/v1/remediations`, GET `/v1/remediations/{proposalId}`,
+POST `/{proposalId}/approve` and POST `/{proposalId}/execute` under that prefix.
+List returns `{items,count,nextToken}`; mutations/detail return `{item}`. Creation
+requires admin and `{findingId,actionId}`. Approval requires approver (or admin),
+`{expectedRevision,reason}` and an unexpired unchanged finding. Execution requires
+admin and `{expectedRevision}` after approval. Viewer can read. Every transition
+and audit event is transactional, with conditional revision guards. Proposals
+expire after 24 hours. Execution is separately claimed to prevent duplicate calls;
+uncertain failures stay FAILED with human review, never automatically retried.
+
+The closed registry supports `REMOVE_OPEN_SSH` and `ENABLE_S3_BLOCK_PUBLIC_ACCESS`.
+Plans preserve the exact public ingress permissions or all four prior bucket
+settings, show the change, and include a rollback plan (including delete of an
+originally absent bucket configuration). Unknown prior settings prevent proposals.
+Security-group attachment impact is explicitly unknown, so all proposals require
+approval. There is no automatic action path. LOW-confidence, Tier 2, suppressed
+and resolved findings cannot produce executable proposals.
+
+Findings advertise `remediationAvailable` plus an allowlisted `remediationActionId`
+only when a complete plan can be built. System status advertises proposal support;
+local fixture mode also advertises evaluations. `RemediationEnabled=false` and
+`RemediationDryRun=true` are the infrastructure defaults. Local execution ALWAYS
+stays dry-run, even with flags changed. Modifying IAM permissions appear only
+when both cloud execution flags explicitly permit writes. A proposal pins its execution mode before approval; later flags cannot turn a
+dry-run proposal into a modifying action. Actual execution checks
+account identity and current AWS state before invoking a fixed SDK method.
+Academy write permissions and real execution remain unverified and were not used.
+
+Added encrypted retained on-demand RemediationsTable and local init/probe schema.
+`local-env.example.json` includes all seven tables and safe feature defaults;
+`local-env.json` remains ignored. No secrets or real credentials were used.
+
+Validation: 128 backend tests passed, including 14 remediation tests with Moto,
+SDK Stubber, authorization, audit atomicity, expiry/staleness, successful stubbed
+nonlocal execution, identity mismatch and changed-state rejection. All five seed
+scenarios plus proposal/approval/dry-run persistence passed in DynamoDB Local
+(`verify_topology.py --escalation --remediation`); all seven table/index probes
+passed. Frontend lint/test/contract/build and SAM lint/build passed. These are
+local/stubbed checks; real AWS, deployed API Gateway and Cognito remain unverified.
+
 ## Phase 4 - advisory escalation (2026-10-16)
 
 `EnableLLM=false` is the default. Optional worker escalation uses an `LLMClient`

@@ -8,7 +8,14 @@ def is_local():
 
 
 def finding_view(item):
-    return {**item, 'remediationAvailable': False}
+    from common.remediation import eligible_action, build_plan
+    action = eligible_action(item)
+    if action:
+        try:
+            build_plan(item)
+        except (ValueError, TypeError, KeyError):
+            action = None
+    return {**item, 'remediationAvailable': bool(action), **({'remediationActionId': action} if action else {})}
 
 
 def scan_all(table, max_pages=20, **options):

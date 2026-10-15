@@ -12,6 +12,14 @@ Metadata:
         scope: project
 
 Parameters:
+  RemediationEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  RemediationDryRun:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
   EnableLLM:
     Type: String
     Default: 'false'
@@ -78,6 +86,7 @@ Rules:
         AssertDescription: Optional Bedrock escalation requires an exact model permission ARN.
 
 Conditions:
+  RemediationWritesEnabled: !And [!Equals [!Ref RemediationEnabled, 'true'], !Equals [!Ref RemediationDryRun, 'false']]
   LLMEnabled: !Equals [!Ref EnableLLM, 'true']
   AsyncWorkerEnabled: !Equals [!Ref EnableAsyncWorker, 'true']
   UseExistingRole: !Not [!Equals [!Ref ExistingExecutionRoleArn, 'arn:aws:iam::000000000000:role/NOT_CONFIGURED']]
@@ -103,6 +112,9 @@ Globals:
         TOPOLOGY_ENABLED: 'true'
         CIG_ACCOUNT_ID: !Ref AWS::AccountId
         CIG_LOCAL_ROLE: admin
+        REMEDIATIONS_TABLE: !Ref RemediationsTable
+        REMEDIATION_ENABLED: !Ref RemediationEnabled
+        REMEDIATION_DRY_RUN: !Ref RemediationDryRun
         LLM_ENABLED: !Ref EnableLLM
         LLM_PROVIDER: bedrock
         BEDROCK_MODEL_ID: !Ref BedrockModelId
@@ -733,6 +745,60 @@ Resources:
             FilterCriteria:
               Filters:
                 - Pattern: '{"eventName":["INSERT"],"dynamodb":{"NewImage":{"status":{"S":["QUEUED"]}}}}'
+
+  RemediationsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification: {SSEEnabled: true}
+      AttributeDefinitions:
+        - {AttributeName: proposalId, AttributeType: S}
+        - {AttributeName: scopeKey, AttributeType: S}
+        - {AttributeName: createdOrder, AttributeType: S}
+      KeySchema: [{AttributeName: proposalId, KeyType: HASH}]
+      GlobalSecondaryIndexes:
+        - IndexName: scope-created
+          KeySchema: [{AttributeName: scopeKey, KeyType: HASH}, {AttributeName: createdOrder, KeyType: RANGE}]
+          Projection: {ProjectionType: ALL}
+
+  RemediationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !If [UseExistingRole, !Ref ExistingExecutionRoleArn, !Ref AWS::NoValue]
+      CodeUri: src/
+      Handler: remediations.app.lambda_handler
+      Description: Human-approved reversible registry proposals with dry-run execution by default.
+      Environment:
+        Variables:
+          FINDINGS_TABLE: !Ref FindingsTable
+      Policies:
+        - DynamoDBReadPolicy: {TableName: !Ref FindingsTable}
+        - DynamoDBCrudPolicy: {TableName: !Ref RemediationsTable}
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !GetAtt AuditEventsTable.Arn
+        - !If
+          - RemediationWritesEnabled
+          - Statement:
+              - Effect: Allow
+                Action: [sts:GetCallerIdentity, ec2:DescribeSecurityGroups]
+                Resource: '*'
+              - Effect: Allow
+                Action: ec2:RevokeSecurityGroupIngress
+                Resource: !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:security-group/*
+              - Effect: Allow
+                Action: [s3:GetBucketPublicAccessBlock, s3:PutBucketPublicAccessBlock]
+                Resource: !Sub arn:${AWS::Partition}:s3:::*
+          - !Ref AWS::NoValue
+      Events:
+        ProposalList: {Type: HttpApi, Properties: {ApiId: !Ref Api, Path: /v1/remediations, Method: GET}}
+        ProposalCreate: {Type: HttpApi, Properties: {ApiId: !Ref Api, Path: /v1/remediations, Method: POST}}
+        ProposalDetail: {Type: HttpApi, Properties: {ApiId: !Ref Api, Path: '/v1/remediations/{proposalId}', Method: GET}}
+        ProposalApprove: {Type: HttpApi, Properties: {ApiId: !Ref Api, Path: '/v1/remediations/{proposalId}/approve', Method: POST}}
+        ProposalExecute: {Type: HttpApi, Properties: {ApiId: !Ref Api, Path: '/v1/remediations/{proposalId}/execute', Method: POST}}
 
 Outputs:
   ApiUrl:

@@ -1,3 +1,14 @@
+## Phase 5 local workflow
+
+Run `scripts/local_db.py init --endpoint http://127.0.0.1:18000` and `probe` to
+initialize/check seven tables. Use `scripts/verify_topology.py --escalation
+--remediation --endpoint http://127.0.0.1:18000` for all five fictional scenarios,
+async persistence, version rollback, audit and explicitly approved dry-run actions.
+The verifier blocks AWS collector/client creation. Local execution cannot modify
+AWS even when execution flags are changed. Fixture evaluation jobs queued through
+SAM are processed with `scripts/run_evaluations.py --id <evaluationId>`; no local
+background process starts automatically. See INTEGRATION.md for dated evidence.
+
 # Local intent persistence on macOS
 
 Phase 2 now requires six tables and their declared indexes. Use

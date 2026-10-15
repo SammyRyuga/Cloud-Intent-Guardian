@@ -10,6 +10,11 @@
     "EVALUATIONS_TABLE": "cloud-intent-guardian-dev-evaluations",
     "INTENT_VERSIONS_TABLE": "cloud-intent-guardian-dev-intent-versions",
     "AUDIT_TABLE": "cloud-intent-guardian-dev-audit",
-    "EVALUATION_ARTIFACTS_TABLE": "cloud-intent-guardian-dev-evaluation-artifacts"
+    "EVALUATION_ARTIFACTS_TABLE": "cloud-intent-guardian-dev-evaluation-artifacts",
+    "REMEDIATIONS_TABLE": "cloud-intent-guardian-dev-remediations",
+    "REMEDIATION_ENABLED": "false",
+    "REMEDIATION_DRY_RUN": "true",
+    "LLM_ENABLED": "false",
+    "LLM_PROVIDER": "mock"
   }
 }

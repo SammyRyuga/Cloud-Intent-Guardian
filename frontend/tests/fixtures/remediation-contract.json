@@ -1,0 +1,285 @@
+{
+  "created": {
+    "item": {
+      "proposalId": "007a6bc9-d5fd-4ded-8433-38072a7d587c",
+      "findingId": "finding-ssh",
+      "findingHash": "f072cdde440572d63d9640cf4d319f2f2f12cb3f467aaac28602488444d97318",
+      "actionId": "REMOVE_OPEN_SSH",
+      "status": "PROPOSED",
+      "revision": 1,
+      "dryRun": true,
+      "createdAt": "2026-10-15T18:46:06.728394Z",
+      "updatedAt": "2026-10-15T18:46:06.728394Z",
+      "createdOrder": "2026-10-15T18:46:06.728394Z#007a6bc9-d5fd-4ded-8433-38072a7d587c",
+      "expiresAt": "2026-10-16T18:46:06.728435Z",
+      "createdBy": {
+        "sub": "remediation-user",
+        "displayName": "Remediation Tester",
+        "role": "admin"
+      },
+      "scopeKey": "fixture-account#ap-south-1#dev",
+      "accountId": "123456789012",
+      "region": "ap-south-1",
+      "resourceId": "sg-0123456789abcdef0",
+      "resourceType": "AWS::EC2::SecurityGroup",
+      "plan": {
+        "description": "Revoke only the evidenced public CIDR ingress permissions that include SSH.",
+        "before": {
+          "publicSshPermissions": [
+            {
+              "IpProtocol": "tcp",
+              "FromPort": 22,
+              "ToPort": 22,
+              "IpRanges": [
+                {
+                  "CidrIp": "0.0.0.0/0"
+                }
+              ]
+            }
+          ]
+        },
+        "after": {
+          "publicSshPermissions": []
+        },
+        "rollback": {
+          "operation": "authorize_security_group_ingress",
+          "permissions": [
+            {
+              "IpProtocol": "tcp",
+              "FromPort": 22,
+              "ToPort": 22,
+              "IpRanges": [
+                {
+                  "CidrIp": "0.0.0.0/0"
+                }
+              ]
+            }
+          ]
+        },
+        "impact": "May affect every resource attached to this group. Attachment coverage is unknown; approval is mandatory."
+      },
+      "approvalRequired": true
+    }
+  },
+  "approved": {
+    "item": {
+      "proposalId": "007a6bc9-d5fd-4ded-8433-38072a7d587c",
+      "findingId": "finding-ssh",
+      "findingHash": "f072cdde440572d63d9640cf4d319f2f2f12cb3f467aaac28602488444d97318",
+      "actionId": "REMOVE_OPEN_SSH",
+      "status": "APPROVED",
+      "revision": 2,
+      "dryRun": true,
+      "createdAt": "2026-10-15T18:46:06.728394Z",
+      "updatedAt": "2026-10-15T18:46:06.744110Z",
+      "createdOrder": "2026-10-15T18:46:06.728394Z#007a6bc9-d5fd-4ded-8433-38072a7d587c",
+      "expiresAt": "2026-10-16T18:46:06.728435Z",
+      "createdBy": {
+        "sub": "remediation-user",
+        "displayName": "Remediation Tester",
+        "role": "admin"
+      },
+      "scopeKey": "fixture-account#ap-south-1#dev",
+      "accountId": "123456789012",
+      "region": "ap-south-1",
+      "resourceId": "sg-0123456789abcdef0",
+      "resourceType": "AWS::EC2::SecurityGroup",
+      "plan": {
+        "description": "Revoke only the evidenced public CIDR ingress permissions that include SSH.",
+        "before": {
+          "publicSshPermissions": [
+            {
+              "IpProtocol": "tcp",
+              "FromPort": 22,
+              "ToPort": 22,
+              "IpRanges": [
+                {
+                  "CidrIp": "0.0.0.0/0"
+                }
+              ]
+            }
+          ]
+        },
+        "after": {
+          "publicSshPermissions": []
+        },
+        "rollback": {
+          "operation": "authorize_security_group_ingress",
+          "permissions": [
+            {
+              "IpProtocol": "tcp",
+              "FromPort": 22,
+              "ToPort": 22,
+              "IpRanges": [
+                {
+                  "CidrIp": "0.0.0.0/0"
+                }
+              ]
+            }
+          ]
+        },
+        "impact": "May affect every resource attached to this group. Attachment coverage is unknown; approval is mandatory."
+      },
+      "approvalRequired": true,
+      "approvedBy": {
+        "sub": "remediation-user",
+        "displayName": "Remediation Tester",
+        "role": "approver"
+      },
+      "approvedAt": "2026-10-15T18:46:06.744105Z",
+      "reason": "Reviewed impact"
+    }
+  },
+  "executed": {
+    "item": {
+      "proposalId": "007a6bc9-d5fd-4ded-8433-38072a7d587c",
+      "findingId": "finding-ssh",
+      "findingHash": "f072cdde440572d63d9640cf4d319f2f2f12cb3f467aaac28602488444d97318",
+      "actionId": "REMOVE_OPEN_SSH",
+      "status": "DRY_RUN_COMPLETE",
+      "revision": 4,
+      "dryRun": true,
+      "createdAt": "2026-10-15T18:46:06.728394Z",
+      "updatedAt": "2026-10-15T18:46:06.757410Z",
+      "createdOrder": "2026-10-15T18:46:06.728394Z#007a6bc9-d5fd-4ded-8433-38072a7d587c",
+      "expiresAt": "2026-10-16T18:46:06.728435Z",
+      "createdBy": {
+        "sub": "remediation-user",
+        "displayName": "Remediation Tester",
+        "role": "admin"
+      },
+      "scopeKey": "fixture-account#ap-south-1#dev",
+      "accountId": "123456789012",
+      "region": "ap-south-1",
+      "resourceId": "sg-0123456789abcdef0",
+      "resourceType": "AWS::EC2::SecurityGroup",
+      "plan": {
+        "description": "Revoke only the evidenced public CIDR ingress permissions that include SSH.",
+        "before": {
+          "publicSshPermissions": [
+            {
+              "IpProtocol": "tcp",
+              "FromPort": 22,
+              "ToPort": 22,
+              "IpRanges": [
+                {
+                  "CidrIp": "0.0.0.0/0"
+                }
+              ]
+            }
+          ]
+        },
+        "after": {
+          "publicSshPermissions": []
+        },
+        "rollback": {
+          "operation": "authorize_security_group_ingress",
+          "permissions": [
+            {
+              "IpProtocol": "tcp",
+              "FromPort": 22,
+              "ToPort": 22,
+              "IpRanges": [
+                {
+                  "CidrIp": "0.0.0.0/0"
+                }
+              ]
+            }
+          ]
+        },
+        "impact": "May affect every resource attached to this group. Attachment coverage is unknown; approval is mandatory."
+      },
+      "approvalRequired": true,
+      "approvedBy": {
+        "sub": "remediation-user",
+        "displayName": "Remediation Tester",
+        "role": "approver"
+      },
+      "approvedAt": "2026-10-15T18:46:06.744105Z",
+      "reason": "Reviewed impact",
+      "execution": {
+        "dryRun": true,
+        "status": "DRY_RUN_COMPLETE",
+        "completedAt": "2026-10-15T18:46:06.757405Z"
+      }
+    }
+  },
+  "list": {
+    "items": [
+      {
+        "proposalId": "007a6bc9-d5fd-4ded-8433-38072a7d587c",
+        "findingId": "finding-ssh",
+        "findingHash": "f072cdde440572d63d9640cf4d319f2f2f12cb3f467aaac28602488444d97318",
+        "actionId": "REMOVE_OPEN_SSH",
+        "status": "DRY_RUN_COMPLETE",
+        "revision": 4,
+        "dryRun": true,
+        "createdAt": "2026-10-15T18:46:06.728394Z",
+        "updatedAt": "2026-10-15T18:46:06.757410Z",
+        "createdOrder": "2026-10-15T18:46:06.728394Z#007a6bc9-d5fd-4ded-8433-38072a7d587c",
+        "expiresAt": "2026-10-16T18:46:06.728435Z",
+        "createdBy": {
+          "sub": "remediation-user",
+          "displayName": "Remediation Tester",
+          "role": "admin"
+        },
+        "scopeKey": "fixture-account#ap-south-1#dev",
+        "accountId": "123456789012",
+        "region": "ap-south-1",
+        "resourceId": "sg-0123456789abcdef0",
+        "resourceType": "AWS::EC2::SecurityGroup",
+        "plan": {
+          "description": "Revoke only the evidenced public CIDR ingress permissions that include SSH.",
+          "before": {
+            "publicSshPermissions": [
+              {
+                "IpProtocol": "tcp",
+                "FromPort": 22,
+                "ToPort": 22,
+                "IpRanges": [
+                  {
+                    "CidrIp": "0.0.0.0/0"
+                  }
+                ]
+              }
+            ]
+          },
+          "after": {
+            "publicSshPermissions": []
+          },
+          "rollback": {
+            "operation": "authorize_security_group_ingress",
+            "permissions": [
+              {
+                "IpProtocol": "tcp",
+                "FromPort": 22,
+                "ToPort": 22,
+                "IpRanges": [
+                  {
+                    "CidrIp": "0.0.0.0/0"
+                  }
+                ]
+              }
+            ]
+          },
+          "impact": "May affect every resource attached to this group. Attachment coverage is unknown; approval is mandatory."
+        },
+        "approvalRequired": true,
+        "approvedBy": {
+          "sub": "remediation-user",
+          "displayName": "Remediation Tester",
+          "role": "approver"
+        },
+        "approvedAt": "2026-10-15T18:46:06.744105Z",
+        "reason": "Reviewed impact",
+        "execution": {
+          "dryRun": true,
+          "status": "DRY_RUN_COMPLETE",
+          "completedAt": "2026-10-15T18:46:06.757405Z"
+        }
+      }
+    ],
+    "count": 1,
+    "nextToken": null
+  }
+}
