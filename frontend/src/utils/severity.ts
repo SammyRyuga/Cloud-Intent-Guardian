@@ -28,6 +28,7 @@ export function formatDiffState(state: DiffState): string {
     case 'ADDED': return 'Unmatched';
     case 'MISSING': return 'Missing';
     case 'CHANGED': return 'Changed';
+    case 'UNEXPECTED': return 'Unexpected';
     case 'UNKNOWN': return 'Unknown';
   }
 }

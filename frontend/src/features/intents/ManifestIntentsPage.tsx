@@ -177,7 +177,7 @@ export function ManifestIntentsPage() {
                 Updated: {formatDateTime(selected.updatedAt)}
               </p>
               <ul className="my-4 space-y-2">
-                {selected.constraints.map((row) => (
+                {(selected.constraints ?? []).map((row) => (
                   <li
                     key={row.id}
                     className="text-sm border border-rule rounded p-2"
@@ -186,12 +186,24 @@ export function ManifestIntentsPage() {
                       {row.id}: {row.type}
                     </span>
                     <span className="block">
-                      {row.severity} - {row.description} -{" "}
-                      {row.enabled ? "Enabled" : "Disabled"}
+                      {[row.severity, row.description, row.enabled === undefined ? undefined : row.enabled ? "Enabled" : "Disabled"]
+                        .filter(Boolean)
+                        .join(" - ")}
                     </span>
                   </li>
                 ))}
               </ul>
+              {selected.schemaVersion === 2 && (
+                <p className="text-sm text-graphite">
+                  Manifest schema version 2 declarations are retained in the stored response.
+                </p>
+              )}
+              <details className="mt-4 border border-rule rounded p-3">
+                <summary className="cursor-pointer text-sm font-medium">Stored manifest JSON</summary>
+                <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap break-words font-mono text-xs text-ink">
+                  {JSON.stringify(selected, null, 2)}
+                </pre>
+              </details>
               {selected.status === "DRAFT" && (
                 <Button
                   disabled={approve.isPending}

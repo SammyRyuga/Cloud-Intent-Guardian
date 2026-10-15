@@ -1,7 +1,9 @@
 import os
+import json
 from common.dynamodb import dynamodb_resource
+from common.manifest import validate_manifest, ManifestValidationError
 from botocore.exceptions import BotoCoreError, ClientError
-from common.http import response, error, utc_now
+from common.http import response, error, utc_now, _json_default
 from boto3.dynamodb.conditions import Attr
 
 
@@ -17,8 +19,12 @@ def lambda_handler(event, context):
         found = table.get_item(Key={"intentId": intent_id}, ConsistentRead=True).get("Item")
         if not found:
             return error(404, "INTENT_NOT_FOUND", "No intent exists with that ID.")
-        if not found.get("constraints"):
-            return error(409, "INTENT_NOT_VALID", "An intent with no constraints cannot be approved.")
+        try:
+            fields = {'name', 'description', 'constraints', 'schemaVersion', 'components', 'relationships', 'trustBoundaries', 'criticality'}
+            manifest = {key: value for key, value in found.items() if key in fields}
+            validate_manifest(json.loads(json.dumps(manifest, default=_json_default)))
+        except ManifestValidationError as exc:
+            return error(409, "INTENT_NOT_VALID", exc.message, exc.details)
         if found.get("status") == "APPROVED":
             return response(200, {"item": found, "message": "Intent was already approved."})
         if found.get('status') != 'DRAFT':

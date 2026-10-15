@@ -1,0 +1,1040 @@
+{
+  "created": {
+    "item": {
+      "intentId": "bccd70b2-6991-4380-b724-9764e14ee2df",
+      "schemaVersion": 2,
+      "name": "Local three-tier intent",
+      "description": "Simulated topology for local development",
+      "constraints": [
+        {
+          "id": "ssh",
+          "type": "SECURITY_GROUP_NO_OPEN_SSH",
+          "severity": "HIGH",
+          "description": "ssh",
+          "enabled": true
+        },
+        {
+          "id": "no-direct-worker-db",
+          "type": "FORBIDDEN_PATH",
+          "severity": "HIGH",
+          "description": "no-direct-worker-db",
+          "enabled": true,
+          "from": "worker",
+          "to": "db",
+          "pathMode": "DIRECT",
+          "edgeTypes": [
+            "NETWORK_REACHABILITY"
+          ]
+        },
+        {
+          "id": "worker-via-api",
+          "type": "REQUIRED_INTERMEDIARY",
+          "severity": "HIGH",
+          "description": "worker-via-api",
+          "enabled": true,
+          "from": "worker",
+          "to": "db",
+          "via": [
+            "api"
+          ],
+          "edgeTypes": [
+            "NETWORK_REACHABILITY"
+          ]
+        }
+      ],
+      "components": [
+        {
+          "id": "web",
+          "resourceTypes": [
+            "AWS::EC2::Instance"
+          ],
+          "selector": {
+            "resourceIds": [
+              "i-fixture-web"
+            ]
+          },
+          "minMatches": 1
+        },
+        {
+          "id": "api",
+          "resourceTypes": [
+            "AWS::EC2::Instance"
+          ],
+          "selector": {
+            "resourceIds": [
+              "i-fixture-api"
+            ]
+          },
+          "minMatches": 1
+        },
+        {
+          "id": "worker",
+          "resourceTypes": [
+            "AWS::Lambda::Function"
+          ],
+          "selector": {
+            "resourceIds": [
+              "fixture-worker"
+            ]
+          },
+          "minMatches": 1
+        },
+        {
+          "id": "db",
+          "resourceTypes": [
+            "AWS::RDS::DBInstance"
+          ],
+          "selector": {
+            "resourceIds": [
+              "fixture-db"
+            ]
+          },
+          "minMatches": 1
+        }
+      ],
+      "relationships": [
+        {
+          "id": "web-api",
+          "from": "web",
+          "to": "api",
+          "effect": "ALLOW",
+          "relationshipType": "NETWORK_REACHABILITY",
+          "protocol": "tcp",
+          "ports": [
+            443
+          ],
+          "required": true
+        },
+        {
+          "id": "api-db",
+          "from": "api",
+          "to": "db",
+          "effect": "ALLOW",
+          "relationshipType": "NETWORK_REACHABILITY",
+          "protocol": "tcp",
+          "ports": [
+            5432
+          ],
+          "required": true
+        }
+      ],
+      "trustBoundaries": [
+        {
+          "id": "edge",
+          "members": [
+            "web"
+          ],
+          "crossingRules": [
+            {
+              "id": "web-service",
+              "to": "services",
+              "effect": "ALLOW",
+              "via": [
+                "api"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "services",
+          "members": [
+            "api",
+            "worker"
+          ],
+          "crossingRules": [
+            {
+              "id": "service-data",
+              "to": "data",
+              "effect": "ALLOW",
+              "via": [
+                "api"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "data",
+          "members": [
+            "db"
+          ],
+          "crossingRules": []
+        }
+      ],
+      "criticality": {
+        "api": "HIGH",
+        "db": "CRITICAL",
+        "web": "MEDIUM",
+        "worker": "MEDIUM"
+      },
+      "version": 1,
+      "status": "DRAFT",
+      "createdAt": "2026-10-15T18:09:53.099573Z",
+      "updatedAt": "2026-10-15T18:09:53.099573Z",
+      "approvedAt": null,
+      "createdBy": "authenticated-user",
+      "sourceType": "JSON_CONSTRAINT_MANIFEST"
+    }
+  },
+  "approved": {
+    "item": {
+      "intentId": "bccd70b2-6991-4380-b724-9764e14ee2df",
+      "schemaVersion": 2,
+      "name": "Local three-tier intent",
+      "description": "Simulated topology for local development",
+      "constraints": [
+        {
+          "id": "ssh",
+          "type": "SECURITY_GROUP_NO_OPEN_SSH",
+          "severity": "HIGH",
+          "description": "ssh",
+          "enabled": true
+        },
+        {
+          "id": "no-direct-worker-db",
+          "type": "FORBIDDEN_PATH",
+          "severity": "HIGH",
+          "description": "no-direct-worker-db",
+          "enabled": true,
+          "from": "worker",
+          "to": "db",
+          "pathMode": "DIRECT",
+          "edgeTypes": [
+            "NETWORK_REACHABILITY"
+          ]
+        },
+        {
+          "id": "worker-via-api",
+          "type": "REQUIRED_INTERMEDIARY",
+          "severity": "HIGH",
+          "description": "worker-via-api",
+          "enabled": true,
+          "from": "worker",
+          "to": "db",
+          "via": [
+            "api"
+          ],
+          "edgeTypes": [
+            "NETWORK_REACHABILITY"
+          ]
+        }
+      ],
+      "components": [
+        {
+          "id": "web",
+          "resourceTypes": [
+            "AWS::EC2::Instance"
+          ],
+          "selector": {
+            "resourceIds": [
+              "i-fixture-web"
+            ]
+          },
+          "minMatches": 1
+        },
+        {
+          "id": "api",
+          "resourceTypes": [
+            "AWS::EC2::Instance"
+          ],
+          "selector": {
+            "resourceIds": [
+              "i-fixture-api"
+            ]
+          },
+          "minMatches": 1
+        },
+        {
+          "id": "worker",
+          "resourceTypes": [
+            "AWS::Lambda::Function"
+          ],
+          "selector": {
+            "resourceIds": [
+              "fixture-worker"
+            ]
+          },
+          "minMatches": 1
+        },
+        {
+          "id": "db",
+          "resourceTypes": [
+            "AWS::RDS::DBInstance"
+          ],
+          "selector": {
+            "resourceIds": [
+              "fixture-db"
+            ]
+          },
+          "minMatches": 1
+        }
+      ],
+      "relationships": [
+        {
+          "id": "web-api",
+          "from": "web",
+          "to": "api",
+          "effect": "ALLOW",
+          "relationshipType": "NETWORK_REACHABILITY",
+          "protocol": "tcp",
+          "ports": [
+            443
+          ],
+          "required": true
+        },
+        {
+          "id": "api-db",
+          "from": "api",
+          "to": "db",
+          "effect": "ALLOW",
+          "relationshipType": "NETWORK_REACHABILITY",
+          "protocol": "tcp",
+          "ports": [
+            5432
+          ],
+          "required": true
+        }
+      ],
+      "trustBoundaries": [
+        {
+          "id": "edge",
+          "members": [
+            "web"
+          ],
+          "crossingRules": [
+            {
+              "id": "web-service",
+              "to": "services",
+              "effect": "ALLOW",
+              "via": [
+                "api"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "services",
+          "members": [
+            "api",
+            "worker"
+          ],
+          "crossingRules": [
+            {
+              "id": "service-data",
+              "to": "data",
+              "effect": "ALLOW",
+              "via": [
+                "api"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "data",
+          "members": [
+            "db"
+          ],
+          "crossingRules": []
+        }
+      ],
+      "criticality": {
+        "api": "HIGH",
+        "db": "CRITICAL",
+        "web": "MEDIUM",
+        "worker": "MEDIUM"
+      },
+      "version": 1,
+      "status": "APPROVED",
+      "createdAt": "2026-10-15T18:09:53.099573Z",
+      "updatedAt": "2026-10-15T18:09:53.109792Z",
+      "approvedAt": "2026-10-15T18:09:53.109792Z",
+      "createdBy": "authenticated-user",
+      "sourceType": "JSON_CONSTRAINT_MANIFEST"
+    }
+  },
+  "intentGraph": {
+    "view": "INTENT",
+    "nodes": [
+      {
+        "id": "intent:bccd70b2-6991-4380-b724-9764e14ee2df:component:api",
+        "label": "api",
+        "resourceType": "INTENT_COMPONENT",
+        "diffState": "UNKNOWN",
+        "properties": {
+          "componentId": "api",
+          "resourceTypes": [
+            "AWS::EC2::Instance"
+          ],
+          "selector": {
+            "resourceIds": [
+              "i-fixture-api"
+            ]
+          },
+          "minMatches": 1
+        },
+        "componentId": "api",
+        "resourceIds": [],
+        "evidence": []
+      },
+      {
+        "id": "intent:bccd70b2-6991-4380-b724-9764e14ee2df:component:db",
+        "label": "db",
+        "resourceType": "INTENT_COMPONENT",
+        "diffState": "UNKNOWN",
+        "properties": {
+          "componentId": "db",
+          "resourceTypes": [
+            "AWS::RDS::DBInstance"
+          ],
+          "selector": {
+            "resourceIds": [
+              "fixture-db"
+            ]
+          },
+          "minMatches": 1
+        },
+        "componentId": "db",
+        "resourceIds": [],
+        "evidence": []
+      },
+      {
+        "id": "intent:bccd70b2-6991-4380-b724-9764e14ee2df:component:web",
+        "label": "web",
+        "resourceType": "INTENT_COMPONENT",
+        "diffState": "UNKNOWN",
+        "properties": {
+          "componentId": "web",
+          "resourceTypes": [
+            "AWS::EC2::Instance"
+          ],
+          "selector": {
+            "resourceIds": [
+              "i-fixture-web"
+            ]
+          },
+          "minMatches": 1
+        },
+        "componentId": "web",
+        "resourceIds": [],
+        "evidence": []
+      },
+      {
+        "id": "intent:bccd70b2-6991-4380-b724-9764e14ee2df:component:worker",
+        "label": "worker",
+        "resourceType": "INTENT_COMPONENT",
+        "diffState": "UNKNOWN",
+        "properties": {
+          "componentId": "worker",
+          "resourceTypes": [
+            "AWS::Lambda::Function"
+          ],
+          "selector": {
+            "resourceIds": [
+              "fixture-worker"
+            ]
+          },
+          "minMatches": 1
+        },
+        "componentId": "worker",
+        "resourceIds": [],
+        "evidence": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "a080cc571159cd4c4ee5e102",
+        "source": "intent:bccd70b2-6991-4380-b724-9764e14ee2df:component:api",
+        "target": "intent:bccd70b2-6991-4380-b724-9764e14ee2df:component:db",
+        "relationshipType": "NETWORK_REACHABILITY",
+        "diffState": "UNKNOWN",
+        "declarationId": "api-db",
+        "effect": "ALLOW",
+        "evidence": []
+      },
+      {
+        "id": "b4c5e35b80d107711d653d71",
+        "source": "intent:bccd70b2-6991-4380-b724-9764e14ee2df:component:web",
+        "target": "intent:bccd70b2-6991-4380-b724-9764e14ee2df:component:api",
+        "relationshipType": "NETWORK_REACHABILITY",
+        "diffState": "UNKNOWN",
+        "declarationId": "web-api",
+        "effect": "ALLOW",
+        "evidence": []
+      }
+    ],
+    "truncated": false,
+    "partial": false,
+    "warnings": [],
+    "totalNodeCount": 4,
+    "asOf": "2026-10-15T18:09:53.109792Z",
+    "intentId": "bccd70b2-6991-4380-b724-9764e14ee2df",
+    "intentVersion": 1,
+    "snapshotId": null,
+    "coverage": {}
+  },
+  "diffGraph": {
+    "view": "DIFF",
+    "nodes": [
+      {
+        "id": "fixture-db",
+        "label": "fixture-db",
+        "resourceType": "AWS::RDS::DBInstance",
+        "diffState": "MATCHED",
+        "properties": {
+          "publiclyAccessible": false
+        },
+        "source": "Bundled simulated inventory",
+        "evidence": [],
+        "componentIds": [
+          "db"
+        ]
+      },
+      {
+        "id": "fixture-worker",
+        "label": "fixture-worker",
+        "resourceType": "AWS::Lambda::Function",
+        "diffState": "MATCHED",
+        "properties": {},
+        "source": "Bundled simulated inventory",
+        "evidence": [],
+        "componentIds": [
+          "worker"
+        ]
+      },
+      {
+        "id": "i-fixture-api",
+        "label": "i-fixture-api",
+        "resourceType": "AWS::EC2::Instance",
+        "diffState": "MATCHED",
+        "properties": {
+          "publicIpAddress": null
+        },
+        "source": "Bundled simulated inventory",
+        "evidence": [],
+        "componentIds": [
+          "api"
+        ]
+      },
+      {
+        "id": "i-fixture-web",
+        "label": "i-fixture-web",
+        "resourceType": "AWS::EC2::Instance",
+        "diffState": "MATCHED",
+        "properties": {
+          "publicIpAddress": null
+        },
+        "source": "Bundled simulated inventory",
+        "evidence": [],
+        "componentIds": [
+          "web"
+        ]
+      },
+      {
+        "id": "sg-fixture",
+        "label": "sg-fixture",
+        "resourceType": "AWS::EC2::SecurityGroup",
+        "diffState": "UNKNOWN",
+        "properties": {
+          "ingressRules": []
+        },
+        "source": "Bundled simulated inventory",
+        "evidence": [],
+        "explanation": "Component membership is unresolved under available coverage."
+      }
+    ],
+    "edges": [
+      {
+        "id": "30a2790cc5fd44c3ffa28895",
+        "source": "fixture-worker",
+        "target": "i-fixture-api",
+        "relationshipType": "NETWORK_REACHABILITY",
+        "diffState": "UNEXPECTED",
+        "observationKind": "OBSERVED",
+        "evidence": [
+          {
+            "source": "SIMULATED_FLOW_LOGS",
+            "observedAt": "2026-10-15T00:00:00Z",
+            "details": {
+              "simulated": true,
+              "sourceId": "fixture-worker",
+              "targetId": "i-fixture-api"
+            }
+          }
+        ]
+      },
+      {
+        "id": "70633d67db50ea433c1c446d",
+        "source": "fixture-worker",
+        "target": "fixture-db",
+        "relationshipType": "NETWORK_REACHABILITY",
+        "diffState": "UNEXPECTED",
+        "observationKind": "OBSERVED",
+        "evidence": [
+          {
+            "source": "SIMULATED_FLOW_LOGS",
+            "observedAt": "2026-10-15T00:00:00Z",
+            "details": {
+              "simulated": true,
+              "sourceId": "fixture-worker",
+              "targetId": "fixture-db"
+            }
+          }
+        ]
+      },
+      {
+        "id": "8c208cbf07b489bc91acf5bb",
+        "source": "i-fixture-api",
+        "target": "fixture-db",
+        "relationshipType": "NETWORK_REACHABILITY",
+        "diffState": "MATCHED",
+        "observationKind": "OBSERVED",
+        "evidence": [
+          {
+            "source": "SIMULATED_FLOW_LOGS",
+            "observedAt": "2026-10-15T00:00:00Z",
+            "details": {
+              "simulated": true,
+              "sourceId": "i-fixture-api",
+              "targetId": "fixture-db"
+            }
+          }
+        ]
+      },
+      {
+        "id": "ed733ffbdf5e7f2f2f22d031",
+        "source": "i-fixture-web",
+        "target": "i-fixture-api",
+        "relationshipType": "NETWORK_REACHABILITY",
+        "diffState": "MATCHED",
+        "observationKind": "OBSERVED",
+        "evidence": [
+          {
+            "source": "SIMULATED_FLOW_LOGS",
+            "observedAt": "2026-10-15T00:00:00Z",
+            "details": {
+              "simulated": true,
+              "sourceId": "i-fixture-web",
+              "targetId": "i-fixture-api"
+            }
+          }
+        ]
+      }
+    ],
+    "truncated": false,
+    "partial": false,
+    "warnings": [],
+    "totalNodeCount": 5,
+    "asOf": "2026-10-15T00:00:00Z",
+    "intentId": "bccd70b2-6991-4380-b724-9764e14ee2df",
+    "intentVersion": 1,
+    "snapshotId": "fixture-lambda-db-bypass",
+    "coverage": {
+      "resourceTypes": {
+        "AWS::EC2::Instance": "COMPLETE",
+        "AWS::Lambda::Function": "COMPLETE",
+        "AWS::RDS::DBInstance": "COMPLETE",
+        "AWS::EC2::SecurityGroup": "COMPLETE"
+      },
+      "relationshipTypes": {
+        "NETWORK_REACHABILITY": "COMPLETE"
+      }
+    }
+  },
+  "bypassEvaluation": {
+    "evaluation": {
+      "evaluationId": "27169da7-d951-43e3-beaa-205706f5c4ba",
+      "status": "SUCCEEDED",
+      "intentId": "bccd70b2-6991-4380-b724-9764e14ee2df",
+      "intentName": "Local three-tier intent",
+      "intentVersion": 1,
+      "accountId": "fixture-account",
+      "region": "ap-south-1",
+      "startedAt": "2026-10-15T18:09:53.139463Z",
+      "finishedAt": "2026-10-15T18:09:53.157141Z",
+      "conformance": {
+        "percent": 75,
+        "totalRules": 12,
+        "passingRules": 9,
+        "failingRules": 3,
+        "unknownRules": 0,
+        "notApplicableRules": 0,
+        "definition": "Enabled applicable policy rules; unknown evidence prevents full conformance."
+      },
+      "summary": {
+        "resourceCount": 5,
+        "violationsFound": 3,
+        "resolvedFindings": 0,
+        "inventoryPartial": false
+      },
+      "ruleResults": [
+        {
+          "ruleId": "ssh",
+          "type": "SECURITY_GROUP_NO_OPEN_SSH",
+          "outcome": "PASS",
+          "bindings": [
+            {
+              "resourceId": "sg-fixture",
+              "outcome": "PASS"
+            }
+          ]
+        },
+        {
+          "ruleId": "component:api",
+          "type": "REQUIRED_COMPONENT",
+          "outcome": "PASS",
+          "severity": "HIGH",
+          "explanation": "The component meets its minimum match count."
+        },
+        {
+          "ruleId": "component:db",
+          "type": "REQUIRED_COMPONENT",
+          "outcome": "PASS",
+          "severity": "CRITICAL",
+          "explanation": "The component meets its minimum match count."
+        },
+        {
+          "ruleId": "component:web",
+          "type": "REQUIRED_COMPONENT",
+          "outcome": "PASS",
+          "severity": "MEDIUM",
+          "explanation": "The component meets its minimum match count."
+        },
+        {
+          "ruleId": "component:worker",
+          "type": "REQUIRED_COMPONENT",
+          "outcome": "PASS",
+          "severity": "MEDIUM",
+          "explanation": "The component meets its minimum match count."
+        },
+        {
+          "ruleId": "constraint:boundary:data",
+          "type": "TRUST_BOUNDARY_CROSSING",
+          "outcome": "PASS",
+          "severity": "MEDIUM",
+          "explanation": "No explicitly denied or bypassing boundary crossing was observed."
+        },
+        {
+          "ruleId": "constraint:no-direct-worker-db",
+          "type": "FORBIDDEN_PATH",
+          "outcome": "VIOLATION",
+          "severity": "HIGH",
+          "explanation": "A forbidden directed path is supported by the selected edge evidence."
+        },
+        {
+          "ruleId": "constraint:service-data",
+          "type": "TRUST_BOUNDARY_CROSSING",
+          "outcome": "VIOLATION",
+          "severity": "MEDIUM",
+          "explanation": "An explicit boundary DENY or bypassed required intermediary has a witnessed path."
+        },
+        {
+          "ruleId": "constraint:web-service",
+          "type": "TRUST_BOUNDARY_CROSSING",
+          "outcome": "PASS",
+          "severity": "MEDIUM",
+          "explanation": "No explicitly denied or bypassing boundary crossing was observed."
+        },
+        {
+          "ruleId": "constraint:worker-via-api",
+          "type": "REQUIRED_INTERMEDIARY",
+          "outcome": "VIOLATION",
+          "severity": "HIGH",
+          "explanation": "A source-to-target path bypasses the required intermediary sequence."
+        },
+        {
+          "ruleId": "relationship:api-db",
+          "type": "REQUIRED_RELATIONSHIP",
+          "outcome": "PASS",
+          "severity": "MEDIUM",
+          "explanation": "Every concrete source-target binding has an adequate matching edge witness."
+        },
+        {
+          "ruleId": "relationship:web-api",
+          "type": "REQUIRED_RELATIONSHIP",
+          "outcome": "PASS",
+          "severity": "MEDIUM",
+          "explanation": "Every concrete source-target binding has an adequate matching edge witness."
+        }
+      ],
+      "simulated": true,
+      "warnings": []
+    },
+    "findings": [
+      {
+        "findingId": "cea0714288d6b2dca84d69793fe4edc3",
+        "title": "A forbidden directed path is supported by the selected edge evidence. - fixture-db",
+        "description": "A forbidden directed path is supported by the selected edge evidence.",
+        "explanation": "A forbidden directed path is supported by the selected edge evidence.",
+        "severity": "HIGH",
+        "category": "NETWORK_PATH",
+        "status": "OPEN",
+        "resourceId": "fixture-db",
+        "resourceName": "fixture-db",
+        "resourceType": "AWS::RDS::DBInstance",
+        "region": "ap-south-1",
+        "accountId": "fixture-account",
+        "intentId": "bccd70b2-6991-4380-b724-9764e14ee2df",
+        "intentName": "Local three-tier intent",
+        "intentVersion": 1,
+        "constraintId": "constraint:no-direct-worker-db",
+        "ruleId": "FORBIDDEN_PATH",
+        "expected": {
+          "constraintType": "FORBIDDEN_PATH",
+          "description": "A forbidden directed path is supported by the selected edge evidence."
+        },
+        "observed": {
+          "resourceId": "fixture-db",
+          "sourceId": "fixture-worker",
+          "targetId": "fixture-db",
+          "path": [
+            {
+              "sourceId": "fixture-worker",
+              "targetId": "fixture-db",
+              "type": "NETWORK_REACHABILITY",
+              "status": "OBSERVED",
+              "observationKind": "OBSERVED",
+              "protocol": "tcp",
+              "ports": [
+                5432
+              ],
+              "evidence": [
+                {
+                  "source": "SIMULATED_FLOW_LOGS",
+                  "observedAt": "2026-10-15T00:00:00Z",
+                  "details": {
+                    "simulated": true,
+                    "sourceId": "fixture-worker",
+                    "targetId": "fixture-db"
+                  }
+                }
+              ],
+              "relationshipType": "NETWORK_REACHABILITY"
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "source": "Topology observations",
+            "resourceId": "fixture-db",
+            "observedAt": "2026-10-15T00:00:00Z",
+            "details": {
+              "edgeTypes": [
+                "NETWORK_REACHABILITY"
+              ],
+              "relationshipCoverage": {
+                "NETWORK_REACHABILITY": "COMPLETE"
+              }
+            }
+          }
+        ],
+        "firstSeenAt": "2026-10-15T18:09:53.140597Z",
+        "lastSeenAt": "2026-10-15T18:09:53.140597Z",
+        "updatedAt": "2026-10-15T18:09:53.140597Z",
+        "evaluationId": "27169da7-d951-43e3-beaa-205706f5c4ba",
+        "simulated": true
+      },
+      {
+        "findingId": "c57398d137239269e8a4cb5b0a60e82e",
+        "title": "A source-to-target path bypasses the required intermediary sequence. - fixture-db",
+        "description": "A source-to-target path bypasses the required intermediary sequence.",
+        "explanation": "A source-to-target path bypasses the required intermediary sequence.",
+        "severity": "HIGH",
+        "category": "NETWORK_PATH",
+        "status": "OPEN",
+        "resourceId": "fixture-db",
+        "resourceName": "fixture-db",
+        "resourceType": "AWS::RDS::DBInstance",
+        "region": "ap-south-1",
+        "accountId": "fixture-account",
+        "intentId": "bccd70b2-6991-4380-b724-9764e14ee2df",
+        "intentName": "Local three-tier intent",
+        "intentVersion": 1,
+        "constraintId": "constraint:worker-via-api",
+        "ruleId": "REQUIRED_INTERMEDIARY",
+        "expected": {
+          "constraintType": "REQUIRED_INTERMEDIARY",
+          "description": "A source-to-target path bypasses the required intermediary sequence."
+        },
+        "observed": {
+          "resourceId": "fixture-db",
+          "sourceId": "fixture-worker",
+          "targetId": "fixture-db",
+          "path": [
+            {
+              "sourceId": "fixture-worker",
+              "targetId": "fixture-db",
+              "type": "NETWORK_REACHABILITY",
+              "status": "OBSERVED",
+              "observationKind": "OBSERVED",
+              "protocol": "tcp",
+              "ports": [
+                5432
+              ],
+              "evidence": [
+                {
+                  "source": "SIMULATED_FLOW_LOGS",
+                  "observedAt": "2026-10-15T00:00:00Z",
+                  "details": {
+                    "simulated": true,
+                    "sourceId": "fixture-worker",
+                    "targetId": "fixture-db"
+                  }
+                }
+              ],
+              "relationshipType": "NETWORK_REACHABILITY"
+            }
+          ],
+          "observed": {
+            "requiredIntermediaries": [
+              "api"
+            ]
+          }
+        },
+        "evidence": [
+          {
+            "source": "Topology observations",
+            "resourceId": "fixture-db",
+            "observedAt": "2026-10-15T00:00:00Z",
+            "details": {
+              "edgeTypes": [
+                "NETWORK_REACHABILITY"
+              ],
+              "relationshipCoverage": {
+                "NETWORK_REACHABILITY": "COMPLETE"
+              }
+            }
+          }
+        ],
+        "firstSeenAt": "2026-10-15T18:09:53.146395Z",
+        "lastSeenAt": "2026-10-15T18:09:53.146395Z",
+        "updatedAt": "2026-10-15T18:09:53.146395Z",
+        "evaluationId": "27169da7-d951-43e3-beaa-205706f5c4ba",
+        "simulated": true
+      },
+      {
+        "findingId": "60bb1eb66975745e922dfec9ec56e490",
+        "title": "An explicit boundary DENY or bypassed required intermediary has a witnessed path. - fixture-db",
+        "description": "An explicit boundary DENY or bypassed required intermediary has a witnessed path.",
+        "explanation": "An explicit boundary DENY or bypassed required intermediary has a witnessed path.",
+        "severity": "MEDIUM",
+        "category": "NETWORK_PATH",
+        "status": "OPEN",
+        "resourceId": "fixture-db",
+        "resourceName": "fixture-db",
+        "resourceType": "AWS::RDS::DBInstance",
+        "region": "ap-south-1",
+        "accountId": "fixture-account",
+        "intentId": "bccd70b2-6991-4380-b724-9764e14ee2df",
+        "intentName": "Local three-tier intent",
+        "intentVersion": 1,
+        "constraintId": "constraint:service-data",
+        "ruleId": "TRUST_BOUNDARY_CROSSING",
+        "expected": {
+          "constraintType": "TRUST_BOUNDARY_CROSSING",
+          "description": "An explicit boundary DENY or bypassed required intermediary has a witnessed path."
+        },
+        "observed": {
+          "resourceId": "fixture-db",
+          "sourceId": "fixture-worker",
+          "targetId": "fixture-db",
+          "path": [
+            {
+              "sourceId": "fixture-worker",
+              "targetId": "fixture-db",
+              "type": "NETWORK_REACHABILITY",
+              "status": "OBSERVED",
+              "observationKind": "OBSERVED",
+              "protocol": "tcp",
+              "ports": [
+                5432
+              ],
+              "evidence": [
+                {
+                  "source": "SIMULATED_FLOW_LOGS",
+                  "observedAt": "2026-10-15T00:00:00Z",
+                  "details": {
+                    "simulated": true,
+                    "sourceId": "fixture-worker",
+                    "targetId": "fixture-db"
+                  }
+                }
+              ],
+              "relationshipType": "NETWORK_REACHABILITY"
+            }
+          ],
+          "observed": {
+            "crossingRuleId": "service-data",
+            "requiredIntermediaries": [
+              "api"
+            ]
+          }
+        },
+        "evidence": [
+          {
+            "source": "Topology observations",
+            "resourceId": "fixture-db",
+            "observedAt": "2026-10-15T00:00:00Z",
+            "details": {
+              "edgeTypes": [
+                "NETWORK_REACHABILITY"
+              ],
+              "relationshipCoverage": {
+                "NETWORK_REACHABILITY": "COMPLETE"
+              }
+            }
+          },
+          {
+            "source": "Topology observations",
+            "resourceId": "fixture-db",
+            "observedAt": "2026-10-15T00:00:00Z",
+            "details": {
+              "crossingRuleId": "service-data",
+              "fromBoundary": "services",
+              "toBoundary": "data",
+              "effect": "ALLOW",
+              "via": [
+                "api"
+              ]
+            }
+          }
+        ],
+        "firstSeenAt": "2026-10-15T18:09:53.143526Z",
+        "lastSeenAt": "2026-10-15T18:09:53.143526Z",
+        "updatedAt": "2026-10-15T18:09:53.143526Z",
+        "evaluationId": "27169da7-d951-43e3-beaa-205706f5c4ba",
+        "simulated": true
+      }
+    ],
+    "inventory": {
+      "accountId": "fixture-account",
+      "region": "ap-south-1",
+      "collectedAt": "2026-10-15T00:00:00Z",
+      "totalResources": 5,
+      "partial": false,
+      "warnings": [],
+      "simulated": true,
+      "snapshotId": "fixture-lambda-db-bypass",
+      "scenario": "lambda-db-bypass",
+      "coverage": {
+        "resourceTypes": {
+          "AWS::EC2::Instance": "COMPLETE",
+          "AWS::Lambda::Function": "COMPLETE",
+          "AWS::RDS::DBInstance": "COMPLETE",
+          "AWS::EC2::SecurityGroup": "COMPLETE"
+        },
+        "relationshipTypes": {
+          "NETWORK_REACHABILITY": "COMPLETE"
+        }
+      },
+      "sourceVerdicts": [
+        {
+          "sourceFamily": "inventory",
+          "verdict": "CORROBORATES"
+        },
+        {
+          "sourceFamily": "flowLogs",
+          "verdict": "CORROBORATES"
+        }
+      ]
+    }
+  }
+}

@@ -2,7 +2,7 @@ export type Severity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFO';
 
 export type FindingStatus = 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED' | 'SUPPRESSED';
 
-export type DiffState = 'MATCHED' | 'ADDED' | 'MISSING' | 'CHANGED' | 'UNKNOWN';
+export type DiffState = 'MATCHED' | 'ADDED' | 'MISSING' | 'CHANGED' | 'UNEXPECTED' | 'UNKNOWN';
 
 export type GraphView = 'DIFF' | 'INTENT' | 'ACTUAL';
 
@@ -76,6 +76,15 @@ export interface GraphNode extends Record<string, unknown> {
   findingCount?: number;
   arn?: string;
   properties?: Record<string, unknown>;
+  componentId?: string;
+  componentIds?: string[];
+  resourceIds?: string[];
+  declarationId?: string;
+  effect?: 'ALLOW' | 'DENY';
+  observationKind?: string;
+  source?: string | null;
+  explanation?: string;
+  simulated?: boolean;
 }
 
 export interface GraphEdge {
@@ -84,6 +93,14 @@ export interface GraphEdge {
   target: string;
   relationshipType: string;
   diffState: DiffState;
+  evidence?: unknown;
+  protocol?: string;
+  ports?: number[];
+  observationKind?: string;
+  declarationId?: string;
+  effect?: 'ALLOW' | 'DENY';
+  explanation?: string;
+  simulated?: boolean;
 }
 
 export interface ArchitectureGraph {
@@ -95,6 +112,11 @@ export interface ArchitectureGraph {
   asOf: string;
   partial?: boolean;
   warnings?: Array<{source: string; message: string}>;
+  intentId?: string;
+  intentVersion?: number | string;
+  snapshotId?: string | null;
+  coverage?: unknown;
+  simulated?: boolean;
 }
 
 export interface IntentVersion {

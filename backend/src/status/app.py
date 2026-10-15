@@ -9,7 +9,10 @@ from botocore.config import Config
 def lambda_handler(event, context):
     region = os.environ.get("AWS_REGION", "unknown")
     if is_local():
-        return response(200, local_status(region, os.environ.get('STAGE_NAME', 'dev')))
+        state = local_status(region, os.environ.get('STAGE_NAME', 'dev'))
+        state['features'] = {'fixtureInventory': os.environ.get('INVENTORY_PROVIDER') == 'fixture',
+                             'topology': os.environ.get('TOPOLOGY_ENABLED', 'true').lower() == 'true'}
+        return response(200, state)
     account_id = None
     sts_status = "CONNECTED"
     config_status = "NOT_CONFIGURED"
@@ -21,24 +24,27 @@ def lambda_handler(event, context):
     except (ClientError, BotoCoreError) as exc:
         sts_status = "ERROR"
         warnings.append({"source": "sts", "message": str(exc)[:250]})
-    try:
-        config = session.client("config", config=config_options)
-        recorders = config.describe_configuration_recorders().get("ConfigurationRecorders", [])
-        if not recorders:
-            config_status = "NOT_CONFIGURED"
-        else:
-            statuses = config.describe_configuration_recorder_status().get("ConfigurationRecordersStatus", [])
-            config_status = "CONNECTED" if any(x.get("recording") for x in statuses) else "STOPPED"
-    except ClientError as exc:
-        code = exc.response.get("Error", {}).get("Code", "")
-        if code in {"NoSuchConfigurationRecorderException", "NoAvailableConfigurationRecorderException"}:
-            config_status = "NOT_CONFIGURED"
-        else:
+    if os.environ.get('CONFIG_ENABLED', 'false').lower() != 'true':
+        config_status = 'NOT_ENABLED'
+    else:
+        try:
+            config = session.client("config", config=config_options)
+            recorders = config.describe_configuration_recorders().get("ConfigurationRecorders", [])
+            if not recorders:
+                config_status = "NOT_CONFIGURED"
+            else:
+                statuses = config.describe_configuration_recorder_status().get("ConfigurationRecordersStatus", [])
+                config_status = "CONNECTED" if any(x.get("recording") for x in statuses) else "STOPPED"
+        except ClientError as exc:
+            code = exc.response.get("Error", {}).get("Code", "")
+            if code in {"NoSuchConfigurationRecorderException", "NoAvailableConfigurationRecorderException"}:
+                config_status = "NOT_CONFIGURED"
+            else:
+                config_status = "ERROR"
+                warnings.append({"source": "aws_config", "message": exc.response.get("Error", {}).get("Message", str(exc))[:250]})
+        except BotoCoreError as exc:
             config_status = "ERROR"
-            warnings.append({"source": "aws_config", "message": exc.response.get("Error", {}).get("Message", str(exc))[:250]})
-    except BotoCoreError as exc:
-        config_status = "ERROR"
-        warnings.append({"source": "aws_config", "message": str(exc)[:250]})
+            warnings.append({"source": "aws_config", "message": str(exc)[:250]})
     discovery_ok = sts_status == 'CONNECTED'
     for service, operation, options in [('ec2', 'describe_instances', {'MaxResults': 5}),
                                         ('rds', 'describe_db_instances', {'MaxRecords': 20}),

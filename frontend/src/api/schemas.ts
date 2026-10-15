@@ -4,7 +4,7 @@ export const SeveritySchema = z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO
 
 export const FindingStatusSchema = z.enum(['OPEN', 'ACKNOWLEDGED', 'RESOLVED', 'SUPPRESSED']);
 
-export const DiffStateSchema = z.enum(['MATCHED', 'ADDED', 'MISSING', 'CHANGED', 'UNKNOWN']);
+export const DiffStateSchema = z.enum(['MATCHED', 'ADDED', 'MISSING', 'CHANGED', 'UNEXPECTED', 'UNKNOWN']);
 
 export const GraphViewSchema = z.enum(['DIFF', 'INTENT', 'ACTUAL']);
 
@@ -72,7 +72,16 @@ export const GraphNodeSchema = z.object({
   findingCount: z.number().optional(),
   arn: z.string().optional(),
   properties: z.record(z.unknown()).optional(),
-});
+  componentId: z.string().optional(),
+  componentIds: z.array(z.string()).optional(),
+  resourceIds: z.array(z.string()).optional(),
+  declarationId: z.string().optional(),
+  effect: z.enum(['ALLOW', 'DENY']).optional(),
+  observationKind: z.string().optional(),
+  source: z.string().nullable().optional(),
+  explanation: z.string().optional(),
+  simulated: z.boolean().optional(),
+}).passthrough();
 
 export const GraphEdgeSchema = z.object({
   id: z.string(),
@@ -80,7 +89,20 @@ export const GraphEdgeSchema = z.object({
   target: z.string(),
   relationshipType: z.string(),
   diffState: DiffStateSchema,
-});
+  evidence: z.unknown().optional(),
+  protocol: z.string().optional(),
+  ports: z.array(z.number().int().min(1).max(65535)).optional(),
+  observationKind: z.string().optional(),
+  declarationId: z.string().optional(),
+  effect: z.enum(['ALLOW', 'DENY']).optional(),
+  explanation: z.string().optional(),
+  simulated: z.boolean().optional(),
+}).passthrough();
+
+export const GraphCoverageSchema = z.object({
+  resourceTypes: z.record(z.string()).optional(),
+  relationshipTypes: z.record(z.string()).optional(),
+}).passthrough();
 
 export const ArchitectureGraphSchema = z.object({
   view: GraphViewSchema,
@@ -91,7 +113,12 @@ export const ArchitectureGraphSchema = z.object({
   asOf: z.string(),
   partial: z.boolean().optional(),
   warnings: z.array(z.object({source: z.string(), message: z.string()})).optional(),
-});
+  intentId: z.string().optional(),
+  intentVersion: z.union([z.number(), z.string()]).optional(),
+  snapshotId: z.string().nullable().optional(),
+  coverage: GraphCoverageSchema.optional(),
+  simulated: z.boolean().optional(),
+}).passthrough();
 
 export const IntentVersionSchema = z.object({
   versionId: z.string(),

@@ -5,7 +5,12 @@ export const endpoints = {
   finding: (id: string) => `/v1/findings/${encodeURIComponent(id)}`,
   findingAcknowledge: (id: string) => `/v1/findings/${encodeURIComponent(id)}/acknowledge`,
   findingGenerateAi: (id: string) => `/v1/findings/${encodeURIComponent(id)}/ai-explanation`,
-  architecture: (view: string) => `/v1/architecture/graph?view=${encodeURIComponent(view)}`,
+  architecture: (view: string, selection?: { intentId?: string; version?: string }) => {
+    const params = new URLSearchParams({ view });
+    if (selection?.intentId) params.set('intentId', selection.intentId);
+    if (selection?.version) params.set('version', selection.version);
+    return `/v1/architecture/graph?${params.toString()}`;
+  },
   intents: () => '/v1/intents',
   intent: (id: string) => `/v1/intents/${encodeURIComponent(id)}`,
   intentApprove: (id: string) => `/v1/intents/${encodeURIComponent(id)}/approve`,

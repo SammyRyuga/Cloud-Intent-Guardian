@@ -69,10 +69,14 @@ export function useAcknowledgeFinding() {
   });
 }
 
-export function useArchitectureGraph(view: string = 'DIFF') {
+export function useArchitectureGraph(
+  view: T.GraphView = 'DIFF',
+  selection: { intentId?: string; version?: string } = {},
+) {
+  const filters = { intentId: selection.intentId, version: selection.version };
   return useQuery({
-    queryKey: queryKeys.architecture(view),
-    queryFn: () => apiClient<T.ArchitectureGraph>(endpoints.architecture(view), S.ArchitectureGraphSchema),
+    queryKey: queryKeys.architecture(view, filters),
+    queryFn: () => apiClient<T.ArchitectureGraph>(endpoints.architecture(view, selection), S.ArchitectureGraphSchema),
     staleTime: 60000,
     enabled: hasCapability('architecture'),
   });

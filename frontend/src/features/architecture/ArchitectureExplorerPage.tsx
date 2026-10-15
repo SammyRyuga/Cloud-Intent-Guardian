@@ -20,6 +20,7 @@ import { CopyableId } from '@/components/common/CopyableId';
 import { formatDiffState } from '@/utils/severity';
 import { formatResourceType } from '@/utils/format';
 import type { GraphNode, DiffState, GraphView } from '@/types/domain';
+import { GraphViewSchema } from '@/api/schemas';
 import { AlertCircle } from 'lucide-react';
 
 // Custom Node Component per AGENTS.md §5.5
@@ -34,6 +35,8 @@ function ArchitectureNode({ data }: { data: GraphNode }) {
         return 'border-[1.5px] border-dashed border-ink bg-sheet'; // Missing: dashed ink
       case 'CHANGED':
         return 'border-2 border-sev-critical bg-sheet'; // Changed: highest finding severity colour
+      case 'UNEXPECTED':
+        return 'border-2 border-graphite bg-sheet'; // UNEXPECTED is a topology classification, not severity
       case 'UNKNOWN':
         return 'border-[1.5px] border-dotted border-graphite bg-film'; // UNKNOWN: dotted graphite, neutral (INV-07)
     }
@@ -72,6 +75,15 @@ const nodeTypes = {
   archNode: ArchitectureNode,
 };
 
+const diffStateLegend: Array<{ state: DiffState; swatch: string }> = [
+  { state: 'MATCHED', swatch: 'border-rule-strong bg-sheet' },
+  { state: 'ADDED', swatch: 'border-2 border-sev-medium bg-sheet' },
+  { state: 'MISSING', swatch: 'border-[1.5px] border-dashed border-ink bg-sheet' },
+  { state: 'CHANGED', swatch: 'border-2 border-sev-critical bg-sheet' },
+  { state: 'UNEXPECTED', swatch: 'border-2 border-graphite bg-sheet' },
+  { state: 'UNKNOWN', swatch: 'border-[1.5px] border-dotted border-graphite bg-film' },
+];
+
 // Layout with Dagre
 function getLayoutedElements(nodes: Node[], edges: Edge[]) {
   const dagreGraph = new dagre.graphlib.Graph();
@@ -104,10 +116,15 @@ function getLayoutedElements(nodes: Node[], edges: Edge[]) {
 
 export function ArchitectureExplorerPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const currentView = (env.useMocks ? searchParams.get('view') || 'DIFF' : 'ACTUAL') as GraphView;
+  const requestedView = GraphViewSchema.safeParse(searchParams.get('view')).success
+    ? searchParams.get('view') as GraphView
+    : (env.useMocks ? 'DIFF' : 'ACTUAL');
+  const currentView = requestedView;
+  const intentId = searchParams.get('intentId') || undefined;
+  const version = searchParams.get('version') || undefined;
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
 
-  const { data: graphData, isLoading, isError, error, refetch } = useArchitectureGraph(currentView);
+  const { data: graphData, isLoading, isError, error, refetch } = useArchitectureGraph(currentView, { intentId, version });
 
   const { flowNodes, flowEdges } = useMemo(() => {
     if (!graphData) return { flowNodes: [], flowEdges: [] };
@@ -125,6 +142,10 @@ export function ArchitectureExplorerPage() {
 
       if (e.diffState === 'ADDED') strokeStyle = '#8A5A00';
       if (e.diffState === 'CHANGED') strokeStyle = '#B42318';
+      if (e.diffState === 'UNEXPECTED') {
+        strokeStyle = '#5A677B';
+        strokeDash = '6,3';
+      }
       if (e.diffState === 'MISSING') {
         strokeStyle = '#172033';
         strokeDash = '5,5';
@@ -148,8 +169,9 @@ export function ArchitectureExplorerPage() {
   }, [graphData]);
 
   const handleViewChange = (v: GraphView) => {
-    searchParams.set('view', v);
-    setSearchParams(searchParams);
+    const next = new URLSearchParams(searchParams);
+    next.set('view', v);
+    setSearchParams(next);
   };
 
   return (
@@ -158,15 +180,17 @@ export function ArchitectureExplorerPage() {
         <div>
           <h1 className="font-title text-xl font-bold text-ink">Architecture Explorer</h1>
           <p className="text-xs text-graphite">
-            Interactive topology comparison across declared baseline and observed cloud inventory
+            Backend-provided topology and comparison classifications
           </p>
         </div>
 
         {/* View Switcher */}
         <div className="inline-flex rounded-md border border-rule bg-sheet p-1 text-xs font-medium">
-          {(env.useMocks ? ['DIFF', 'INTENT', 'ACTUAL'] as const : ['ACTUAL'] as const).map((view) => (
+          {(hasCapability('architecture') ? ['DIFF', 'INTENT', 'ACTUAL'] as const : ['ACTUAL'] as const).map((view) => (
             <button
               key={view}
+              type="button"
+              aria-pressed={currentView === view}
               onClick={() => handleViewChange(view)}
               className={`px-3 py-1 rounded transition-colors ${
                 currentView === view ? 'bg-prussian text-white' : 'text-graphite hover:text-ink'
@@ -187,10 +211,18 @@ export function ArchitectureExplorerPage() {
         </div>
       )}
 
-      {!env.useMocks && <p className="text-xs text-graphite mb-3">Observed topology only. UNKNOWN means comparison has not been implemented. Showing {graphData?.nodes.length ?? 0} resources.</p>}
+      {!env.useMocks && graphData && <p className="text-xs text-graphite mb-3">Showing {graphData.nodes.length} resources in the {currentView.toLowerCase()} view.</p>}
       {graphData?.partial && <p role="status" className="text-sm text-sev-medium">Inventory is partial: {graphData.warnings?.map(row => row.message).join('; ')}</p>}
       <StateBoundary isNotEnabled={!hasCapability('architecture')} isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
         <div className="flex-1 rounded-[12px] border border-rule bg-sheet overflow-hidden relative">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 p-3 border-b border-rule text-xs" aria-label="Diff state legend">
+            {diffStateLegend.map(({ state, swatch }) => (
+              <span key={state} className="inline-flex items-center gap-2 text-graphite">
+                <span aria-hidden="true" className={`w-3 h-3 rounded-sm border ${swatch}`} />
+                {formatDiffState(state)}
+              </span>
+            ))}
+          </div>
           <details className="p-3 border-b border-rule text-xs"><summary>Resource list</summary><ul className="max-h-40 overflow-auto">{graphData?.nodes.map(node => <li key={node.id}><button className="p-2 text-left underline" onClick={() => setSelectedNode(node)}>{node.label}</button></li>)}</ul></details>
           <ReactFlow
             nodes={flowNodes}

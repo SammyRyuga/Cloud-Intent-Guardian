@@ -1,6 +1,20 @@
 import { z } from "zod";
 
 // These validate the existing backend wire format before adapting names for the UI.
+const ManifestConstraintSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  severity: z.enum(["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]),
+  description: z.string(),
+  enabled: z.boolean(),
+}).passthrough();
+
+// v2 declarations are response data too. Keep their complete shape when parsing
+// instead of reducing a server response to the legacy constraint facade.
+const BoundedTopologyObjectSchema = z.record(z.unknown()).refine(
+  (row) => Object.keys(row).length <= 100,
+  "Topology objects may contain at most 100 fields",
+);
 export const ManifestSchema = z.object({
   intentId: z.string(),
   name: z.string(),
@@ -12,16 +26,15 @@ export const ManifestSchema = z.object({
   approvedAt: z.string().nullable(),
   createdBy: z.string(),
   sourceType: z.string(),
-  constraints: z.array(
-    z.object({
-      id: z.string(),
-      type: z.string(),
-      severity: z.enum(["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]),
-      description: z.string(),
-      enabled: z.boolean(),
-    }),
-  ),
-});
+  schemaVersion: z.union([z.literal(1), z.literal(2)]).optional(),
+  components: z.array(BoundedTopologyObjectSchema).max(100).optional(),
+  relationships: z.array(BoundedTopologyObjectSchema).max(250).optional(),
+  trustBoundaries: z.array(BoundedTopologyObjectSchema).max(20).optional(),
+  criticality: z.record(z.enum(["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]))
+    .refine((row) => Object.keys(row).length <= 100, "Criticality may contain at most 100 entries")
+    .optional(),
+  constraints: z.array(ManifestConstraintSchema).max(50),
+}).passthrough();
 export const ManifestDetailSchema = z.object({ item: ManifestSchema });
 export const ManifestsSchema = z.object({
   items: z.array(ManifestSchema),

@@ -1,11 +1,9 @@
 {
   "created": {
     "item": {
-      "intentId": "89f2a642-0f55-46a7-a8f0-115ae151141e",
+      "intentId": "1f315e96-755e-4d80-8300-2fb9fd0203c2",
       "name": "Contract baseline",
       "description": "Test observation, not live AWS evidence",
-      "version": 1,
-      "status": "DRAFT",
       "constraints": [
         {
           "id": "ssh",
@@ -15,8 +13,10 @@
           "enabled": true
         }
       ],
-      "createdAt": "2026-10-13T07:43:18.160723Z",
-      "updatedAt": "2026-10-13T07:43:18.160723Z",
+      "version": 1,
+      "status": "DRAFT",
+      "createdAt": "2026-10-15T18:09:52.282523Z",
+      "updatedAt": "2026-10-15T18:09:52.282523Z",
       "approvedAt": null,
       "createdBy": "authenticated-user",
       "sourceType": "JSON_CONSTRAINT_MANIFEST"
@@ -25,11 +25,9 @@
   "intents": {
     "items": [
       {
-        "intentId": "89f2a642-0f55-46a7-a8f0-115ae151141e",
+        "intentId": "1f315e96-755e-4d80-8300-2fb9fd0203c2",
         "name": "Contract baseline",
         "description": "Test observation, not live AWS evidence",
-        "version": 1,
-        "status": "DRAFT",
         "constraints": [
           {
             "id": "ssh",
@@ -39,8 +37,10 @@
             "enabled": true
           }
         ],
-        "createdAt": "2026-10-13T07:43:18.160723Z",
-        "updatedAt": "2026-10-13T07:43:18.160723Z",
+        "version": 1,
+        "status": "DRAFT",
+        "createdAt": "2026-10-15T18:09:52.282523Z",
+        "updatedAt": "2026-10-15T18:09:52.282523Z",
         "approvedAt": null,
         "createdBy": "authenticated-user",
         "sourceType": "JSON_CONSTRAINT_MANIFEST"
@@ -52,11 +52,9 @@
   },
   "approved": {
     "item": {
-      "intentId": "89f2a642-0f55-46a7-a8f0-115ae151141e",
+      "intentId": "1f315e96-755e-4d80-8300-2fb9fd0203c2",
       "name": "Contract baseline",
       "description": "Test observation, not live AWS evidence",
-      "version": 1,
-      "status": "APPROVED",
       "constraints": [
         {
           "id": "ssh",
@@ -66,9 +64,11 @@
           "enabled": true
         }
       ],
-      "createdAt": "2026-10-13T07:43:18.160723Z",
-      "updatedAt": "2026-10-13T07:43:18.181848Z",
-      "approvedAt": "2026-10-13T07:43:18.181848Z",
+      "version": 1,
+      "status": "APPROVED",
+      "createdAt": "2026-10-15T18:09:52.282523Z",
+      "updatedAt": "2026-10-15T18:09:52.297761Z",
+      "approvedAt": "2026-10-15T18:09:52.297761Z",
       "createdBy": "authenticated-user",
       "sourceType": "JSON_CONSTRAINT_MANIFEST"
     }
@@ -76,7 +76,7 @@
   "findings": {
     "items": [
       {
-        "findingId": "5bc76c8a1d546908b365e8108f22ff33",
+        "findingId": "1fe221671fe71bade4a01268feaf05a9",
         "title": "ssh \u2014 Contract group",
         "description": "ssh",
         "explanation": "The security group permits SSH (TCP/22) from the public internet.",
@@ -87,7 +87,9 @@
         "resourceName": "Contract group",
         "resourceType": "AWS::EC2::SecurityGroup",
         "region": "ap-south-1",
-        "intentId": "89f2a642-0f55-46a7-a8f0-115ae151141e",
+        "accountId": "123456789012",
+        "simulated": false,
+        "intentId": "1f315e96-755e-4d80-8300-2fb9fd0203c2",
         "intentName": "Contract baseline",
         "intentVersion": 1,
         "constraintId": "ssh",
@@ -123,10 +125,10 @@
             }
           }
         ],
-        "firstSeenAt": "2026-10-13T07:43:18.190994Z",
-        "lastSeenAt": "2026-10-13T07:43:18.190994Z",
-        "updatedAt": "2026-10-13T07:43:18.190994Z",
-        "evaluationId": "b370457c-3590-436c-a012-14be8002679c",
+        "firstSeenAt": "2026-10-15T18:09:52.306654Z",
+        "lastSeenAt": "2026-10-15T18:09:52.306654Z",
+        "updatedAt": "2026-10-15T18:09:52.306654Z",
+        "evaluationId": "8d05d079-e788-4729-ae59-79cb475d2560",
         "remediationAvailable": false
       }
     ],
@@ -136,7 +138,7 @@
   },
   "finding": {
     "item": {
-      "findingId": "5bc76c8a1d546908b365e8108f22ff33",
+      "findingId": "1fe221671fe71bade4a01268feaf05a9",
       "title": "ssh \u2014 Contract group",
       "description": "ssh",
       "explanation": "The security group permits SSH (TCP/22) from the public internet.",
@@ -147,7 +149,9 @@
       "resourceName": "Contract group",
       "resourceType": "AWS::EC2::SecurityGroup",
       "region": "ap-south-1",
-      "intentId": "89f2a642-0f55-46a7-a8f0-115ae151141e",
+      "accountId": "123456789012",
+      "simulated": false,
+      "intentId": "1f315e96-755e-4d80-8300-2fb9fd0203c2",
       "intentName": "Contract baseline",
       "intentVersion": 1,
       "constraintId": "ssh",
@@ -183,10 +187,10 @@
           }
         }
       ],
-      "firstSeenAt": "2026-10-13T07:43:18.190994Z",
-      "lastSeenAt": "2026-10-13T07:43:18.190994Z",
-      "updatedAt": "2026-10-13T07:43:18.190994Z",
-      "evaluationId": "b370457c-3590-436c-a012-14be8002679c",
+      "firstSeenAt": "2026-10-15T18:09:52.306654Z",
+      "lastSeenAt": "2026-10-15T18:09:52.306654Z",
+      "updatedAt": "2026-10-15T18:09:52.306654Z",
+      "evaluationId": "8d05d079-e788-4729-ae59-79cb475d2560",
       "remediationAvailable": false
     }
   },
@@ -195,7 +199,10 @@
       "percent": 0,
       "totalRules": 1,
       "passingRules": 0,
-      "failingRules": 1
+      "failingRules": 1,
+      "unknownRules": 0,
+      "notApplicableRules": 0,
+      "definition": "Enabled applicable policy rules; unknown evidence prevents full conformance."
     },
     "severityCounts": {
       "critical": 0,
@@ -207,7 +214,7 @@
     "totalFindings": 1,
     "activeDriftCount": null,
     "openRemediations": null,
-    "lastEvaluatedAt": "2026-10-13T07:43:18.196632Z",
+    "lastEvaluatedAt": "2026-10-15T18:09:52.316136Z",
     "evaluatedRegion": "ap-south-1",
     "partial": false,
     "evaluationStatus": "SUCCEEDED",
@@ -218,20 +225,23 @@
   },
   "evaluation": {
     "evaluation": {
-      "evaluationId": "b370457c-3590-436c-a012-14be8002679c",
+      "evaluationId": "8d05d079-e788-4729-ae59-79cb475d2560",
       "status": "SUCCEEDED",
-      "intentId": "89f2a642-0f55-46a7-a8f0-115ae151141e",
+      "intentId": "1f315e96-755e-4d80-8300-2fb9fd0203c2",
       "intentName": "Contract baseline",
       "intentVersion": 1,
       "accountId": "123456789012",
       "region": "ap-south-1",
-      "startedAt": "2026-10-13T07:43:18.189998Z",
-      "finishedAt": "2026-10-13T07:43:18.196632Z",
+      "startedAt": "2026-10-15T18:09:52.305698Z",
+      "finishedAt": "2026-10-15T18:09:52.316136Z",
       "conformance": {
         "percent": 0,
         "totalRules": 1,
         "passingRules": 0,
-        "failingRules": 1
+        "failingRules": 1,
+        "unknownRules": 0,
+        "notApplicableRules": 0,
+        "definition": "Enabled applicable policy rules; unknown evidence prevents full conformance."
       },
       "summary": {
         "resourceCount": 1,
@@ -239,11 +249,25 @@
         "resolvedFindings": 0,
         "inventoryPartial": false
       },
+      "ruleResults": [
+        {
+          "ruleId": "ssh",
+          "type": "SECURITY_GROUP_NO_OPEN_SSH",
+          "outcome": "VIOLATION",
+          "bindings": [
+            {
+              "resourceId": "sg-contract",
+              "outcome": "VIOLATION"
+            }
+          ]
+        }
+      ],
+      "simulated": false,
       "warnings": []
     },
     "findings": [
       {
-        "findingId": "5bc76c8a1d546908b365e8108f22ff33",
+        "findingId": "1fe221671fe71bade4a01268feaf05a9",
         "title": "ssh \u2014 Contract group",
         "description": "ssh",
         "explanation": "The security group permits SSH (TCP/22) from the public internet.",
@@ -254,7 +278,9 @@
         "resourceName": "Contract group",
         "resourceType": "AWS::EC2::SecurityGroup",
         "region": "ap-south-1",
-        "intentId": "89f2a642-0f55-46a7-a8f0-115ae151141e",
+        "accountId": "123456789012",
+        "simulated": false,
+        "intentId": "1f315e96-755e-4d80-8300-2fb9fd0203c2",
         "intentName": "Contract baseline",
         "intentVersion": 1,
         "constraintId": "ssh",
@@ -290,10 +316,10 @@
             }
           }
         ],
-        "firstSeenAt": "2026-10-13T07:43:18.190994Z",
-        "lastSeenAt": "2026-10-13T07:43:18.190994Z",
-        "updatedAt": "2026-10-13T07:43:18.190994Z",
-        "evaluationId": "b370457c-3590-436c-a012-14be8002679c"
+        "firstSeenAt": "2026-10-15T18:09:52.306654Z",
+        "lastSeenAt": "2026-10-15T18:09:52.306654Z",
+        "updatedAt": "2026-10-15T18:09:52.306654Z",
+        "evaluationId": "8d05d079-e788-4729-ae59-79cb475d2560"
       }
     ],
     "inventory": {
@@ -309,11 +335,11 @@
     "accountId": null,
     "region": "ap-south-1",
     "stage": "dev",
-    "checkedAt": "2026-10-13T07:43:18.217032Z",
+    "checkedAt": "2026-10-15T18:09:52.335420Z",
     "backendReachable": true,
     "awsSourcesConnected": false,
     "evaluatedRegion": "ap-south-1",
-    "lastSyncAt": "2026-10-13T07:43:18.217032Z",
+    "lastSyncAt": "2026-10-15T18:09:52.335420Z",
     "version": "0.2.0",
     "sources": {
       "awsIdentity": {
@@ -331,6 +357,10 @@
         "source": "local",
         "message": "Local API mode uses DynamoDB Local. AWS discovery and Cognito are not verified."
       }
-    ]
+    ],
+    "features": {
+      "fixtureInventory": false,
+      "topology": true
+    }
   }
 }

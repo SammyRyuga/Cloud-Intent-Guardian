@@ -19,7 +19,7 @@ backend/
   src/                          Eight handlers and shared helpers
 ```
 
-The backend implements draft intent creation/retrieval/approval, four deterministic constraints, live inventory with observed graph edges, findings persistence and synchronous evaluations. Stored dashboard summaries, finding details and observed graph views are implemented. Evaluation history/status reads, version management, audit events, relationship-conformance rules, role/account isolation, remediation workflows and Bedrock explanations remain to be implemented. Automatic remediation is disabled by absence of an implementation.
+The backend implements draft intent creation/retrieval/approval, four attribute constraints plus v2 relationship/path/boundary rules, inventory with typed coverage, findings persistence and synchronous evaluations. INTENT and DIFF graph views and a guarded local fixture provider are now available. Live collected edges are structural; network reachability remains unknown without adequate evidence. Evaluation history/status reads, version management, audit events, role isolation, remediation workflows and Bedrock explanations remain later phases. See [current integration](INTEGRATION.md) and [validation](backend/VALIDATION.md).
 
 The React frontend is in `frontend/`, together with its PRD and implementation specification. [Integration guide](INTEGRATION.md) documents the connected MVP, real local API mode and remaining AWS validation.
 
@@ -228,7 +228,7 @@ The original checkout ignored `DYNAMODB_ENDPOINT_URL`; the shared helper fixes t
 | `GET /v1/health` | Public `{ok, service, timestamp, version}` |
 | `GET /v1/system/status` | Live AWS `{status, accountId, region, stage, checkedAt, sources, warnings}` |
 | `GET /v1/resources` | Live inventory `{items, edges, meta}` |
-| `GET /v1/architecture/graph?view=ACTUAL` | Observed graph; comparison states remain UNKNOWN |
+| `GET /v1/architecture/graph?view=ACTUAL` | Observed graph; INTENT and DIFF also accept optional intentId/version, with evidence-based comparison states |
 | `GET /v1/dashboard/summary` | Stored counts and latest evaluation conformance; unavailable features are null |
 | `GET /v1/findings/{findingId}` | `{item}` with persisted evidence |
 | `GET /v1/intents` | Optional `limit`, `nextToken`; `{items, count, nextToken, limit}` |
