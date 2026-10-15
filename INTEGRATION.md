@@ -1,3 +1,28 @@
+## Overview evaluation and proposal count correction (2026-10-16)
+
+A live read found no saved intents in the demo account. Evaluation therefore
+returns HTTP 409 `NO_APPROVED_INTENT`: create and explicitly approve an intent
+before evaluating it. The frontend now retains the backend's error code/message
+and offers an Intents link instead of presenting every 409 as a concurrent edit.
+No baseline is created or approved automatically.
+
+`GET /v1/dashboard/summary` now reads scoped remediation proposals and reports
+`features.remediation=true` and the count of PROPOSED, APPROVED or EXECUTING
+proposals. A bounded/incomplete proposal scan yields a null count and
+`partial=true`; the frontend labels this unavailable. ViewsFunction has read-only
+access to the proposals table. Execution remains disabled and dry-run remains on.
+Standalone drift-event history is still unimplemented and remains Not enabled.
+The /v1 routes and response envelopes are unchanged.
+
+Validation passed: 145 backend tests, 30 frontend tests, 13 contract tests,
+SAM validation with lint, SAM build, frontend lint/build and git diff checks.
+Frontend lint reports two existing Fast Refresh warnings. Tests cover scoped
+pending proposal counts, incomplete scans, backend conflict messages, the Intents
+link and unavailable-versus-disabled count labels. A deployed Lambda invocation
+with a synthetic admin event confirmed the exact NO_APPROVED_INTENT response;
+this bypasses API Gateway JWT authorization and does not establish a signed-in
+browser journey. Deployment verification will follow this record.
+
 ## Working prototype deployment (2026-10-16)
 
 User-authorized deployment is live at **https://cloud-intent-guardian.onrender.com**.

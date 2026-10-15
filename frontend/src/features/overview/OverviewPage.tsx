@@ -11,6 +11,8 @@ import { StateBoundary } from '@/components/common/StateBoundary';
 import { formatDateTime } from '@/utils/dates';
 import { Play, ShieldCheck, AlertTriangle, Layers } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getEvaluationErrorGuidance } from './evaluationErrorGuidance';
+import { getOptionalCountPresentation } from './optionalCountPresentation';
 
 export function OverviewPage() {
   const { data: summary, isLoading, isError, error, refetch } = useDashboardSummary();
@@ -23,6 +25,9 @@ export function OverviewPage() {
   const history = useEvaluations({ cursor: historyCursor });
   const currentStatus = activeEvaluation.data?.item.status;
   const isEvaluationActive = currentStatus === 'QUEUED' || currentStatus === 'RUNNING';
+  const evaluationErrorGuidance = getEvaluationErrorGuidance(runEvaluation.error);
+  const driftCount = summary ? getOptionalCountPresentation(summary.activeDriftCount, summary.features?.driftEvents) : null;
+  const remediationCount = summary ? getOptionalCountPresentation(summary.openRemediations, summary.features?.remediation) : null;
 
   useEffect(() => {
     if (currentStatus === 'SUCCEEDED' || currentStatus === 'PARTIAL' || currentStatus === 'FAILED') {
@@ -60,11 +65,16 @@ export function OverviewPage() {
       </div>
 
       {runEvaluation.isPending && <p role="status" className="text-sm text-graphite">Submitting evaluation request.</p>}
-      {runEvaluation.error && <p role="alert" className="text-sm text-sev-critical">{runEvaluation.error.message}</p>}
+      {runEvaluation.error && <div role="alert" className="text-sm text-sev-critical">
+        <p>{runEvaluation.error.message}</p>
+        {evaluationErrorGuidance && <Link to={evaluationErrorGuidance.to} className="mt-1 inline-block text-prussian underline">
+          {evaluationErrorGuidance.label}
+        </Link>}
+      </div>}
       {runEvaluation.data && <p role="status" className="text-sm">Evaluation accepted as {runEvaluation.data.evaluation.status}. ID: {runEvaluation.data.evaluation.evaluationId}</p>}
       {activeEvaluation.error && <p role="alert" className="text-sm text-sev-critical">Evaluation status could not be loaded: {activeEvaluation.error.message}</p>}
       {activeEvaluation.data && <div className="flex items-center gap-3 text-sm"><p role="status">Evaluation {activeEvaluation.data.item.status.toLowerCase()}. ID: {activeEvaluation.data.item.evaluationId}{activeEvaluation.data.item.progressStage ? ` · ${activeEvaluation.data.item.progressStage}` : ''}</p><Button variant="secondary" size="sm" onClick={() => activeEvaluation.refetch()}>Refresh status</Button></div>}
-      {summary?.partial && <p role="status" className="text-sm text-sev-medium">Stored data is incomplete. Counts cover retrieved records; conformance is unavailable.</p>}
+      {summary?.partial && <p role="status" className="text-sm text-sev-medium">Stored data is incomplete. Some counts or conformance results may be unavailable.</p>}
       <StateBoundary
         isLoading={isLoading}
         isError={isError}
@@ -114,8 +124,8 @@ export function OverviewPage() {
                   <span className="text-xs font-medium">Active Drift Events</span>
                 </div>
                 <div className="flex items-baseline gap-2 mt-2">
-                  <span className="font-title text-3xl font-bold text-ink">{summary.activeDriftCount ?? 'Not enabled'}</span>
-                  {summary.activeDriftCount !== null && <Link to="/drift-events" className="text-xs text-prussian hover:underline">
+                  <span className="font-title text-3xl font-bold text-ink">{driftCount?.label}</span>
+                  {driftCount?.showLink && <Link to="/drift-events" className="text-xs text-prussian hover:underline">
                     Inspect drift
                   </Link>}
                 </div>
@@ -127,8 +137,8 @@ export function OverviewPage() {
                   <span className="text-xs font-medium">Pending Remediations</span>
                 </div>
                 <div className="flex items-baseline gap-2 mt-2">
-                  <span className="font-title text-3xl font-bold text-ink">{summary.openRemediations ?? 'Not enabled'}</span>
-                  {summary.openRemediations !== null && <Link to="/remediation" className="text-xs text-prussian hover:underline">
+                  <span className="font-title text-3xl font-bold text-ink">{remediationCount?.label}</span>
+                  {remediationCount?.showLink && <Link to="/remediation" className="text-xs text-prussian hover:underline">
                     Review actions
                   </Link>}
                 </div>

@@ -87,10 +87,20 @@ export async function apiClient<T>(
   }
 
   if (response.status === 409) {
+    let errorPayload: unknown;
+    try {
+      errorPayload = await response.json();
+    } catch {
+      // A malformed or empty conflict response uses the safe generic fallback below.
+    }
+    const envelope = isRecord(errorPayload) ? errorPayload.error : undefined;
+    const payload = isRecord(envelope) ? envelope : isRecord(errorPayload) ? errorPayload : undefined;
+    const backendCode = typeof payload?.code === 'string' && payload.code.trim() ? payload.code.trim() : undefined;
+    const backendMessage = typeof payload?.message === 'string' && payload.message.trim() ? payload.message.trim() : undefined;
     throw new ApiError({
-      message: 'This item was already changed by someone else. Refresh to see its current state.',
+      message: backendMessage || 'The request conflicts with the current state. Refresh and try again.',
       kind: 'conflict',
-      code: 'STATE_CONFLICT',
+      code: backendCode || 'STATE_CONFLICT',
       requestId,
       status: 409,
     });
@@ -156,4 +166,8 @@ export async function apiClient<T>(
   }
 
   return parseResult.data;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

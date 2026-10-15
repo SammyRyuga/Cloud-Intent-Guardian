@@ -494,6 +494,8 @@ Resources:
             TableName: !Ref FindingsTable
         - DynamoDBReadPolicy:
             TableName: !Ref EvaluationsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref RemediationsTable
       Events:
         DashboardRoute:
           Type: HttpApi

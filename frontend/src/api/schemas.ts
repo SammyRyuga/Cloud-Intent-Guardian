@@ -29,6 +29,10 @@ export const DashboardSummarySchema = z.object({
   totalFindings: z.number(),
   activeDriftCount: z.number().nullable(),
   openRemediations: z.number().nullable(),
+  features: z.object({
+    driftEvents: z.boolean().optional(),
+    remediation: z.boolean().optional(),
+  }).optional(),
   partial: z.boolean().optional(),
   lastEvaluatedAt: z.string().nullable(),
   evaluatedRegion: z.string(),

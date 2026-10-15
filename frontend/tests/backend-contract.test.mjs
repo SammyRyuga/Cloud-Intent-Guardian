@@ -123,7 +123,8 @@ test("finding adapter preserves IDs, observed timestamps and opaque pagination",
 test("dashboard and local readiness parse without inventing unavailable features", () => {
   const dashboard = S.DashboardSummarySchema.parse(wire.dashboard);
   assert.equal(dashboard.totalFindings, 1);
-  assert.equal(dashboard.openRemediations, null);
+  assert.equal(dashboard.openRemediations, 0);
+  assert.equal(dashboard.features?.remediation, true);
   assert.equal(
     S.SystemStatusSchema.parse(wire.status).awsSourcesConnected,
     false,

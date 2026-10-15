@@ -25,6 +25,8 @@ def lambda_handler(event, context):
             return error(409, 'REGION_SCOPE_MISMATCH', 'Only the configured region is available.')
         items, findings_partial = scan_all(findings, FilterExpression=Attr('scopeKey').eq(configured_scope()))
         evaluations, evaluations_partial = scan_all(db.Table(os.environ['EVALUATIONS_TABLE']), FilterExpression=Attr('scopeKey').eq(configured_scope()))
+        proposals, proposals_partial = scan_all(db.Table(os.environ['REMEDIATIONS_TABLE']), FilterExpression=Attr('scopeKey').eq(configured_scope()))
+        pending_proposals = sum(row.get('status') in {'PROPOSED', 'APPROVED', 'EXECUTING'} for row in proposals)
         evaluations = [row for row in evaluations if row.get('status') in {'SUCCEEDED', 'PARTIAL'} and row.get('finishedAt')]
         evaluations.sort(key=lambda row: row['finishedAt'], reverse=True)
         latest = evaluations[0] if evaluations else None
@@ -32,14 +34,16 @@ def lambda_handler(event, context):
         severity = {level: sum(row.get('severity', '').lower() == level for row in active)
                     for level in ['critical', 'high', 'medium', 'low', 'info']}
         metrics = (latest or {}).get('conformance')
-        incomplete = findings_partial or evaluations_partial
-        if not metrics or incomplete or latest.get('status') != 'SUCCEEDED':
+        evaluation_incomplete = findings_partial or evaluations_partial
+        incomplete = evaluation_incomplete or proposals_partial
+        if not metrics or evaluation_incomplete or latest.get('status') != 'SUCCEEDED':
             metrics = {'percent': None, 'totalRules': 0, 'passingRules': 0, 'failingRules': 0}
         return response(200, {'conformance': metrics, 'severityCounts': severity,
-                              'totalFindings': len(active), 'activeDriftCount': None, 'openRemediations': None,
+                              'totalFindings': len(active), 'activeDriftCount': None,
+                              'openRemediations': None if proposals_partial else pending_proposals,
                               'lastEvaluatedAt': latest.get('finishedAt') if latest else None,
                               'evaluatedRegion': region, 'partial': incomplete,
                               'evaluationStatus': latest.get('status') if latest else None,
-                              'features': {'driftEvents': False, 'remediation': False}})
+                              'features': {'driftEvents': False, 'remediation': True}})
     except (ClientError, BotoCoreError) as exc:
         return error(502, 'VIEW_READ_FAILED', 'Could not read stored dashboard or finding data.', type(exc).__name__)

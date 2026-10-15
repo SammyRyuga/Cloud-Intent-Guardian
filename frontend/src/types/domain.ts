@@ -29,6 +29,10 @@ export interface DashboardSummary {
   totalFindings: number;
   activeDriftCount: number | null;
   openRemediations: number | null;
+  features?: {
+    driftEvents?: boolean;
+    remediation?: boolean;
+  };
   partial?: boolean;
   lastEvaluatedAt: string | null;
   evaluatedRegion: string;

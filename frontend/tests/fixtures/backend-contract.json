@@ -303,14 +303,14 @@
     },
     "totalFindings": 1,
     "activeDriftCount": null,
-    "openRemediations": null,
+    "openRemediations": 0,
     "lastEvaluatedAt": "2026-10-15T18:46:05.076394Z",
     "evaluatedRegion": "ap-south-1",
     "partial": false,
     "evaluationStatus": "SUCCEEDED",
     "features": {
       "driftEvents": false,
-      "remediation": false
+      "remediation": true
     }
   },
   "evaluation": {

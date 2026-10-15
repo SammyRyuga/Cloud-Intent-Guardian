@@ -73,7 +73,8 @@ class IntegrationContracts(unittest.TestCase):
         dashboard = decoded(views.lambda_handler(authed({}), None))
         self.assertEqual(dashboard['totalFindings'], 1)
         self.assertEqual(dashboard['severityCounts']['high'], 1)
-        self.assertIsNone(dashboard['openRemediations'])
+        self.assertEqual(dashboard['openRemediations'], 0)
+        self.assertTrue(dashboard['features']['remediation'])
         with patch.dict(os.environ, {'CIG_LOCAL': 'true'}):
             local_status = decoded(status.lambda_handler(authed({}), None))
             self.assertFalse(local_status['awsSourcesConnected'])
@@ -122,6 +123,26 @@ class IntegrationContracts(unittest.TestCase):
     def test_missing_finding_is_404(self):
         result = importlib.import_module('views.app').lambda_handler(authed({'pathParameters': {'findingId': 'absent'}}), None)
         self.assertEqual(result['statusCode'], 404)
+
+    def test_dashboard_counts_only_pending_proposals_in_configured_scope(self):
+        from common.auth import configured_scope
+        table = self.db.Table(os.environ['REMEDIATIONS_TABLE'])
+        for index, status in enumerate(['PROPOSED', 'APPROVED', 'EXECUTING', 'DRY_RUN_SUCCEEDED', 'SUCCEEDED', 'FAILED']):
+            table.put_item(Item={'proposalId': str(index), 'scopeKey': configured_scope(), 'status': status})
+        table.put_item(Item={'proposalId': 'other-scope', 'scopeKey': 'different-scope', 'status': 'PROPOSED'})
+        result = decoded(importlib.import_module('views.app').lambda_handler(authed({}), None))
+        self.assertEqual(result['openRemediations'], 3)
+        self.assertTrue(result['features']['remediation'])
+        self.assertIsNone(result['activeDriftCount'])
+        self.assertFalse(result['features']['driftEvents'])
+
+    def test_dashboard_does_not_claim_complete_proposal_count_after_capped_scan(self):
+        module = importlib.import_module('views.app')
+        with patch.object(module, 'scan_all', side_effect=[([], False), ([], False), ([{'status': 'PROPOSED'}], True)]):
+            result = decoded(module.lambda_handler(authed({}), None))
+        self.assertIsNone(result['openRemediations'])
+        self.assertTrue(result['partial'])
+        self.assertTrue(result['features']['remediation'])
 
     def test_actual_graph_uses_only_observed_nodes_and_edges(self):
         module = importlib.import_module('resources.app')
