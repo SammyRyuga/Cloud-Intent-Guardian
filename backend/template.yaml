@@ -12,6 +12,16 @@ Metadata:
         scope: project
 
 Parameters:
+  EnableAsyncWorker:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Optional DynamoDB Streams evaluation worker; local jobs use the explicit local runner.
+  ExistingExecutionRoleArn:
+    Type: String
+    Default: arn:aws:iam::000000000000:role/NOT_CONFIGURED
+    AllowedPattern: '^arn:aws[a-zA-Z-]*:iam::[0-9]{12}:role/[a-zA-Z_0-9+=,.@\-_/]+$'
+    Description: Optional pre-approved Academy execution role; policies must already exist and PassRole must be allowed.
   EnableConfig:
     Type: String
     Default: 'false'
@@ -46,6 +56,8 @@ Parameters:
     Description: Exact frontend OAuth sign-out return URL.
 
 Conditions:
+  AsyncWorkerEnabled: !Equals [!Ref EnableAsyncWorker, 'true']
+  UseExistingRole: !Not [!Equals [!Ref ExistingExecutionRoleArn, 'arn:aws:iam::000000000000:role/NOT_CONFIGURED']]
   ConfigEnabled: !Equals [!Ref EnableConfig, 'true']
   LambdaInventoryEnabled: !Equals [!Ref EnableLambdaInventory, 'true']
   TagInventoryEnabled: !Equals [!Ref EnableTagInventory, 'true']
@@ -66,6 +78,12 @@ Globals:
         INVENTORY_PROVIDER: aws
         CIG_FIXTURE_SCENARIO: benign
         TOPOLOGY_ENABLED: 'true'
+        CIG_ACCOUNT_ID: !Ref AWS::AccountId
+        CIG_LOCAL_ROLE: admin
+        ASYNC_WORKER_ENABLED: !Ref EnableAsyncWorker
+        INTENT_VERSIONS_TABLE: !Ref IntentVersionsTable
+        AUDIT_TABLE: !Ref AuditEventsTable
+        EVALUATION_ARTIFACTS_TABLE: !Ref EvaluationArtifactsTable
         CONFIG_ENABLED: !Ref EnableConfig
         LAMBDA_INVENTORY_ENABLED: !Ref EnableLambdaInventory
         TAG_INVENTORY_ENABLED: !Ref EnableTagInventory
@@ -93,6 +111,22 @@ Resources:
           AttributeDataType: String
           Required: true
           Mutable: true
+
+  ViewerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: viewer
+      UserPoolId: !Ref UserPool
+  ApproverGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: approver
+      UserPoolId: !Ref UserPool
+  AdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: admin
+      UserPoolId: !Ref UserPool
 
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -175,6 +209,57 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: false
 
+  IntentVersionsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub cloud-intent-guardian-${StageName}-intent-versions
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - {AttributeName: intentId, AttributeType: S}
+        - {AttributeName: version, AttributeType: N}
+      KeySchema:
+        - {AttributeName: intentId, KeyType: HASH}
+        - {AttributeName: version, KeyType: RANGE}
+      SSESpecification: {SSEEnabled: true}
+
+  AuditEventsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub cloud-intent-guardian-${StageName}-audit
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - {AttributeName: auditId, AttributeType: S}
+        - {AttributeName: scopeKey, AttributeType: S}
+        - {AttributeName: eventOrder, AttributeType: S}
+      KeySchema:
+        - {AttributeName: auditId, KeyType: HASH}
+      GlobalSecondaryIndexes:
+        - IndexName: scope-time
+          KeySchema:
+            - {AttributeName: scopeKey, KeyType: HASH}
+            - {AttributeName: eventOrder, KeyType: RANGE}
+          Projection: {ProjectionType: ALL}
+      SSESpecification: {SSEEnabled: true}
+
+  EvaluationArtifactsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub cloud-intent-guardian-${StageName}-evaluation-artifacts
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - {AttributeName: evaluationId, AttributeType: S}
+        - {AttributeName: artifactKey, AttributeType: S}
+      KeySchema:
+        - {AttributeName: evaluationId, KeyType: HASH}
+        - {AttributeName: artifactKey, KeyType: RANGE}
+      SSESpecification: {SSEEnabled: true}
+
   FindingsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -183,6 +268,14 @@ Resources:
       AttributeDefinitions:
         - AttributeName: findingId
           AttributeType: S
+        - AttributeName: scopeIntentKey
+          AttributeType: S
+      GlobalSecondaryIndexes:
+        - IndexName: scope-intent
+          KeySchema:
+            - {AttributeName: scopeIntentKey, KeyType: HASH}
+            - {AttributeName: findingId, KeyType: RANGE}
+          Projection: {ProjectionType: ALL}
       KeySchema:
         - AttributeName: findingId
           KeyType: HASH
@@ -199,6 +292,17 @@ Resources:
       AttributeDefinitions:
         - AttributeName: evaluationId
           AttributeType: S
+        - AttributeName: scopeKey
+          AttributeType: S
+        - AttributeName: createdOrder
+          AttributeType: S
+      StreamSpecification: !If [AsyncWorkerEnabled, {StreamViewType: NEW_IMAGE}, !Ref AWS::NoValue]
+      GlobalSecondaryIndexes:
+        - IndexName: scope-created
+          KeySchema:
+            - {AttributeName: scopeKey, KeyType: HASH}
+            - {AttributeName: createdOrder, KeyType: RANGE}
+          Projection: {ProjectionType: ALL}
       KeySchema:
         - AttributeName: evaluationId
           KeyType: HASH
@@ -210,6 +314,7 @@ Resources:
   HealthFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Role: !If [UseExistingRole, !Ref ExistingExecutionRoleArn, !Ref AWS::NoValue]
       CodeUri: src/
       Handler: health.app.lambda_handler
       Description: Public liveness endpoint only; returns no account details.
@@ -226,6 +331,7 @@ Resources:
   StatusFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Role: !If [UseExistingRole, !Ref ExistingExecutionRoleArn, !Ref AWS::NoValue]
       CodeUri: src/
       Handler: status.app.lambda_handler
       Description: Authenticated AWS account and source readiness status.
@@ -258,6 +364,7 @@ Resources:
   ResourcesFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Role: !If [UseExistingRole, !Ref ExistingExecutionRoleArn, !Ref AWS::NoValue]
       CodeUri: src/
       Handler: resources.app.lambda_handler
       Description: Read-only inventory from EC2, VPC, security groups, RDS and S3 APIs.
@@ -266,6 +373,8 @@ Resources:
         Variables:
           INTENTS_TABLE: !Ref IntentsTable
       Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref IntentVersionsTable
         - DynamoDBReadPolicy:
             TableName: !Ref IntentsTable
         - Statement:
@@ -316,6 +425,7 @@ Resources:
   ViewsFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Role: !If [UseExistingRole, !Ref ExistingExecutionRoleArn, !Ref AWS::NoValue]
       CodeUri: src/
       Handler: views.app.lambda_handler
       Description: Stored findings detail and dashboard summary without live discovery.
@@ -345,6 +455,7 @@ Resources:
   FindingsFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Role: !If [UseExistingRole, !Ref ExistingExecutionRoleArn, !Ref AWS::NoValue]
       CodeUri: src/
       Handler: findings.app.lambda_handler
       Description: Lists stored findings with cursor pagination.
@@ -352,9 +463,23 @@ Resources:
         Variables:
           FINDINGS_TABLE: !Ref FindingsTable
       Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !GetAtt AuditEventsTable.Arn
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !GetAtt FindingsTable.Arn
         - DynamoDBReadPolicy:
             TableName: !Ref FindingsTable
       Events:
+        UpdateFindingRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /v1/findings/{findingId}
+            Method: PATCH
         FindingsRoute:
           Type: HttpApi
           Properties:
@@ -365,6 +490,7 @@ Resources:
   IntentsFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Role: !If [UseExistingRole, !Ref ExistingExecutionRoleArn, !Ref AWS::NoValue]
       CodeUri: src/
       Handler: intents.app.lambda_handler
       Description: Lists and creates draft JSON intent manifests.
@@ -372,6 +498,12 @@ Resources:
         Variables:
           INTENTS_TABLE: !Ref IntentsTable
       Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IntentVersionsTable
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !GetAtt AuditEventsTable.Arn
         - DynamoDBCrudPolicy:
             TableName: !Ref IntentsTable
       Events:
@@ -391,6 +523,7 @@ Resources:
   IntentDetailFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Role: !If [UseExistingRole, !Ref ExistingExecutionRoleArn, !Ref AWS::NoValue]
       CodeUri: src/
       Handler: intent_detail.app.lambda_handler
       Description: Retrieves one intent manifest.
@@ -411,6 +544,7 @@ Resources:
   ApproveIntentFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Role: !If [UseExistingRole, !Ref ExistingExecutionRoleArn, !Ref AWS::NoValue]
       CodeUri: src/
       Handler: approve_intent.app.lambda_handler
       Description: Explicitly approves a validated draft intent.
@@ -418,6 +552,12 @@ Resources:
         Variables:
           INTENTS_TABLE: !Ref IntentsTable
       Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IntentVersionsTable
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !GetAtt AuditEventsTable.Arn
         - DynamoDBCrudPolicy:
             TableName: !Ref IntentsTable
       Events:
@@ -431,9 +571,10 @@ Resources:
   EvaluationsFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Role: !If [UseExistingRole, !Ref ExistingExecutionRoleArn, !Ref AWS::NoValue]
       CodeUri: src/
       Handler: evaluations.app.lambda_handler
-      Description: Runs deterministic intent constraints against live AWS resource inventory.
+      Description: Queues evaluations and reads scoped history; collection runs only in the worker.
       Timeout: 29
       MemorySize: 512
       Environment:
@@ -442,32 +583,102 @@ Resources:
           FINDINGS_TABLE: !Ref FindingsTable
           EVALUATIONS_TABLE: !Ref EvaluationsTable
       Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref IntentsTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref FindingsTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref EvaluationsTable
+        - DynamoDBReadPolicy: {TableName: !Ref IntentsTable}
+        - DynamoDBReadPolicy: {TableName: !Ref IntentVersionsTable}
+        - DynamoDBCrudPolicy: {TableName: !Ref EvaluationsTable}
+        - DynamoDBReadPolicy: {TableName: !Ref EvaluationArtifactsTable}
         - Statement:
             - Effect: Allow
-              Action:
-                - ec2:DescribeInstances
-                - ec2:DescribeVpcs
-                - ec2:DescribeSubnets
-                - ec2:DescribeSecurityGroups
-                - rds:DescribeDBInstances
-                - rds:DescribeDBSubnetGroups
-                - s3:ListAllMyBuckets
-                - s3:GetBucketLocation
-                - s3:GetPublicAccessBlock
-                - s3:GetBucketPolicyStatus
-                - sts:GetCallerIdentity
+              Action: dynamodb:PutItem
+              Resource: !GetAtt AuditEventsTable.Arn
+      Events:
+        EvaluationListRoute:
+          Type: HttpApi
+          Properties: {ApiId: !Ref Api, Path: /v1/evaluations, Method: GET}
+        EvaluationDetailRoute:
+          Type: HttpApi
+          Properties: {ApiId: !Ref Api, Path: '/v1/evaluations/{id}', Method: GET}
+        RunEvaluationRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /v1/evaluations
+            Method: POST
+            TimeoutInMillis: 29000
+
+  VersionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !If [UseExistingRole, !Ref ExistingExecutionRoleArn, !Ref AWS::NoValue]
+      CodeUri: src/
+      Handler: versions.app.lambda_handler
+      Description: Immutable intent versions and explicitly approved baseline pointer changes.
+      Environment:
+        Variables:
+          INTENTS_TABLE: !Ref IntentsTable
+      Policies:
+        - DynamoDBCrudPolicy: {TableName: !Ref IntentsTable}
+        - DynamoDBCrudPolicy: {TableName: !Ref IntentVersionsTable}
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !GetAtt AuditEventsTable.Arn
+      Events:
+        VersionList: {Type: HttpApi, Properties: {ApiId: !Ref Api, Path: '/v1/intents/{intentId}/versions', Method: GET}}
+        VersionCreate: {Type: HttpApi, Properties: {ApiId: !Ref Api, Path: '/v1/intents/{intentId}/versions', Method: POST}}
+        VersionDetail: {Type: HttpApi, Properties: {ApiId: !Ref Api, Path: '/v1/intents/{intentId}/versions/{version}', Method: GET}}
+        VersionApprove: {Type: HttpApi, Properties: {ApiId: !Ref Api, Path: '/v1/intents/{intentId}/versions/{version}/approve', Method: POST}}
+        VersionRollback: {Type: HttpApi, Properties: {ApiId: !Ref Api, Path: '/v1/intents/{intentId}/rollback', Method: POST}}
+        VersionDiff: {Type: HttpApi, Properties: {ApiId: !Ref Api, Path: '/v1/intents/{intentId}/diff', Method: GET}}
+
+  AuditFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !If [UseExistingRole, !Ref ExistingExecutionRoleArn, !Ref AWS::NoValue]
+      CodeUri: src/
+      Handler: audit.app.lambda_handler
+      Description: Read-only scoped audit history with cursor pagination.
+      Policies:
+        - DynamoDBReadPolicy: {TableName: !Ref AuditEventsTable}
+      Events:
+        AuditList: {Type: HttpApi, Properties: {ApiId: !Ref Api, Path: /v1/audit, Method: GET}}
+
+  EvaluationWorkerFunction:
+    Type: AWS::Serverless::Function
+    Condition: AsyncWorkerEnabled
+    Properties:
+      Role: !If [UseExistingRole, !Ref ExistingExecutionRoleArn, !Ref AWS::NoValue]
+      CodeUri: src/
+      Handler: evaluation_worker.app.lambda_handler
+      Description: Idempotent queued evaluation worker; optional Academy transport, no automatic remediation.
+      Timeout: 120
+      MemorySize: 512
+      Environment:
+        Variables:
+          INTENTS_TABLE: !Ref IntentsTable
+          FINDINGS_TABLE: !Ref FindingsTable
+          EVALUATIONS_TABLE: !Ref EvaluationsTable
+      Policies:
+        - DynamoDBCrudPolicy: {TableName: !Ref IntentsTable}
+        - DynamoDBReadPolicy: {TableName: !Ref IntentVersionsTable}
+        - DynamoDBCrudPolicy: {TableName: !Ref FindingsTable}
+        - DynamoDBCrudPolicy: {TableName: !Ref EvaluationsTable}
+        - DynamoDBCrudPolicy: {TableName: !Ref EvaluationArtifactsTable}
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !GetAtt AuditEventsTable.Arn
+            - Effect: Allow
+              Action: [dynamodb:DescribeStream, dynamodb:GetRecords, dynamodb:GetShardIterator, dynamodb:ListStreams]
+              Resource: !GetAtt EvaluationsTable.StreamArn
+            - Effect: Allow
+              Action: [sts:GetCallerIdentity, ec2:DescribeInstances, ec2:DescribeVpcs, ec2:DescribeSubnets, ec2:DescribeSecurityGroups, rds:DescribeDBInstances, rds:DescribeDBSubnetGroups, s3:ListAllMyBuckets, s3:GetBucketLocation, s3:GetPublicAccessBlock, s3:GetBucketPolicyStatus]
               Resource: '*'
         - !If
           - LambdaInventoryEnabled
           - Statement:
               - Effect: Allow
-                Action: [lambda:ListFunctions]
+                Action: lambda:ListFunctions
                 Resource: '*'
           - !Ref AWS::NoValue
         - !If
@@ -478,13 +689,17 @@ Resources:
                 Resource: '*'
           - !Ref AWS::NoValue
       Events:
-        RunEvaluationRoute:
-          Type: HttpApi
+        QueuedEvaluation:
+          Type: DynamoDB
           Properties:
-            ApiId: !Ref Api
-            Path: /v1/evaluations
-            Method: POST
-            TimeoutInMillis: 29000
+            Stream: !GetAtt EvaluationsTable.StreamArn
+            StartingPosition: LATEST
+            BatchSize: 1
+            MaximumRetryAttempts: 2
+            MaximumRecordAgeInSeconds: 3600
+            FilterCriteria:
+              Filters:
+                - Pattern: '{"eventName":["INSERT"],"dynamodb":{"NewImage":{"status":{"S":["QUEUED"]}}}}'
 
 Outputs:
   ApiUrl:
@@ -508,3 +723,9 @@ Outputs:
     Value: !Ref FindingsTable
   EvaluationsTableName:
     Value: !Ref EvaluationsTable
+  IntentVersionsTableName:
+    Value: !Ref IntentVersionsTable
+  AuditEventsTableName:
+    Value: !Ref AuditEventsTable
+  EvaluationArtifactsTableName:
+    Value: !Ref EvaluationArtifactsTable

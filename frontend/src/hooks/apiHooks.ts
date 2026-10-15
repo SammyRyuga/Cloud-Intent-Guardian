@@ -8,6 +8,7 @@ import type * as T from '@/types/domain';
 import * as B from '@/api/backendSchemas';
 import { env } from '@/config/env';
 import { hasCapability } from '@/config/capabilities';
+import { ApiError } from '@/api/errors';
 
 export function useSystemStatus() {
   return useQuery({
@@ -52,19 +53,19 @@ export function useFinding(id: string) {
 export function useAcknowledgeFinding() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      apiClient<{ success: boolean; findingId: string }>(
-        endpoints.findingAcknowledge(id),
-        z.object({ success: z.boolean(), findingId: z.string() }),
-        { method: 'PATCH' }
+    mutationFn: ({ id, expectedRevision }: { id: string; expectedRevision: number }) =>
+      apiClient(
+        endpoints.findingLifecycle(id),
+        B.FindingLifecycleResponseSchema,
+        { method: 'PATCH', body: { action: 'ACKNOWLEDGE', expectedRevision } }
       ),
-    onSuccess: (_, id) => {
+    onSuccess: (_, { id }) => {
       // Invalidate per AGENTS.md §4.3
       queryClient.invalidateQueries({ queryKey: queryKeys.finding(id) });
       queryClient.invalidateQueries({ queryKey: ['findings'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
       queryClient.invalidateQueries({ queryKey: ['architecture'] });
-      queryClient.invalidateQueries({ queryKey: ['audit-events'] });
+      queryClient.invalidateQueries({ queryKey: ['audit'] });
     },
   });
 }
@@ -130,15 +131,17 @@ export function useRemediationDecision() {
       queryClient.invalidateQueries({ queryKey: queryKeys.remediation(id) });
       queryClient.invalidateQueries({ queryKey: ['remediations'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['audit-events'] });
+      queryClient.invalidateQueries({ queryKey: ['audit'] });
     },
   });
 }
 
-export function useAuditEvents() {
+export function useAuditEvents(cursor?: string) {
+  const params = new URLSearchParams({ limit: '25' });
+  if (cursor) params.set('nextToken', cursor);
   return useQuery({
-    queryKey: queryKeys.auditEvents(),
-    queryFn: () => apiClient<T.AuditEventsResponse>(endpoints.auditEvents(), S.AuditEventsResponseSchema),
+    queryKey: queryKeys.audit({ cursor }),
+    queryFn: () => apiClient(endpoints.audit(params.toString()), B.AuditEventsSchema),
     staleTime: 30000,
     enabled: hasCapability('auditTrail'),
   });
@@ -148,18 +151,51 @@ export function useRunEvaluation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () =>
-      apiClient<{ id: string; message: string; status: string }>(
+      apiClient(
         endpoints.evaluations(),
-        env.useMocks ? z.object({ jobId: z.string(), message: z.string(), status: z.string() }).transform(row => ({...row, id: row.jobId})) : B.EvaluationResultSchema,
+        B.EvaluationAcceptedSchema,
         { method: 'POST' }
       ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['findings'] });
-      queryClient.invalidateQueries({ queryKey: ['architecture'] });
-      queryClient.invalidateQueries({ queryKey: ['system-status'] });
-      queryClient.invalidateQueries({ queryKey: ['audit-events'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.evaluations() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.audit() });
     },
+  });
+}
+
+export function useEvaluations(filters?: { cursor?: string; intentId?: string; status?: string }) {
+  const params = new URLSearchParams({ limit: '25' });
+  if (filters?.cursor) params.set('nextToken', filters.cursor);
+  if (filters?.intentId) params.set('intentId', filters.intentId);
+  if (filters?.status) params.set('status', filters.status);
+  return useQuery({
+    queryKey: queryKeys.evaluations(filters),
+    queryFn: () => apiClient(endpoints.evaluations(params.toString()), B.EvaluationsSchema),
+    staleTime: 10000,
+    enabled: hasCapability('evaluations'),
+  });
+}
+
+export function useEvaluation(evaluationId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.evaluation(evaluationId || ''),
+    queryFn: () => apiClient(endpoints.evaluation(evaluationId || ''), B.EvaluationDetailSchema),
+    enabled: Boolean(evaluationId),
+    retry: (failureCount, error) => {
+      if (error instanceof ApiError && (error.status === 403 || error.status === 404)) return false;
+      return failureCount < 3;
+    },
+    refetchInterval: (query) => {
+      const error = query.state.error;
+      if (error instanceof ApiError && (error.status === 403 || error.status === 404)) return false;
+      const status = query.state.data?.item.status;
+      if (status === 'SUCCEEDED' || status === 'PARTIAL' || status === 'FAILED') return false;
+      const createdAt = query.state.data?.item.createdAt;
+      if (createdAt && Date.now() - Date.parse(createdAt) >= 15 * 60 * 1000) return false;
+      const retryDelay = Math.min(2500 * (2 ** Math.max(0, query.state.fetchFailureCount - 1)), 15000);
+      return retryDelay;
+    },
+    refetchIntervalInBackground: false,
   });
 }
 
@@ -185,15 +221,73 @@ export function useApproveManifest() {
     onSuccess: (_, id) => { client.invalidateQueries({queryKey: queryKeys.intents()}); client.invalidateQueries({queryKey: queryKeys.intent(id)}); } });
 }
 
-export function useJob(jobId: string | null) {
+export function useIntentVersions(id: string, cursor?: string) {
+  const params = new URLSearchParams({ limit: '25' });
+  if (cursor) params.set('nextToken', cursor);
   return useQuery({
-    queryKey: queryKeys.job(jobId || ''),
-    queryFn: () => apiClient<T.JobStatus>(endpoints.job(jobId || ''), S.JobStatusSchema),
-    enabled: Boolean(jobId),
-    refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      if (status === 'SUCCEEDED' || status === 'FAILED') return false;
-      return 2500;
+    queryKey: queryKeys.intentVersions(id, { cursor }),
+    queryFn: () => apiClient(endpoints.intentVersions(id, params.toString()), B.IntentVersionsSchema),
+    enabled: Boolean(id),
+  });
+}
+
+export function useIntentVersion(id: string, version: number | null) {
+  return useQuery({
+    queryKey: queryKeys.intentVersion(id, version || 0),
+    queryFn: () => apiClient(endpoints.intentVersion(id, version || 0), B.IntentVersionDetailSchema),
+    enabled: Boolean(id && version),
+  });
+}
+
+export function useCreateIntentVersion() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, manifest, expectedRevision }: { id: string; manifest: unknown; expectedRevision: number }) =>
+      apiClient(endpoints.intentVersions(id), B.IntentVersionDetailSchema, {
+        method: 'POST', body: { manifest, expectedRevision },
+      }),
+    onSuccess: (_, { id }) => {
+      client.invalidateQueries({ queryKey: queryKeys.intentVersions(id) });
+      client.invalidateQueries({ queryKey: queryKeys.intent(id) });
     },
+  });
+}
+
+export function useApproveIntentVersion() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, version, expectedRevision }: { id: string; version: number; expectedRevision: number }) =>
+      apiClient(endpoints.intentVersionApprove(id, version), B.IntentVersionDetailSchema, {
+        method: 'POST', body: { expectedRevision },
+      }),
+    onSuccess: (_, { id, version }) => {
+      client.invalidateQueries({ queryKey: queryKeys.intentVersions(id) });
+      client.invalidateQueries({ queryKey: queryKeys.intentVersion(id, version) });
+      client.invalidateQueries({ queryKey: queryKeys.intent(id) });
+      client.invalidateQueries({ queryKey: queryKeys.intents() });
+    },
+  });
+}
+
+export function useRollbackIntent() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, targetVersion, expectedRevision, reason }: { id: string; targetVersion: number; expectedRevision: number; reason: string }) =>
+      apiClient(endpoints.intentRollback(id), B.ManifestDetailSchema, {
+        method: 'POST', body: { targetVersion, expectedRevision, reason },
+      }),
+    onSuccess: (_, { id }) => {
+      client.invalidateQueries({ queryKey: queryKeys.intent(id) });
+      client.invalidateQueries({ queryKey: queryKeys.intentVersions(id) });
+      client.invalidateQueries({ queryKey: queryKeys.intents() });
+    },
+  });
+}
+
+export function useIntentDiff(id: string, fromVersion: number | null, toVersion: number | null) {
+  return useQuery({
+    queryKey: queryKeys.intentDiff(id, fromVersion || 0, toVersion || 0),
+    queryFn: () => apiClient(endpoints.intentDiff(id, fromVersion || 0, toVersion || 0), B.IntentDiffSchema),
+    enabled: Boolean(id && fromVersion && toVersion && fromVersion !== toVersion),
   });
 }

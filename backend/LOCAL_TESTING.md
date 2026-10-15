@@ -1,5 +1,13 @@
 # Local intent persistence on macOS
 
+Phase 2 now requires six tables and their declared indexes. Use
+`scripts/local_db.py init`, then explicitly `migrate` for earlier local records,
+then `probe`. Local API mutations require the fixture provider's synthetic actor;
+live AWS discovery remains blocked locally. Evaluation now queues work with 202;
+run `scripts/run_evaluations.py` against the same local database to process it.
+See [the current contract and commands](../INTEGRATION.md#phase-2-additions-2026-10-15).
+The older sections below retain the original timeout investigation.
+
 Run commands from `Cloud-Intent-Guardian/backend` (the directory containing `template.yaml`). No AWS deployment or Academy activation is needed. Keep the existing DynamoDB container. No command below removes it or deletes existing tables/items.
 
 ## What was actually inspected

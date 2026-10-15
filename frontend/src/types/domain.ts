@@ -45,6 +45,7 @@ export interface Finding {
   region: string;
   detectedAt: string;
   updatedAt: string;
+  revision?: number;
   description: string;
   remediationAvailable: boolean;
   remediationActionId?: string;
@@ -184,20 +185,23 @@ export interface RemediationsResponse {
 }
 
 export interface AuditEvent {
-  id: string;
+  auditId: string;
   timestamp: string;
-  actor: string;
+  actor: { sub: string; displayName?: string };
   action: string;
-  resourceId?: string;
-  details: string;
-  ipAddress?: string;
+  target: unknown;
+  result: string;
+  requestId: string;
+  evaluationId?: string;
+  scopeKey: string;
+  metadata: Record<string, unknown>;
 }
 
 export interface AuditEventsResponse {
   items: AuditEvent[];
-  meta: {
-    nextCursor?: string | null;
-  };
+  count: number;
+  nextToken: string | null;
+  limit: number;
 }
 
 export interface SystemStatus {
@@ -208,13 +212,15 @@ export interface SystemStatus {
   version: string;
 }
 
-export interface JobStatus {
-  jobId: string;
-  type: 'EVALUATION' | 'INGESTION';
-  status: 'PENDING' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
-  progressPercent: number;
-  startedAt: string;
-  completedAt?: string;
-  message?: string;
-  error?: string;
+export interface EvaluationRecord {
+  evaluationId: string;
+  status: 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'PARTIAL' | 'FAILED';
+  intentId?: string | null;
+  intentVersion?: number | null;
+  createdAt?: string;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  progressStage?: string | null;
+  summary?: Record<string, unknown> | null;
+  error?: { code: string; message: string } | null;
 }

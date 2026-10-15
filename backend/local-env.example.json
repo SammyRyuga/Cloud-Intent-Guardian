@@ -1,9 +1,15 @@
 {
   "Parameters": {
     "CIG_LOCAL": "true",
+    "INVENTORY_PROVIDER": "fixture",
+    "CIG_FIXTURE_SCENARIO": "benign",
+    "CIG_LOCAL_ROLE": "admin",
     "DYNAMODB_ENDPOINT_URL": "http://cig-dynamodb-local:8000",
     "INTENTS_TABLE": "cloud-intent-guardian-dev-intents",
     "FINDINGS_TABLE": "cloud-intent-guardian-dev-findings",
-    "EVALUATIONS_TABLE": "cloud-intent-guardian-dev-evaluations"
+    "EVALUATIONS_TABLE": "cloud-intent-guardian-dev-evaluations",
+    "INTENT_VERSIONS_TABLE": "cloud-intent-guardian-dev-intent-versions",
+    "AUDIT_TABLE": "cloud-intent-guardian-dev-audit",
+    "EVALUATION_ARTIFACTS_TABLE": "cloud-intent-guardian-dev-evaluation-artifacts"
   }
 }

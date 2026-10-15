@@ -1,7 +1,9 @@
 import { hasCapability } from '@/config/capabilities';
 import { env } from '@/config/env';
-import React from 'react';
-import { useDashboardSummary, useRunEvaluation } from '@/hooks/apiHooks';
+import React, { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useDashboardSummary, useEvaluation, useEvaluations, useRunEvaluation } from '@/hooks/apiHooks';
+import { queryKeys } from '@/api/queryKeys';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { SeverityBadge } from '@/components/common/SeverityBadge';
@@ -12,10 +14,27 @@ import { Link } from 'react-router-dom';
 
 export function OverviewPage() {
   const { data: summary, isLoading, isError, error, refetch } = useDashboardSummary();
+  const queryClient = useQueryClient();
   const runEvaluation = useRunEvaluation();
+  const [activeEvaluationId, setActiveEvaluationId] = useState<string | null>(null);
+  const activeEvaluation = useEvaluation(activeEvaluationId);
+  const history = useEvaluations();
+  const currentStatus = activeEvaluation.data?.item.status;
+  const isEvaluationActive = currentStatus === 'QUEUED' || currentStatus === 'RUNNING';
+
+  useEffect(() => {
+    if (currentStatus === 'SUCCEEDED' || currentStatus === 'PARTIAL' || currentStatus === 'FAILED') {
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary() });
+      queryClient.invalidateQueries({ queryKey: ['findings'] });
+      queryClient.invalidateQueries({ queryKey: ['architecture'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.audit() });
+    }
+  }, [currentStatus, queryClient]);
 
   const handleRunEvaluation = () => {
-    runEvaluation.mutate();
+    runEvaluation.mutate(undefined, {
+      onSuccess: ({ evaluation }) => setActiveEvaluationId(evaluation.evaluationId),
+    });
   };
 
   return (
@@ -30,17 +49,19 @@ export function OverviewPage() {
         <Button
           variant="primary"
           onClick={handleRunEvaluation}
-          isLoading={runEvaluation.isPending}
-          disabled={runEvaluation.isPending || !hasCapability('evaluations')}
+          isLoading={runEvaluation.isPending || isEvaluationActive}
+          disabled={runEvaluation.isPending || isEvaluationActive || !hasCapability('evaluations')}
         >
           <Play className="w-3.5 h-3.5 mr-2 stroke-[1.5]" />
           {hasCapability('evaluations') ? 'Run evaluation' : 'AWS evaluation not enabled locally'}
         </Button>
       </div>
 
-      {runEvaluation.isPending && <p role="status" className="text-sm text-graphite">Evaluation is running. Results appear after the backend completes.</p>}
+      {runEvaluation.isPending && <p role="status" className="text-sm text-graphite">Submitting evaluation request.</p>}
       {runEvaluation.error && <p role="alert" className="text-sm text-sev-critical">{runEvaluation.error.message}</p>}
-      {runEvaluation.data && <p role="status" className="text-sm">{runEvaluation.data.status}: {runEvaluation.data.message} ID: {runEvaluation.data.id}</p>}
+      {runEvaluation.data && <p role="status" className="text-sm">Evaluation accepted as {runEvaluation.data.evaluation.status}. ID: {runEvaluation.data.evaluation.evaluationId}</p>}
+      {activeEvaluation.error && <p role="alert" className="text-sm text-sev-critical">Evaluation status could not be loaded: {activeEvaluation.error.message}</p>}
+      {activeEvaluation.data && <div className="flex items-center gap-3 text-sm"><p role="status">Evaluation {activeEvaluation.data.item.status.toLowerCase()}. ID: {activeEvaluation.data.item.evaluationId}{activeEvaluation.data.item.progressStage ? ` · ${activeEvaluation.data.item.progressStage}` : ''}</p><Button variant="secondary" size="sm" onClick={() => activeEvaluation.refetch()}>Refresh status</Button></div>}
       {summary?.partial && <p role="status" className="text-sm text-sev-medium">Stored data is incomplete. Counts cover retrieved records; conformance is unavailable.</p>}
       <StateBoundary
         isLoading={isLoading}
@@ -146,6 +167,28 @@ export function OverviewPage() {
               <span>Last evaluated: {formatDateTime(summary.lastEvaluatedAt)}</span>
               <span>Region: {summary.evaluatedRegion}</span>
             </div>
+
+            {hasCapability('evaluations') && (
+              <Card>
+                <CardHeader title="Evaluation history" subtitle="Server-reported runs in the configured scope" />
+                {history.isLoading && <p className="text-sm text-graphite">Loading evaluation history.</p>}
+                {history.isError && <p role="alert" className="text-sm text-sev-critical">Evaluation history could not be loaded: {history.error.message}</p>}
+                {history.data?.items.length === 0 && <p className="text-sm text-graphite">No history yet. Run an evaluation to start the trend.</p>}
+                {history.data && history.data.items.length > 0 && (
+                  <ul className="divide-y divide-rule">
+                    {history.data.items.map((item) => (
+                      <li key={item.evaluationId} className="py-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+                        <span className="font-mono text-xs">{item.evaluationId}</span>
+                        <span>{item.status}</span>
+                        <span className="text-pencil">{item.createdAt ? formatDateTime(item.createdAt) : 'Not recorded'}</span>
+                        {item.intentVersion !== undefined && item.intentVersion !== null && <span className="text-pencil">Intent version {item.intentVersion}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {history.error && <Button variant="secondary" size="sm" onClick={() => history.refetch()}>Retry history</Button>}
+              </Card>
+            )}
           </>
         )}
       </StateBoundary>

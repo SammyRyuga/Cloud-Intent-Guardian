@@ -1,3 +1,4 @@
+from common.auth import require_role, configured_scope
 """Dashboard and finding detail use stored evidence; no fabricated history."""
 import os
 from boto3.dynamodb.conditions import Attr
@@ -7,6 +8,7 @@ from common.contracts import finding_view, scan_all
 from common.http import response, error, query_params
 
 
+@require_role('viewer')
 def lambda_handler(event, context):
     try:
         db = dynamodb_resource()
@@ -14,14 +16,17 @@ def lambda_handler(event, context):
         finding_id = (event.get('pathParameters') or {}).get('findingId')
         if finding_id:
             item = findings.get_item(Key={'findingId': finding_id}, ConsistentRead=True).get('Item')
-            if not item:
+            if not item or item.get('scopeKey') != configured_scope():
                 return error(404, 'FINDING_NOT_FOUND', 'No finding exists with that ID.')
             return response(200, {'item': finding_view(item)})
 
         region = query_params(event).get('region') or os.environ.get('AWS_REGION', 'ap-south-1')
-        items, findings_partial = scan_all(findings, FilterExpression=Attr('region').eq(region))
-        evaluations, evaluations_partial = scan_all(db.Table(os.environ['EVALUATIONS_TABLE']), FilterExpression=Attr('region').eq(region))
-        evaluations.sort(key=lambda row: row.get('finishedAt', ''), reverse=True)
+        if region != os.environ.get('AWS_REGION', 'ap-south-1'):
+            return error(409, 'REGION_SCOPE_MISMATCH', 'Only the configured region is available.')
+        items, findings_partial = scan_all(findings, FilterExpression=Attr('scopeKey').eq(configured_scope()))
+        evaluations, evaluations_partial = scan_all(db.Table(os.environ['EVALUATIONS_TABLE']), FilterExpression=Attr('scopeKey').eq(configured_scope()))
+        evaluations = [row for row in evaluations if row.get('status') in {'SUCCEEDED', 'PARTIAL'} and row.get('finishedAt')]
+        evaluations.sort(key=lambda row: row['finishedAt'], reverse=True)
         latest = evaluations[0] if evaluations else None
         active = [row for row in items if row.get('status') in {'OPEN', 'ACKNOWLEDGED'}]
         severity = {level: sum(row.get('severity', '').lower() == level for row in active)

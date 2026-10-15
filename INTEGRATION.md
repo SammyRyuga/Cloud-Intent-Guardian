@@ -1,5 +1,106 @@
 # Frontend/backend integration
 
+## Phase 2 additions (2026-10-15)
+
+The current contract now includes immutable intent versions, activation/rollback,
+async evaluation/history, append-only audit and finding lifecycle transitions.
+The Phase 1 and older baseline sections below remain dated historical context.
+
+`POST /v1/evaluations` retains `{intentId}` / `{}` input and adds optional numeric
+`intentVersion` and `reason`. It now returns **202**, replacing the previous
+synchronous 200 response, as approved:
+
+```json
+{"evaluation":{"evaluationId":"server-generated-id","status":"QUEUED","intentId":"intent-id","intentVersion":1,"createdAt":"UTC timestamp"},"statusUrl":"/v1/evaluations/server-generated-id"}
+```
+
+`GET /v1/evaluations` returns `{items,count,nextToken,limit}`, optionally filtered
+by intentId/status. `GET /v1/evaluations/{id}` returns `{item}` with QUEUED,
+RUNNING, SUCCEEDED, PARTIAL or FAILED, stage, timestamps, summary/conformance and
+safe error fields. The frontend polls this route with backoff and terminal/error
+stop conditions. It has no `/v1/jobs` dependency. A 202 is acceptance, not a
+completed evaluation. Dashboard conformance reads completed published evaluations;
+queued work cannot erase earlier results.
+
+The worker pins the approved version/content hash when the job is created, uses
+conditional claims and bounded retries, serializes publication per intent, and
+stores hash-checked snapshot/result/finding artifacts in bounded chunks. Completed
+artifacts are reused on retries. Findings retain lifecycle metadata and stable
+IDs. Complete PASS-based resolutions are committed with terminal publication and
+audit in one transaction, capped at 48 resolutions per job; a larger reconciliation
+requires human/operator review rather than an unbounded transaction. Partial or
+unknown evaluation never clears findings. No modifying AWS SDK call is implemented.
+
+New intent endpoints:
+
+| Route | Behavior |
+| --- | --- |
+| GET/POST `/v1/intents/{intentId}/versions` | Paginated history / create a draft `{manifest,expectedRevision}` |
+| GET `/v1/intents/{intentId}/versions/{version}` | Immutable numeric snapshot with derived effectiveStatus |
+| POST `/v1/intents/{intentId}/versions/{version}/approve` | Approve and activate with expectedRevision |
+| POST `/v1/intents/{intentId}/rollback` | `{targetVersion,expectedRevision,reason}` moves only the active pointer |
+| GET `/v1/intents/{intentId}/diff?fromVersion=1&toVersion=2` | Semantic declaration changes; reorder-only edits are ignored |
+
+Initial create/detail/list/approve envelopes remain intact, with additive
+`latestVersion`, `activeVersion`, `revision` and server scope. Initial repeated
+approval stays idempotent; new stale mutations return 409. Approved snapshots are
+never edited by rollback or superseding. A graph's explicit version can select a
+historic approved snapshot. Legacy records require explicit local migration, not
+an implicit write from a read/approval request.
+
+`GET /v1/audit` returns a scope-bound paginated list, optionally filtered by action
+and UTC from/to bounds. The backend records the verified subject, action, target,
+time, result and request/evaluation correlation. There is no audit mutation API.
+Audit entries and associated state changes commit transactionally. This is
+application append-only behavior, not a claim of tamper resistance against an
+account administrator.
+
+`PATCH /v1/findings/{findingId}` accepts `action: ACKNOWLEDGE|SUPPRESS|REOPEN`,
+`expectedRevision` and optional `reason`. Suppression requires a reason. Stale or
+invalid transitions return 409. Resolution remains evaluation-driven. Review
+status is separate from lifecycle; the four existing lifecycle statuses remain
+OPEN, ACKNOWLEDGED, RESOLVED and SUPPRESSED.
+
+Server role checks now use verified `cognito:groups`: viewer reads; approver also
+approves/rolls back and acknowledges/suppresses/reopens; admin also creates intents
+and starts evaluations. Missing identity is 401, missing/insufficient groups 403.
+The browser sends no role flag. Local fixture mode uses a clearly synthetic actor
+and configurable `CIG_LOCAL_ROLE`; this fallback is unavailable in production or
+local live-discovery mode. Local SAM success does not validate Cognito JWTs.
+
+There are six DynamoDB tables, preserving the three existing primary keys and
+adding version/artifact sort keys plus history/audit/findings GSIs. Run against an
+isolated local database:
+
+```bash
+cd backend
+python scripts/local_db.py init --endpoint http://127.0.0.1:18000
+python scripts/local_db.py migrate --endpoint http://127.0.0.1:18000
+python scripts/local_db.py probe --endpoint http://127.0.0.1:18000
+python scripts/verify_topology.py --endpoint http://127.0.0.1:18000 --evidence local-evidence/phase2-topology.json
+```
+
+`init` creates missing tables/indexes without replacing existing data. `migrate`
+explicitly backfills legacy v1 snapshots, scopes and history index fields, with
+audit; it skips other-account/region finding/evaluation records. The verifier
+directly invokes API handlers plus the async worker and checks persistence,
+version activation/rollback/immutability and audit reads. For interactive local
+API use, start the loopback SAM API with fixture configuration and run
+`scripts/run_evaluations.py --id <evaluationId>` in a separate local process with
+the same non-secret table/endpoint/fixture settings. `--reconcile` marks expired
+work failed. No background cloud service is required locally.
+
+Cloud dispatch is optional: `EnableAsyncWorker=false` by default omits the
+worker/event-source mapping and stream configuration. Production POST refuses
+work when dispatch is disabled. Enabling it requires Academy permission for
+DynamoDB Streams, Lambda event source mappings and their read permissions; these
+are unverified. `ExistingExecutionRoleArn` can reference an already-approved lab
+role. Its default sentinel `arn:aws:iam::000000000000:role/NOT_CONFIGURED` is never
+used as a role; the default still lets SAM generate roles. Supplying a real role
+disables SAM policy attachment for that function, so the operator must ensure its
+permissions and PassRole entitlement already exist. Cognito groups/pool creation
+also remain Academy deployment gates. No deployment or role assignment was run.
+
 ## Phase 1 additions (2026-10-15)
 
 Intent creation now accepts `schemaVersion: 2` with `components`, `relationships`,

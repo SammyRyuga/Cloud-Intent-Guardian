@@ -3,25 +3,37 @@ import json
 import os
 import uuid
 from common.dynamodb import dynamodb_resource
+from common.auth import AuthorizationError, authorize, configured_scope
+from common.audit import request_id
 from common.manifest import validate_manifest, ManifestValidationError
+from common.versions import VersionError, create_initial
 from botocore.exceptions import BotoCoreError, ClientError
 from common.http import response, error, parse_body, utc_now, query_params
+from boto3.dynamodb.conditions import Attr
 
 
 def lambda_handler(event, context):
     print(json.dumps({"event": "intent_handler_started", "requestId": getattr(context, "aws_request_id", None)}), flush=True)
-    try:
-        table = dynamodb_resource().Table(os.environ["INTENTS_TABLE"])
-    except (ClientError, BotoCoreError) as exc:
-        return error(502, "DYNAMODB_CONFIGURATION_FAILED", "Could not initialize DynamoDB.", str(exc)[:250])
     method = event.get("requestContext", {}).get("http", {}).get("method", "GET").upper()
+    if method not in {"GET", "POST"}:
+        return error(405, "METHOD_NOT_ALLOWED", "Method not allowed.")
     if method == "GET":
+        try:
+            authorize(event, required="viewer")
+            scope = configured_scope()
+        except AuthorizationError as exc:
+            return error(exc.status, exc.code, str(exc))
+        try:
+            db = dynamodb_resource()
+            table = db.Table(os.environ["INTENTS_TABLE"])
+        except (ClientError, BotoCoreError) as exc:
+            return error(502, "DYNAMODB_CONFIGURATION_FAILED", "Could not initialize DynamoDB.", str(exc)[:250])
         params = query_params(event)
         try:
             limit = max(1, min(int(params.get("limit", "25")), 100))
         except ValueError:
             return error(400, "INVALID_LIMIT", "The limit query parameter must be an integer between 1 and 100.")
-        scan_kwargs = {"Limit": limit}
+        scan_kwargs = {"Limit": limit, "FilterExpression": Attr("scopeKey").eq(scope)}
         token = params.get("nextToken")
         if token:
             try:
@@ -38,8 +50,11 @@ def lambda_handler(event, context):
             return response(200, {"items": items, "count": len(items), "nextToken": next_token, "limit": limit})
         except (ClientError, BotoCoreError) as exc:
             return error(502, "INTENTS_READ_FAILED", "Could not read intents.", str(exc)[:250])
-    if method != "POST":
-        return error(405, "METHOD_NOT_ALLOWED", "Method not allowed.")
+    try:
+        actor = authorize(event, required="admin")
+        scope = configured_scope()
+    except AuthorizationError as exc:
+        return error(exc.status, exc.code, str(exc))
     try:
         body = parse_body(event)
     except (ValueError, json.JSONDecodeError) as exc:
@@ -57,13 +72,20 @@ def lambda_handler(event, context):
         "createdAt": now,
         "updatedAt": now,
         "approvedAt": None,
-        "createdBy": (event.get("requestContext", {}).get("authorizer", {}).get("jwt", {}).get("claims", {}).get("email") or "authenticated-user"),
+        "createdBy": actor.get("displayName") or actor["sub"],
         "sourceType": "JSON_CONSTRAINT_MANIFEST",
+        "scopeKey": scope,
     }
     try:
+        db = dynamodb_resource()
+        table = db.Table(os.environ["INTENTS_TABLE"])
         print(json.dumps({"event": "intent_put_started", "table": table.name, "intentId": record["intentId"]}), flush=True)
-        table.put_item(Item=record, ConditionExpression="attribute_not_exists(intentId)")
+        record = create_initial(db, table, record, actor, request_id(event))
     except (ClientError, BotoCoreError) as exc:
+        if getattr(exc, "response", {}).get("Error", {}).get("Code") in {"TransactionCanceledException", "ConditionalCheckFailedException"}:
+            return error(409, "INTENT_CREATE_CONFLICT", "The intent could not be created because a conflicting record exists.")
         return error(502, "INTENT_WRITE_FAILED", "Could not save the intent.", str(exc)[:250])
+    except VersionError as exc:
+        return error(exc.status, exc.code, exc.message, exc.details)
     print(json.dumps({"event": "intent_put_succeeded", "intentId": record["intentId"]}), flush=True)
     return response(201, {"item": record})

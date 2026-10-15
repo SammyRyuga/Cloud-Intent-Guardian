@@ -19,7 +19,7 @@ backend/
   src/                          Eight handlers and shared helpers
 ```
 
-The backend implements draft intent creation/retrieval/approval, four attribute constraints plus v2 relationship/path/boundary rules, inventory with typed coverage, findings persistence and synchronous evaluations. INTENT and DIFF graph views and a guarded local fixture provider are now available. Live collected edges are structural; network reachability remains unknown without adequate evidence. Evaluation history/status reads, version management, audit events, role isolation, remediation workflows and Bedrock explanations remain later phases. See [current integration](INTEGRATION.md) and [validation](backend/VALIDATION.md).
+The backend implements v2 architectural intent, four attribute checks plus relationship/path/boundary rules, immutable approved versions, rollback, async evaluation/history, audit and finding lifecycle. INTENT/DIFF graphs and a guarded local fixture worker are available. Server roles use Cognito groups. Live collected edges are structural; network reachability remains unknown without adequate evidence. Severity scoring, cross-validated Bedrock escalation and gated remediation remain later phases. See [current integration](INTEGRATION.md) and [validation](backend/VALIDATION.md).
 
 The React frontend is in `frontend/`, together with its PRD and implementation specification. [Integration guide](INTEGRATION.md) documents the connected MVP, real local API mode and remaining AWS validation.
 
@@ -235,7 +235,10 @@ The original checkout ignored `DYNAMODB_ENDPOINT_URL`; the shared helper fixes t
 | `POST /v1/intents` | Manifest; HTTP 201 `{item}` containing `intentId` and DRAFT status |
 | `GET /v1/intents/{intentId}` | `{item}` |
 | `POST /v1/intents/{intentId}/approve` | `{item}`; repeated approval also includes a message |
-| `POST /v1/evaluations` | `{intentId}` or `{}`; synchronous `{evaluation, findings, inventory}` |
+| `POST /v1/evaluations` | `{intentId}` or `{}`; 202 `{evaluation,statusUrl}` with queued ID |
+| `GET /v1/evaluations` / `GET /v1/evaluations/{id}` | Paginated history / `{item}` status polling |
+| `GET /v1/audit` | Scope-bound paginated audit history |
+| `PATCH /v1/findings/{findingId}` | Explicit lifecycle action/revision; suppression requires a reason |
 | `GET /v1/findings` | Optional `limit`, `nextToken`, `status`; `{items, nextToken, count, limit}` |
 
 Prefer an explicit approved ID for evaluation: default selection has a bounded scan and refuses incomplete selection. Evaluation responses include at most 100 findings. List ordering applies within each scan page, not globally.

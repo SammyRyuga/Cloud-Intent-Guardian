@@ -45,6 +45,7 @@ export const FindingSchema = z.object({
   region: z.string(),
   detectedAt: z.string(),
   updatedAt: z.string(),
+  revision: z.number().optional(),
   description: z.string(),
   remediationAvailable: z.boolean(),
   remediationActionId: z.string().optional(),
@@ -185,20 +186,23 @@ export const RemediationsResponseSchema = z.object({
 });
 
 export const AuditEventSchema = z.object({
-  id: z.string(),
+  auditId: z.string(),
   timestamp: z.string(),
-  actor: z.string(),
+  actor: z.object({ sub: z.string(), displayName: z.string().optional() }),
   action: z.string(),
-  resourceId: z.string().optional(),
-  details: z.string(),
-  ipAddress: z.string().optional(),
-});
+  target: z.unknown(),
+  result: z.string(),
+  requestId: z.string(),
+  evaluationId: z.string().optional(),
+  scopeKey: z.string(),
+  metadata: z.record(z.unknown()),
+}).passthrough();
 
 export const AuditEventsResponseSchema = z.object({
   items: z.array(AuditEventSchema),
-  meta: z.object({
-    nextCursor: z.string().nullable().optional(),
-  }),
+  count: z.number(),
+  nextToken: z.string().nullable(),
+  limit: z.number(),
 });
 
 export const SystemStatusSchema = z.object({
@@ -209,13 +213,32 @@ export const SystemStatusSchema = z.object({
   version: z.string(),
 });
 
-export const JobStatusSchema = z.object({
-  jobId: z.string(),
-  type: z.enum(['EVALUATION', 'INGESTION']),
-  status: z.enum(['PENDING', 'RUNNING', 'SUCCEEDED', 'FAILED']),
-  progressPercent: z.number(),
-  startedAt: z.string(),
-  completedAt: z.string().optional(),
-  message: z.string().optional(),
-  error: z.string().optional(),
+export const EvaluationSchema = z.object({
+  evaluationId: z.string(),
+  status: z.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'PARTIAL', 'FAILED']),
+  intentId: z.string().nullable().optional(),
+  intentVersion: z.number().nullable().optional(),
+  createdAt: z.string().optional(),
+  startedAt: z.string().nullable().optional(),
+  finishedAt: z.string().nullable().optional(),
+  progressStage: z.string().nullable().optional(),
+  summary: z.record(z.unknown()).nullable().optional(),
+  error: z.object({ code: z.string(), message: z.string() }).nullable().optional(),
+}).passthrough();
+export const EvaluationAcceptedSchema = z.object({
+  evaluation: z.object({
+    evaluationId: z.string(),
+    status: z.literal('QUEUED'),
+    intentId: z.string().nullable(),
+    intentVersion: z.number().nullable(),
+    createdAt: z.string(),
+  }).passthrough(),
+  statusUrl: z.string(),
+});
+export const EvaluationDetailSchema = z.object({ item: EvaluationSchema });
+export const EvaluationsResponseSchema = z.object({
+  items: z.array(EvaluationSchema),
+  count: z.number(),
+  nextToken: z.string().nullable(),
+  limit: z.number(),
 });

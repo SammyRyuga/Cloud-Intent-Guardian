@@ -11,8 +11,10 @@ for (const [name, schema, value] of [
   ['intents', schemas.IntentSchema.array(), fixtures.mockIntents],
   ['drift events', schemas.DriftEventSchema.array(), fixtures.mockDriftEvents],
   ['remediation', schemas.RemediationRequestSchema.array(), fixtures.mockRemediations],
-  ['audit events', schemas.AuditEventSchema.array(), fixtures.mockAuditEvents],
-  ['evaluation job', schemas.JobStatusSchema, fixtures.mockActiveJob],
+  ['audit events', schemas.AuditEventsResponseSchema, fixtures.mockAuditResponse],
+  ['accepted evaluation', schemas.EvaluationAcceptedSchema, fixtures.mockEvaluationAccepted],
+  ['evaluation detail', schemas.EvaluationDetailSchema, { item: fixtures.mockEvaluation }],
+  ['evaluation history', schemas.EvaluationsResponseSchema, fixtures.mockEvaluationHistory],
 ]) {
   test(`${name} mock fixture matches its response schema`, () => {
     schema.parse(value);
@@ -28,4 +30,10 @@ test('architecture fixture includes Phase 1 classifications and optional transpo
   assert.equal(graph.simulated, true);
   assert.ok(graph.coverage.resourceTypes);
   assert.ok(graph.coverage.relationshipTypes);
+});
+
+test('evaluation states include every asynchronous terminal and polling status', () => {
+  for (const status of ['QUEUED', 'RUNNING', 'SUCCEEDED', 'PARTIAL', 'FAILED']) {
+    schemas.EvaluationSchema.parse({ ...fixtures.mockEvaluation, status });
+  }
 });

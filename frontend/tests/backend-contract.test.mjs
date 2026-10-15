@@ -110,9 +110,25 @@ test("dashboard and local readiness parse without inventing unavailable features
     false,
   );
 });
-test("synchronous evaluation maps to its actual stored evaluation identifier", () => {
-  const result = B.EvaluationResultSchema.parse(wire.evaluation);
-  assert.equal(result.id, wire.evaluation.evaluation.evaluationId);
-  assert.equal(result.status, "SUCCEEDED");
-  assert.equal(result.summary.violationsFound, 1);
+test("queued evaluation, polling detail and history retain the backend job identifier", () => {
+  const accepted = B.EvaluationAcceptedSchema.parse(wire.evaluation);
+  const detail = B.EvaluationDetailSchema.parse(wire.evaluationDetail).item;
+  const list = B.EvaluationsSchema.parse(wire.evaluations);
+  assert.equal(accepted.evaluation.status, "QUEUED");
+  assert.equal(accepted.evaluation.evaluationId, detail.evaluationId);
+  assert.equal(list.items[0].evaluationId, detail.evaluationId);
+  assert.equal(detail.intentVersion, accepted.evaluation.intentVersion);
+});
+test("audit, finding lifecycle and numeric version handlers match their envelopes", () => {
+  const audit = B.AuditEventsSchema.parse(wire.audit);
+  const acknowledged = B.FindingLifecycleResponseSchema.parse(wire.findingAcknowledged).item;
+  const versions = B.IntentVersionsSchema.parse(wire.versions);
+  const version = B.IntentVersionDetailSchema.parse(wire.versionDetail).item;
+  const diff = B.IntentDiffSchema.parse(wire.versionDiff).item;
+  assert.equal(audit.items[0].auditId, wire.audit.items[0].auditId);
+  assert.equal(acknowledged.status, "ACKNOWLEDGED");
+  assert.ok(versions.items.some((item) => item.version === version.version));
+  assert.ok(versions.items.some((item) => item.version === diff.fromVersion));
+  assert.ok(versions.items.some((item) => item.version === diff.toVersion));
+  assert.deepEqual(diff.components, wire.versionDiff.item.components);
 });

@@ -22,4 +22,6 @@ export type RemediationsResponse = z.infer<typeof S.RemediationsResponseSchema>;
 export type AuditEvent = z.infer<typeof S.AuditEventSchema>;
 export type AuditEventsResponse = z.infer<typeof S.AuditEventsResponseSchema>;
 export type SystemStatus = z.infer<typeof S.SystemStatusSchema>;
-export type JobStatus = z.infer<typeof S.JobStatusSchema>;
+export type Evaluation = z.infer<typeof S.EvaluationSchema>;
+export type EvaluationAccepted = z.infer<typeof S.EvaluationAcceptedSchema>;
+export type EvaluationsResponse = z.infer<typeof S.EvaluationsResponseSchema>;

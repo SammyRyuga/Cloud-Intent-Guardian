@@ -1,3 +1,4 @@
+from common.auth import require_role
 import os
 import hashlib
 from common.http import response, error, query_params
@@ -10,6 +11,7 @@ from common.topology import build_graph
 from botocore.exceptions import BotoCoreError, ClientError
 
 
+@require_role('viewer')
 def lambda_handler(event, context):
     graph = 'architecture' in (event.get('rawPath', '') or event.get('routeKey', ''))
     params = query_params(event)
@@ -22,8 +24,10 @@ def lambda_handler(event, context):
         if graph and view != 'ACTUAL':
             if os.environ.get('TOPOLOGY_ENABLED', 'true').lower() != 'true':
                 return error(409, 'GRAPH_COMPARISON_NOT_ENABLED', 'Topology comparison is disabled.')
-            table = dynamodb_resource().Table(os.environ['INTENTS_TABLE'])
-            intent = approved_intent(table, params.get('intentId'), params.get('version'))
+            db = dynamodb_resource()
+            table = db.Table(os.environ['INTENTS_TABLE'])
+            intent = approved_intent(table, params.get('intentId'), params.get('version'),
+                                     db.Table(os.environ['INTENT_VERSIONS_TABLE']))
             if view == 'INTENT':
                 empty = {'items': [], 'edges': [], 'meta': {'partial': False, 'warnings': [], 'coverage': {}}}
                 return response(200, build_graph(intent, empty, view))

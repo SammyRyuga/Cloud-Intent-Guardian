@@ -15,7 +15,8 @@ from botocore.stub import ANY, Stubber
 from common.dynamodb import DynamoDBConfigurationError, dynamodb_resource
 
 LOCAL = {"CIG_LOCAL": "true", "DYNAMODB_ENDPOINT_URL": "http://127.0.0.1:8000",
-         "AWS_REGION": "ap-south-1", "INTENTS_TABLE": "test-intents"}
+         "AWS_REGION": "ap-south-1", "INTENTS_TABLE": "test-intents",
+         "INVENTORY_PROVIDER": "fixture", "INTENT_VERSIONS_TABLE": "test-versions", "AUDIT_TABLE": "test-audit"}
 PAYLOAD = {"name": "Local AWS Baseline", "constraints": [
     {"id": "s3", "type": "S3_BLOCK_PUBLIC_ACCESS", "severity": "HIGH"}]}
 
@@ -60,44 +61,40 @@ class LocalPersistenceTests(unittest.TestCase):
             self.assertIsNone(credentials.token)
 
     def test_create_list_detail_and_approval_contract_with_sdk_stubs(self):
-        intents = importlib.import_module("intents.app")
-        detail = importlib.import_module("intent_detail.app")
-        approval = importlib.import_module("approve_intent.app")
+        intents = importlib.import_module('intents.app')
+        detail = importlib.import_module('intent_detail.app')
+        approval = importlib.import_module('approve_intent.app')
         with patch.dict(os.environ, LOCAL, clear=True):
             resource = dynamodb_resource()
             serializer = TypeSerializer()
+            wire = lambda item: {key: serializer.serialize(value) for key, value in item.items()}
             with Stubber(resource.meta.client) as stub:
-                stub.add_response("put_item", {}, {"TableName": "test-intents", "Item": ANY,
-                                                  "ConditionExpression": "attribute_not_exists(intentId)"})
-                with patch.object(intents, "dynamodb_resource", return_value=resource):
-                    created = intents.lambda_handler({"requestContext": {"http": {"method": "POST"}},
-                                                      "body": json.dumps(PAYLOAD)}, None)
-                self.assertEqual(created["statusCode"], 201)
-                record = body(created)["item"]
-                wire = {key: serializer.serialize(value) for key, value in record.items()}
-                key = {"intentId": record["intentId"]}
-                stub.add_response("scan", {"Items": [deepcopy(wire)]}, {"TableName": "test-intents", "Limit": 25})
-                with patch.object(intents, "dynamodb_resource", return_value=resource):
+                stub.add_response('transact_write_items', {}, {'TransactItems': ANY})
+                with patch.object(intents, 'dynamodb_resource', return_value=resource):
+                    created = intents.lambda_handler({'requestContext': {'http': {'method': 'POST'}},
+                        'body': json.dumps(PAYLOAD)}, None)
+                self.assertEqual(created['statusCode'], 201)
+                record = body(created)['item']; key = {'intentId': record['intentId']}
+                stub.add_response('scan', {'Items': [wire(record)]},
+                    {'TableName': 'test-intents', 'Limit': 25, 'FilterExpression': ANY})
+                with patch.object(intents, 'dynamodb_resource', return_value=resource):
                     listed = intents.lambda_handler({}, None)
-                self.assertEqual(listed["statusCode"], 200)
-                self.assertEqual(body(listed)["items"], [record])
-                stub.add_response("get_item", {"Item": deepcopy(wire)}, {"TableName": "test-intents", "Key": key, "ConsistentRead": True})
-                with patch.object(detail, "dynamodb_resource", return_value=resource):
-                    fetched = detail.lambda_handler({"pathParameters": key}, None)
-                self.assertEqual(fetched["statusCode"], 200)
-                self.assertEqual(body(fetched)["item"], record)
-                approved = {**record, "status": "APPROVED", "approvedAt": "test-time", "updatedAt": "test-time"}
-                stub.add_response("get_item", {"Item": deepcopy(wire)}, {"TableName": "test-intents", "Key": key, "ConsistentRead": True})
-                stub.add_response("update_item", {"Attributes": {k: serializer.serialize(v) for k, v in approved.items()}},
-                                  {"TableName": "test-intents", "Key": key,
-                                   "UpdateExpression": "SET #s = :approved, approvedAt = :now, updatedAt = :now",
-                                   "ExpressionAttributeNames": {"#s": "status"},
-                                   "ExpressionAttributeValues": {":approved": "APPROVED", ":now": "test-time"},
-                                   "ReturnValues": "ALL_NEW", "ConditionExpression": ANY})
-                with patch.object(approval, "dynamodb_resource", return_value=resource), patch.object(approval, "utc_now", return_value="test-time"):
-                    result = approval.lambda_handler({"pathParameters": key}, None)
-                self.assertEqual(result["statusCode"], 200)
-                self.assertEqual(body(result)["item"], approved)
+                self.assertEqual(body(listed)['items'], [record])
+                stub.add_response('get_item', {'Item': wire(record)},
+                    {'TableName': 'test-intents', 'Key': key, 'ConsistentRead': True})
+                with patch.object(detail, 'dynamodb_resource', return_value=resource):
+                    fetched = detail.lambda_handler({'pathParameters': key}, None)
+                self.assertEqual(body(fetched)['item'], record)
+                stub.add_response('get_item', {'Item': wire(record)},
+                    {'TableName': 'test-intents', 'Key': key, 'ConsistentRead': True})
+                stub.add_response('get_item', {'Item': wire(record)},
+                    {'TableName': 'test-versions', 'Key': {**key, 'version': 1}, 'ConsistentRead': True})
+                stub.add_response('transact_write_items', {}, {'TransactItems': ANY})
+                with patch.object(approval, 'dynamodb_resource', return_value=resource):
+                    result = approval.lambda_handler({'pathParameters': key}, None)
+                self.assertEqual(result['statusCode'], 200)
+                self.assertEqual(body(result)['item']['status'], 'APPROVED')
+                self.assertEqual(body(result)['item']['activeVersion'], 1)
                 stub.assert_no_pending_responses()
 
     def test_connection_failure_is_structured(self):
@@ -105,7 +102,7 @@ class LocalPersistenceTests(unittest.TestCase):
         with patch.dict(os.environ, LOCAL, clear=True):
             resource = dynamodb_resource()
             table = resource.Table("test-intents")
-            with patch.object(resource, "Table", return_value=table), patch.object(intents, "dynamodb_resource", return_value=resource), patch.object(table, "put_item", side_effect=EndpointConnectionError(endpoint_url=LOCAL["DYNAMODB_ENDPOINT_URL"])):
+            with patch.object(resource, "Table", return_value=table), patch.object(intents, "dynamodb_resource", return_value=resource), patch("common.versions.transaction_write", side_effect=EndpointConnectionError(endpoint_url=LOCAL["DYNAMODB_ENDPOINT_URL"])):
                 result = intents.lambda_handler({"requestContext": {"http": {"method": "POST"}}, "body": json.dumps(PAYLOAD)}, None)
             self.assertEqual(result["statusCode"], 502)
             self.assertEqual(body(result)["error"]["code"], "INTENT_WRITE_FAILED")

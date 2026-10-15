@@ -1,19 +1,22 @@
 import { hasCapability } from '@/config/capabilities';
 import { useAuditEvents } from '@/hooks/apiHooks';
 import { StateBoundary } from '@/components/common/StateBoundary';
-import { CopyableId } from '@/components/common/CopyableId';
 import { formatDateTime } from '@/utils/dates';
-import type { AuditEvent } from '@/types/domain';
+import { useSearchParams } from 'react-router-dom';
+import type { AuditEvent } from '@/api/backendSchemas';
+import { Button } from '@/components/ui/Button';
 
 export function AuditTrailPage() {
-  const { data, isLoading, isError, error, refetch } = useAuditEvents();
+  const [params, setParams] = useSearchParams();
+  const cursor = params.get('nextToken') || undefined;
+  const { data, isLoading, isError, error, refetch } = useAuditEvents(cursor);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
         <h1 className="font-title text-2xl font-bold text-ink">Immutable Audit Trail</h1>
         <p className="text-xs text-graphite mt-1">
-          Server-generated activity log recording evaluations, remediation approvals, and system events (INV-17)
+          Server-generated activity in the configured scope (INV-17)
         </p>
       </div>
 
@@ -23,8 +26,8 @@ export function AuditTrailPage() {
         isError={isError}
         error={error}
         isEmpty={data?.items.length === 0}
-        emptyTitle="No audit log entries recorded"
-        emptyDescription="System activity will appear here once actions are performed."
+        emptyTitle="No audit entries on this page"
+        emptyDescription="Server activity will appear here after an audited action is recorded."
         onRetry={() => refetch()}
       >
         {data && (
@@ -36,28 +39,25 @@ export function AuditTrailPage() {
                   <th className="py-2.5 px-4">Actor</th>
                   <th className="py-2.5 px-4">Action</th>
                   <th className="py-2.5 px-4">Details</th>
-                  <th className="py-2.5 px-4">IP Address</th>
+                  <th className="py-2.5 px-4">Result and target</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-rule">
                 {data.items.map((item: AuditEvent) => (
-                  <tr key={item.id} className="hover:bg-film/60">
+                  <tr key={item.auditId} className="hover:bg-film/60">
                     <td className="py-3 px-4 text-pencil whitespace-nowrap">{formatDateTime(item.timestamp)}</td>
-                    <td className="py-3 px-4 font-mono font-medium text-ink">{item.actor}</td>
+                    <td className="py-3 px-4 font-mono font-medium text-ink">{item.actor.displayName || item.actor.sub}</td>
                     <td className="py-3 px-4">
                       <span className="font-mono text-[11px] bg-film px-1.5 py-0.5 rounded border border-rule text-ink">
                         {item.action}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-ink/90">
-                      <div>{item.details}</div>
-                      {item.resourceId && (
-                        <div className="mt-1">
-                          <CopyableId id={item.resourceId} />
-                        </div>
-                      )}
+                      <div>{item.result}</div>
+                      <pre className="mt-1 max-w-lg whitespace-pre-wrap break-words font-mono text-[11px] text-pencil">{typeof item.target === 'string' ? item.target : JSON.stringify(item.target)}</pre>
+                      {item.evaluationId && <div className="mt-1 font-mono text-[11px]">Evaluation {item.evaluationId}</div>}
                     </td>
-                    <td className="py-3 px-4 font-mono text-pencil">{item.ipAddress || '—'}</td>
+                    <td className="py-3 px-4 font-mono text-pencil">{item.requestId}</td>
                   </tr>
                 ))}
               </tbody>
@@ -65,6 +65,16 @@ export function AuditTrailPage() {
           </div>
         )}
       </StateBoundary>
+      {data?.nextToken && <Button variant="secondary" onClick={() => {
+        const next = new URLSearchParams(params);
+        next.set('nextToken', data.nextToken!);
+        setParams(next);
+      }}>Next page</Button>}
+      {cursor && <Button variant="secondary" onClick={() => {
+        const next = new URLSearchParams(params);
+        next.delete('nextToken');
+        setParams(next);
+      }}>First page</Button>}
     </div>
   );
 }

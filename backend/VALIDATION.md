@@ -1,5 +1,49 @@
 # Validation of the local persistence patch
 
+## Phase 2 validation - 2026-10-15
+
+Implemented transactional immutable version snapshots/activation/rollback,
+asynchronous queued evaluation/status/history, scoped group authorization,
+append-only audit, and human finding lifecycle transitions. Existing `/v1` and
+envelopes remain; the approved evaluation POST change is 202 with a status URL.
+
+Checks run on this phase:
+
+- **93 backend tests passed** using the same cached Python 3.14.8/boto3/Moto
+  environment documented below. Added coverage includes role claim forms and
+  denial, audit rollback on storage failure, suppression reason/revision conflicts,
+  version immutability/supersede/rollback and semantic diffs, explicit legacy
+  migration, pinned jobs, scope-bound history, bounded artifact hashing, duplicate
+  delivery and retry after complete artifacts. Legacy botocore Stubber tests now
+  check transactional create/approval rather than the replaced single writes.
+- **DynamoDB Local validation passed** on isolated port 18000. `init` added the
+  three tables and new indexes; `migrate` explicitly backfilled earlier local
+  records. The enhanced `verify_topology.py` exercised all five async seed
+  scenarios plus version creation/approval/rollback, immutable v1 snapshot and
+  audit reads. Intent ID: `206c680f-27e2-437b-aceb-70fc1dd51cab`. Ignored evidence:
+  `backend/local-evidence/phase2-topology.json`. These are direct handler + worker
+  invocations against a real local database, not API Gateway/Cognito evidence.
+- **SAM validation/lint and Python 3.13 build passed**, with public build wheels
+  resolved offline as below. No deployment or live AWS API was called.
+- **Frontend gates passed:** lint (two existing fast-refresh warnings), tests
+  24/24, contract tests 13/13 and production build. The architecture chunk is
+  84.39 kB gzip. Both contract fixture files came from actual backend handlers.
+- Python syntax and `git diff --check` passed; `local-env.json` remains ignored.
+
+Run the same backend/SAM commands below and the updated local commands in
+`INTEGRATION.md`. The verifier now queues 202 jobs and explicitly runs their
+worker. The earlier Phase 1 commands/results remain historical.
+
+Not verified: deployed JWT/group validation, real Cognito user assignment,
+Academy permissions for role creation/PassRole/Cognito/Streams, actual stream
+delivery/retry/deadline timing, cloud migration/backfill, or live inventory.
+Cloud worker transport is disabled by default; local mode needs no Streams.
+The 48-resolution transaction cap is a deliberate bounded-work limit; larger
+reconciliations do not silently clear findings. GSI reads can lag; direct status
+reads are consistent. Local in-memory database durability was not tested.
+
+Severity scoring, Bedrock/cross-validation and remediation remain later phases.
+
 ## Phase 1 validation - 2026-10-15
 
 Implemented v2 manifests, deterministic relationship/path/boundary rules,

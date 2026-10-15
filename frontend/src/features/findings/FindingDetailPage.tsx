@@ -16,8 +16,8 @@ export function FindingDetailPage() {
   const acknowledgeFinding = useAcknowledgeFinding();
 
   const handleAcknowledge = () => {
-    if (findingId) {
-      acknowledgeFinding.mutate(findingId);
+    if (findingId && finding?.revision !== undefined) {
+      acknowledgeFinding.mutate({ id: findingId, expectedRevision: finding.revision });
     }
   };
 
@@ -47,7 +47,7 @@ export function FindingDetailPage() {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                {finding.status === 'OPEN' && hasCapability('findings.update') && (
+                {finding.status === 'OPEN' && hasCapability('findings.update') && finding.revision !== undefined && (
                   <Button
                     variant="secondary"
                     size="sm"
@@ -75,6 +75,9 @@ export function FindingDetailPage() {
                 )}
               </div>
             </div>
+            {acknowledgeFinding.data && <p role="status" className="text-sm">Finding acknowledged.</p>}
+            {finding.status === 'OPEN' && hasCapability('findings.update') && finding.revision === undefined && <p className="text-xs text-graphite">Acknowledge is unavailable because the server did not provide a revision.</p>}
+            {acknowledgeFinding.error && <p role="alert" className="text-sm text-sev-critical">{acknowledgeFinding.error.message}</p>}
 
             {finding.evidence && <Card><CardHeader title="Evaluation evidence" /><p className="text-sm mb-3">{finding.explanation}</p>{finding.evidence.map((entry, index) => <div key={index} className="border-t border-rule py-3"><p className="text-xs">{entry.source} - {formatDateTime(entry.observedAt)}</p><CopyableId id={entry.resourceId} /><pre className="text-xs whitespace-pre-wrap break-words mt-2">{JSON.stringify(entry.details, null, 2)}</pre></div>)}</Card>}
             {/* Finding Details Cards */}

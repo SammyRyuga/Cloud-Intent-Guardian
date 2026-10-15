@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 import boto3
+from phase_support import authed, create_tables, finish
 from moto import mock_aws
 from common.scenarios import scenario_manifest
 
@@ -26,13 +27,11 @@ class TopologyContracts(unittest.TestCase):
             'AWS_ACCESS_KEY_ID': 'testing', 'AWS_SECRET_ACCESS_KEY': 'testing',
             'CIG_LOCAL': 'true', 'DYNAMODB_ENDPOINT_URL': 'http://127.0.0.1:18000',
             'INVENTORY_PROVIDER': 'fixture', 'CIG_FIXTURE_SCENARIO': 'benign',
-            'INTENTS_TABLE': 'v2-intents', 'FINDINGS_TABLE': 'v2-findings', 'EVALUATIONS_TABLE': 'v2-evaluations'}, clear=True)
+            'CIG_ACCOUNT_ID': 'fixture-account', 'ASYNC_WORKER_ENABLED': 'true', 'INTENTS_TABLE': 'v2-intents', 'FINDINGS_TABLE': 'v2-findings', 'EVALUATIONS_TABLE': 'v2-evaluations'}, clear=True)
         self.env.start()
         self.aws = mock_aws(); self.aws.start()
         self.db = boto3.resource('dynamodb', region_name='ap-south-1')
-        for table, key in [('v2-intents', 'intentId'), ('v2-findings', 'findingId'), ('v2-evaluations', 'evaluationId')]:
-            self.db.create_table(TableName=table, KeySchema=[{'AttributeName': key, 'KeyType': 'HASH'}],
-                AttributeDefinitions=[{'AttributeName': key, 'AttributeType': 'S'}], BillingMode='PAY_PER_REQUEST')
+        create_tables(self.db)
         self.patches = []
         for name in ['intents', 'approve_intent', 'resources', 'evaluations']:
             module = importlib.import_module(name + '.app')
@@ -46,24 +45,26 @@ class TopologyContracts(unittest.TestCase):
 
     def create(self, manifest=None):
         module = importlib.import_module('intents.app')
-        item = payload(module.lambda_handler({'requestContext': {'http': {'method': 'POST'}},
-            'body': json.dumps(manifest or scenario_manifest())}, None), 201)['item']
+        item = payload(module.lambda_handler(authed({'requestContext': {'http': {'method': 'POST'}},
+            'body': json.dumps(manifest or scenario_manifest())}), None), 201)['item']
         self.created = {'item': item}
         approved = payload(importlib.import_module('approve_intent.app').lambda_handler(
-            {'pathParameters': {'intentId': item['intentId']}}, None))['item']
+            authed({'pathParameters': {'intentId': item['intentId']}}), None))['item']
         return approved
 
     def evaluate(self, intent):
-        return payload(importlib.import_module('evaluations.app').lambda_handler(
-            {'body': json.dumps({'intentId': intent['intentId']})}, None))
+        queued = payload(importlib.import_module('evaluations.app').lambda_handler(
+            authed({'body': json.dumps({'intentId': intent['intentId']})}), None), 202)
+        self.last_queued = queued
+        return finish(self.db, queued)
 
     def test_v2_create_approve_read_and_intent_graph_never_collects(self):
         intent = self.create()
         self.assertEqual(intent['components'], scenario_manifest()['components'])
         graph_module = importlib.import_module('resources.app')
         with patch.object(graph_module, 'collect_inventory', side_effect=AssertionError('AWS call')):
-            graph = payload(graph_module.lambda_handler({'rawPath': '/v1/architecture/graph',
-                'queryStringParameters': {'view': 'INTENT', 'intentId': intent['intentId']}}, None))
+            graph = payload(graph_module.lambda_handler(authed({'rawPath': '/v1/architecture/graph',
+                'queryStringParameters': {'view': 'INTENT', 'intentId': intent['intentId']}}), None))
         self.assertEqual(graph['view'], 'INTENT')
         self.assertEqual(len(graph['nodes']), 4)
         self.assertIsInstance(graph['asOf'], str)
@@ -83,12 +84,14 @@ class TopologyContracts(unittest.TestCase):
         if destination:
             module = importlib.import_module('resources.app')
             request = {'rawPath': '/v1/architecture/graph', 'queryStringParameters': {'view': 'INTENT', 'intentId': intent['intentId']}}
-            intent_graph = payload(module.lambda_handler(request, None))
+            intent_graph = payload(module.lambda_handler(authed(request), None))
             request['queryStringParameters']['view'] = 'DIFF'
             with patch.dict(os.environ, {'CIG_FIXTURE_SCENARIO': 'lambda-db-bypass'}):
-                diff_graph = payload(module.lambda_handler(request, None))
+                diff_graph = payload(module.lambda_handler(authed(request), None))
             Path(destination).write_text(json.dumps({'created': self.created, 'approved': {'item': intent},
-                'intentGraph': intent_graph, 'diffGraph': diff_graph, 'bypassEvaluation': bypass}, indent=2) + '\n')
+                'intentGraph': intent_graph, 'diffGraph': diff_graph, 'bypassEvaluation': bypass, 'queuedEvaluation': self.last_queued,
+                'evaluationDetail': payload(importlib.import_module('evaluations.app').lambda_handler(authed({
+                    'requestContext': {'http': {'method': 'GET'}}, 'pathParameters': {'id': self.last_queued['evaluation']['evaluationId']}}), None))}, indent=2, default=__import__('common.http', fromlist=['_json_default'])._json_default) + '\n')
 
     def test_open_ssh_is_deduplicated_and_resolves_when_complete(self):
         intent = self.create()
@@ -104,14 +107,14 @@ class TopologyContracts(unittest.TestCase):
 
     def test_local_without_fixture_refuses_before_collector(self):
         module = importlib.import_module('evaluations.app')
-        with patch.dict(os.environ, {'INVENTORY_PROVIDER': 'aws'}), patch.object(module, 'collect_inventory', side_effect=AssertionError('AWS call')):
-            self.assertEqual(module.lambda_handler({}, None)['statusCode'], 409)
+        with patch.dict(os.environ, {'INVENTORY_PROVIDER': 'aws'}), patch('evaluation_worker.app.collect_inventory', side_effect=AssertionError('AWS call')):
+            self.assertEqual(module.lambda_handler(authed({}), None)['statusCode'], 409)
 
     def test_fixture_cannot_enable_production_observations(self):
         module = importlib.import_module('evaluations.app')
         intent = self.create()
-        with patch.dict(os.environ, {'CIG_LOCAL': 'false'}), patch.object(module, 'collect_inventory', side_effect=AssertionError('AWS call')):
-            self.assertEqual(module.lambda_handler({'body': json.dumps({'intentId': intent['intentId']})}, None)['statusCode'], 409)
+        with patch.dict(os.environ, {'CIG_LOCAL': 'false'}), patch('evaluation_worker.app.collect_inventory', side_effect=AssertionError('AWS call')):
+            self.assertEqual(module.lambda_handler(authed({'body': json.dumps({'intentId': intent['intentId']})}), None)['statusCode'], 409)
 
     def test_missing_attribute_retains_finding_and_unknown_is_not_pass(self):
         intent = self.create({'name': 'Bucket intent', 'constraints': [
@@ -121,10 +124,10 @@ class TopologyContracts(unittest.TestCase):
         inventory['items'] = [{'resourceId': 'fixture-bucket', 'resourceType': 'AWS::S3::Bucket',
             'region': 'ap-south-1', 'attributes': {'publicAccessBlockEnabled': False}}]
         module = importlib.import_module('evaluations.app')
-        with patch.object(module, 'observations', return_value=inventory):
+        with patch('evaluation_worker.app.observations', return_value=inventory):
             first = self.evaluate(intent)
         inventory['items'][0]['attributes'] = {'publicAccessBlockEnabled': None}
-        with patch.object(module, 'observations', return_value=inventory):
+        with patch('evaluation_worker.app.observations', return_value=inventory):
             unknown = self.evaluate(intent)
         self.assertEqual(unknown['evaluation']['status'], 'PARTIAL')
         self.assertIsNone(unknown['evaluation']['conformance']['percent'])
@@ -135,8 +138,8 @@ class TopologyContracts(unittest.TestCase):
         intent = self.create()
         module = importlib.import_module('resources.app')
         with patch.dict(os.environ, {'CIG_FIXTURE_SCENARIO': 'lambda-db-bypass'}):
-            graph = payload(module.lambda_handler({'rawPath': '/v1/architecture/graph',
-                'queryStringParameters': {'view': 'DIFF', 'intentId': intent['intentId']}}, None))
+            graph = payload(module.lambda_handler(authed({'rawPath': '/v1/architecture/graph',
+                'queryStringParameters': {'view': 'DIFF', 'intentId': intent['intentId']}}), None))
         ids = {row['id'] for row in graph['nodes']}
         self.assertTrue(all(row['source'] in ids and row['target'] in ids for row in graph['edges']))
         self.assertIn('UNEXPECTED', {row['diffState'] for row in graph['edges']})

@@ -1,3 +1,4 @@
+from common.auth import require_role
 import os
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
@@ -6,6 +7,7 @@ from common.contracts import is_local, local_status
 from botocore.config import Config
 
 
+@require_role('viewer')
 def lambda_handler(event, context):
     region = os.environ.get("AWS_REGION", "unknown")
     if is_local():

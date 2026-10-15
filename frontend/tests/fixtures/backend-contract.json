@@ -1,7 +1,7 @@
 {
   "created": {
     "item": {
-      "intentId": "1f315e96-755e-4d80-8300-2fb9fd0203c2",
+      "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
       "name": "Contract baseline",
       "description": "Test observation, not live AWS evidence",
       "constraints": [
@@ -15,17 +15,20 @@
       ],
       "version": 1,
       "status": "DRAFT",
-      "createdAt": "2026-10-15T18:09:52.282523Z",
-      "updatedAt": "2026-10-15T18:09:52.282523Z",
+      "createdAt": "2026-10-15T18:24:17.066428Z",
+      "updatedAt": "2026-10-15T18:24:17.066428Z",
       "approvedAt": null,
-      "createdBy": "authenticated-user",
-      "sourceType": "JSON_CONSTRAINT_MANIFEST"
+      "createdBy": "contract-user",
+      "sourceType": "JSON_CONSTRAINT_MANIFEST",
+      "scopeKey": "123456789012#ap-south-1#dev",
+      "latestVersion": 1,
+      "revision": 0
     }
   },
   "intents": {
     "items": [
       {
-        "intentId": "1f315e96-755e-4d80-8300-2fb9fd0203c2",
+        "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
         "name": "Contract baseline",
         "description": "Test observation, not live AWS evidence",
         "constraints": [
@@ -39,11 +42,14 @@
         ],
         "version": 1,
         "status": "DRAFT",
-        "createdAt": "2026-10-15T18:09:52.282523Z",
-        "updatedAt": "2026-10-15T18:09:52.282523Z",
+        "createdAt": "2026-10-15T18:24:17.066428Z",
+        "updatedAt": "2026-10-15T18:24:17.066428Z",
         "approvedAt": null,
-        "createdBy": "authenticated-user",
-        "sourceType": "JSON_CONSTRAINT_MANIFEST"
+        "createdBy": "contract-user",
+        "sourceType": "JSON_CONSTRAINT_MANIFEST",
+        "scopeKey": "123456789012#ap-south-1#dev",
+        "latestVersion": 1,
+        "revision": 0
       }
     ],
     "count": 1,
@@ -52,7 +58,7 @@
   },
   "approved": {
     "item": {
-      "intentId": "1f315e96-755e-4d80-8300-2fb9fd0203c2",
+      "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
       "name": "Contract baseline",
       "description": "Test observation, not live AWS evidence",
       "constraints": [
@@ -66,18 +72,22 @@
       ],
       "version": 1,
       "status": "APPROVED",
-      "createdAt": "2026-10-15T18:09:52.282523Z",
-      "updatedAt": "2026-10-15T18:09:52.297761Z",
-      "approvedAt": "2026-10-15T18:09:52.297761Z",
-      "createdBy": "authenticated-user",
-      "sourceType": "JSON_CONSTRAINT_MANIFEST"
+      "createdAt": "2026-10-15T18:24:17.066428Z",
+      "updatedAt": "2026-10-15T18:24:17.082992Z",
+      "approvedAt": "2026-10-15T18:24:17.082992Z",
+      "createdBy": "contract-user",
+      "sourceType": "JSON_CONSTRAINT_MANIFEST",
+      "scopeKey": "123456789012#ap-south-1#dev",
+      "latestVersion": 1,
+      "revision": 1,
+      "activeVersion": 1
     }
   },
   "findings": {
     "items": [
       {
-        "findingId": "1fe221671fe71bade4a01268feaf05a9",
-        "title": "ssh \u2014 Contract group",
+        "findingId": "5b771cf34901ebda4b197697b01a2af9",
+        "title": "ssh - Contract group",
         "description": "ssh",
         "explanation": "The security group permits SSH (TCP/22) from the public internet.",
         "severity": "HIGH",
@@ -89,7 +99,7 @@
         "region": "ap-south-1",
         "accountId": "123456789012",
         "simulated": false,
-        "intentId": "1f315e96-755e-4d80-8300-2fb9fd0203c2",
+        "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
         "intentName": "Contract baseline",
         "intentVersion": 1,
         "constraintId": "ssh",
@@ -125,10 +135,14 @@
             }
           }
         ],
-        "firstSeenAt": "2026-10-15T18:09:52.306654Z",
-        "lastSeenAt": "2026-10-15T18:09:52.306654Z",
-        "updatedAt": "2026-10-15T18:09:52.306654Z",
-        "evaluationId": "8d05d079-e788-4729-ae59-79cb475d2560",
+        "firstSeenAt": "2026-10-15T18:24:17.128424Z",
+        "lastSeenAt": "2026-10-15T18:24:17.138411Z",
+        "updatedAt": "2026-10-15T18:24:17.138411Z",
+        "evaluationId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+        "scopeKey": "123456789012#ap-south-1#dev",
+        "scopeIntentKey": "123456789012#ap-south-1#dev#6434ae4f-b422-4dad-8d45-2246178d90c8",
+        "lastEvaluationOrder": "2026-10-15T18:24:17.096953Z#7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+        "revision": 0,
         "remediationAvailable": false
       }
     ],
@@ -138,8 +152,8 @@
   },
   "finding": {
     "item": {
-      "findingId": "1fe221671fe71bade4a01268feaf05a9",
-      "title": "ssh \u2014 Contract group",
+      "findingId": "5b771cf34901ebda4b197697b01a2af9",
+      "title": "ssh - Contract group",
       "description": "ssh",
       "explanation": "The security group permits SSH (TCP/22) from the public internet.",
       "severity": "HIGH",
@@ -151,7 +165,7 @@
       "region": "ap-south-1",
       "accountId": "123456789012",
       "simulated": false,
-      "intentId": "1f315e96-755e-4d80-8300-2fb9fd0203c2",
+      "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
       "intentName": "Contract baseline",
       "intentVersion": 1,
       "constraintId": "ssh",
@@ -187,10 +201,14 @@
           }
         }
       ],
-      "firstSeenAt": "2026-10-15T18:09:52.306654Z",
-      "lastSeenAt": "2026-10-15T18:09:52.306654Z",
-      "updatedAt": "2026-10-15T18:09:52.306654Z",
-      "evaluationId": "8d05d079-e788-4729-ae59-79cb475d2560",
+      "firstSeenAt": "2026-10-15T18:24:17.128424Z",
+      "lastSeenAt": "2026-10-15T18:24:17.138411Z",
+      "updatedAt": "2026-10-15T18:24:17.138411Z",
+      "evaluationId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+      "scopeKey": "123456789012#ap-south-1#dev",
+      "scopeIntentKey": "123456789012#ap-south-1#dev#6434ae4f-b422-4dad-8d45-2246178d90c8",
+      "lastEvaluationOrder": "2026-10-15T18:24:17.096953Z#7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+      "revision": 0,
       "remediationAvailable": false
     }
   },
@@ -214,7 +232,7 @@
     "totalFindings": 1,
     "activeDriftCount": null,
     "openRemediations": null,
-    "lastEvaluatedAt": "2026-10-15T18:09:52.316136Z",
+    "lastEvaluatedAt": "2026-10-15T18:24:17.154044Z",
     "evaluatedRegion": "ap-south-1",
     "partial": false,
     "evaluationStatus": "SUCCEEDED",
@@ -225,15 +243,33 @@
   },
   "evaluation": {
     "evaluation": {
-      "evaluationId": "8d05d079-e788-4729-ae59-79cb475d2560",
+      "evaluationId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+      "status": "QUEUED",
+      "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+      "intentVersion": 1,
+      "createdAt": "2026-10-15T18:24:17.096953Z"
+    },
+    "statusUrl": "/v1/evaluations/7f6ab8df-77d9-4d8f-92c6-e0afade17324"
+  },
+  "evaluationDetail": {
+    "item": {
+      "evaluationId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324",
       "status": "SUCCEEDED",
-      "intentId": "1f315e96-755e-4d80-8300-2fb9fd0203c2",
+      "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
       "intentName": "Contract baseline",
       "intentVersion": 1,
-      "accountId": "123456789012",
-      "region": "ap-south-1",
-      "startedAt": "2026-10-15T18:09:52.305698Z",
-      "finishedAt": "2026-10-15T18:09:52.316136Z",
+      "scopeKey": "123456789012#ap-south-1#dev",
+      "createdAt": "2026-10-15T18:24:17.096953Z",
+      "createdOrder": "2026-10-15T18:24:17.096953Z#7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+      "startedAt": null,
+      "finishedAt": "2026-10-15T18:24:17.154044Z",
+      "progressStage": "SUCCEEDED",
+      "summary": {
+        "resourceCount": 1,
+        "violationsFound": 1,
+        "resolvedFindings": 0,
+        "inventoryPartial": false
+      },
       "conformance": {
         "percent": 0,
         "totalRules": 1,
@@ -243,103 +279,75 @@
         "notApplicableRules": 0,
         "definition": "Enabled applicable policy rules; unknown evidence prevents full conformance."
       },
-      "summary": {
-        "resourceCount": 1,
-        "violationsFound": 1,
-        "resolvedFindings": 0,
-        "inventoryPartial": false
-      },
+      "warnings": [],
+      "simulated": false,
+      "accountId": "123456789012",
+      "region": "ap-south-1",
       "ruleResults": [
         {
           "ruleId": "ssh",
           "type": "SECURITY_GROUP_NO_OPEN_SSH",
-          "outcome": "VIOLATION",
-          "bindings": [
-            {
-              "resourceId": "sg-contract",
-              "outcome": "VIOLATION"
-            }
-          ]
+          "outcome": "VIOLATION"
         }
-      ],
-      "simulated": false,
-      "warnings": []
-    },
-    "findings": [
+      ]
+    }
+  },
+  "evaluations": {
+    "items": [
       {
-        "findingId": "1fe221671fe71bade4a01268feaf05a9",
-        "title": "ssh \u2014 Contract group",
-        "description": "ssh",
-        "explanation": "The security group permits SSH (TCP/22) from the public internet.",
-        "severity": "HIGH",
-        "category": "NETWORK_PATH",
-        "status": "OPEN",
-        "resourceId": "sg-contract",
-        "resourceName": "Contract group",
-        "resourceType": "AWS::EC2::SecurityGroup",
-        "region": "ap-south-1",
-        "accountId": "123456789012",
-        "simulated": false,
-        "intentId": "1f315e96-755e-4d80-8300-2fb9fd0203c2",
+        "evaluationId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+        "status": "SUCCEEDED",
+        "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
         "intentName": "Contract baseline",
         "intentVersion": 1,
-        "constraintId": "ssh",
-        "ruleId": "SECURITY_GROUP_NO_OPEN_SSH",
-        "expected": {
-          "description": "ssh",
-          "constraintType": "SECURITY_GROUP_NO_OPEN_SSH"
+        "scopeKey": "123456789012#ap-south-1#dev",
+        "createdAt": "2026-10-15T18:24:17.096953Z",
+        "createdOrder": "2026-10-15T18:24:17.096953Z#7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+        "startedAt": null,
+        "finishedAt": "2026-10-15T18:24:17.154044Z",
+        "progressStage": "SUCCEEDED",
+        "summary": {
+          "resourceCount": 1,
+          "violationsFound": 1,
+          "resolvedFindings": 0,
+          "inventoryPartial": false
         },
-        "observed": {
-          "matchingIngressRules": [
-            {
-              "protocol": "tcp",
-              "fromPort": 22,
-              "toPort": 22,
-              "cidr": "0.0.0.0/0"
-            }
-          ]
+        "conformance": {
+          "percent": 0,
+          "totalRules": 1,
+          "passingRules": 0,
+          "failingRules": 1,
+          "unknownRules": 0,
+          "notApplicableRules": 0,
+          "definition": "Enabled applicable policy rules; unknown evidence prevents full conformance."
         },
-        "evidence": [
+        "warnings": [],
+        "simulated": false,
+        "accountId": "123456789012",
+        "region": "ap-south-1",
+        "ruleResults": [
           {
-            "source": "Explicit test fixture",
-            "resourceId": "sg-contract",
-            "observedAt": "2026-10-13T00:00:00Z",
-            "details": {
-              "matchingIngressRules": [
-                {
-                  "protocol": "tcp",
-                  "fromPort": 22,
-                  "toPort": 22,
-                  "cidr": "0.0.0.0/0"
-                }
-              ]
-            }
+            "ruleId": "ssh",
+            "type": "SECURITY_GROUP_NO_OPEN_SSH",
+            "outcome": "VIOLATION"
           }
-        ],
-        "firstSeenAt": "2026-10-15T18:09:52.306654Z",
-        "lastSeenAt": "2026-10-15T18:09:52.306654Z",
-        "updatedAt": "2026-10-15T18:09:52.306654Z",
-        "evaluationId": "8d05d079-e788-4729-ae59-79cb475d2560"
+        ]
       }
     ],
-    "inventory": {
-      "accountId": "123456789012",
-      "region": "ap-south-1",
-      "totalResources": 1,
-      "partial": false,
-      "warnings": []
-    }
+    "count": 1,
+    "nextToken": null,
+    "limit": 25
   },
   "status": {
     "status": "LOCAL",
     "accountId": null,
     "region": "ap-south-1",
     "stage": "dev",
-    "checkedAt": "2026-10-15T18:09:52.335420Z",
+    "checkedAt": "2026-10-15T18:24:17.188434Z",
     "backendReachable": true,
     "awsSourcesConnected": false,
     "evaluatedRegion": "ap-south-1",
-    "lastSyncAt": "2026-10-15T18:09:52.335420Z",
+    "lastSyncAt": "2026-10-15T18:24:17.188434Z",
     "version": "0.2.0",
     "sources": {
       "awsIdentity": {
@@ -362,5 +370,403 @@
       "fixtureInventory": false,
       "topology": true
     }
+  },
+  "versions": {
+    "items": [
+      {
+        "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+        "version": 1,
+        "name": "Contract baseline",
+        "description": "Test observation, not live AWS evidence",
+        "constraints": [
+          {
+            "id": "ssh",
+            "type": "SECURITY_GROUP_NO_OPEN_SSH",
+            "severity": "HIGH",
+            "description": "ssh",
+            "enabled": true
+          }
+        ],
+        "status": "APPROVED",
+        "contentHash": "75bcd00cf276a3406e58110f3cf5adfd3296f270466ea79ef9d0338347d7ec6b",
+        "createdAt": "2026-10-15T18:24:17.066428Z",
+        "updatedAt": "2026-10-15T18:24:17.082992Z",
+        "createdBy": "contract-user",
+        "author": {
+          "sub": "contract-user",
+          "displayName": "contract-user"
+        },
+        "sourceType": "JSON_CONSTRAINT_MANIFEST",
+        "scopeKey": "123456789012#ap-south-1#dev",
+        "approvedAt": "2026-10-15T18:24:17.082992Z",
+        "effectiveStatus": "APPROVED"
+      }
+    ],
+    "count": 1,
+    "nextToken": null,
+    "limit": 25
+  },
+  "versionDetail": {
+    "item": {
+      "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+      "version": 1,
+      "name": "Contract baseline",
+      "description": "Test observation, not live AWS evidence",
+      "constraints": [
+        {
+          "id": "ssh",
+          "type": "SECURITY_GROUP_NO_OPEN_SSH",
+          "severity": "HIGH",
+          "description": "ssh",
+          "enabled": true
+        }
+      ],
+      "status": "APPROVED",
+      "contentHash": "75bcd00cf276a3406e58110f3cf5adfd3296f270466ea79ef9d0338347d7ec6b",
+      "createdAt": "2026-10-15T18:24:17.066428Z",
+      "updatedAt": "2026-10-15T18:24:17.082992Z",
+      "createdBy": "contract-user",
+      "author": {
+        "sub": "contract-user",
+        "displayName": "contract-user"
+      },
+      "sourceType": "JSON_CONSTRAINT_MANIFEST",
+      "scopeKey": "123456789012#ap-south-1#dev",
+      "approvedAt": "2026-10-15T18:24:17.082992Z",
+      "effectiveStatus": "APPROVED"
+    }
+  },
+  "versionDiff": {
+    "item": {
+      "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+      "fromVersion": 1,
+      "toVersion": 1,
+      "components": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "relationships": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "trustBoundaries": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "constraints": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "criticality": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      }
+    }
+  },
+  "findingAcknowledged": {
+    "item": {
+      "findingId": "5b771cf34901ebda4b197697b01a2af9",
+      "title": "ssh - Contract group",
+      "description": "ssh",
+      "explanation": "The security group permits SSH (TCP/22) from the public internet.",
+      "severity": "HIGH",
+      "category": "NETWORK_PATH",
+      "status": "ACKNOWLEDGED",
+      "resourceId": "sg-contract",
+      "resourceName": "Contract group",
+      "resourceType": "AWS::EC2::SecurityGroup",
+      "region": "ap-south-1",
+      "accountId": "123456789012",
+      "simulated": false,
+      "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+      "intentName": "Contract baseline",
+      "intentVersion": 1,
+      "constraintId": "ssh",
+      "ruleId": "SECURITY_GROUP_NO_OPEN_SSH",
+      "expected": {
+        "description": "ssh",
+        "constraintType": "SECURITY_GROUP_NO_OPEN_SSH"
+      },
+      "observed": {
+        "matchingIngressRules": [
+          {
+            "protocol": "tcp",
+            "fromPort": 22,
+            "toPort": 22,
+            "cidr": "0.0.0.0/0"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "source": "Explicit test fixture",
+          "resourceId": "sg-contract",
+          "observedAt": "2026-10-13T00:00:00Z",
+          "details": {
+            "matchingIngressRules": [
+              {
+                "protocol": "tcp",
+                "fromPort": 22,
+                "toPort": 22,
+                "cidr": "0.0.0.0/0"
+              }
+            ]
+          }
+        }
+      ],
+      "firstSeenAt": "2026-10-15T18:24:17.128424Z",
+      "lastSeenAt": "2026-10-15T18:24:17.138411Z",
+      "updatedAt": "2026-10-15T18:24:17.234129Z",
+      "evaluationId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+      "scopeKey": "123456789012#ap-south-1#dev",
+      "scopeIntentKey": "123456789012#ap-south-1#dev#6434ae4f-b422-4dad-8d45-2246178d90c8",
+      "lastEvaluationOrder": "2026-10-15T18:24:17.096953Z#7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+      "revision": 1,
+      "acknowledgedAt": "2026-10-15T18:24:17.234129Z",
+      "acknowledgedBy": "contract-user",
+      "remediationAvailable": false
+    }
+  },
+  "audit": {
+    "items": [
+      {
+        "auditId": "a555feba64b7009951f0541cb6cc223e",
+        "timestamp": "2026-10-15T18:24:17.234141Z",
+        "actor": {
+          "sub": "contract-user",
+          "displayName": "contract-user"
+        },
+        "action": "FINDING_ACKNOWLEDGED",
+        "target": {
+          "type": "FINDING",
+          "id": "5b771cf34901ebda4b197697b01a2af9"
+        },
+        "result": "SUCCESS",
+        "requestId": "b27d6358-5694-4489-b426-8fcb113ff9fa",
+        "scopeKey": "123456789012#ap-south-1#dev",
+        "eventOrder": "2026-10-15T18:24:17.234141Z#a555feba64b7009951f0541cb6cc223e",
+        "metadata": {
+          "reason": "",
+          "previousStatus": "OPEN"
+        }
+      },
+      {
+        "auditId": "946cf902a62b0f1daa548b070ac5c701",
+        "timestamp": "2026-10-15T18:24:17.154065Z",
+        "actor": {
+          "sub": "evaluation-worker",
+          "displayName": "Evaluation worker"
+        },
+        "action": "EVALUATION_SUCCEEDED",
+        "target": {
+          "type": "EVALUATION",
+          "id": "7f6ab8df-77d9-4d8f-92c6-e0afade17324"
+        },
+        "result": "SUCCESS",
+        "requestId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324:terminal:SUCCEEDED",
+        "scopeKey": "123456789012#ap-south-1#dev",
+        "eventOrder": "2026-10-15T18:24:17.154065Z#946cf902a62b0f1daa548b070ac5c701",
+        "metadata": {
+          "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+          "intentVersion": 1,
+          "errorCode": null
+        }
+      },
+      {
+        "auditId": "853ccbd6755824993f2d01889a8c79dc",
+        "timestamp": "2026-10-15T18:24:17.151858Z",
+        "actor": {
+          "sub": "evaluation-worker",
+          "displayName": "Evaluation worker"
+        },
+        "action": "EVALUATION_STAGE_CHANGED",
+        "target": {
+          "type": "EVALUATION",
+          "id": "7f6ab8df-77d9-4d8f-92c6-e0afade17324"
+        },
+        "result": "SUCCESS",
+        "requestId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324:EVALUATION_STAGE_CHANGED:PUBLISHING",
+        "scopeKey": "123456789012#ap-south-1#dev",
+        "eventOrder": "2026-10-15T18:24:17.151858Z#853ccbd6755824993f2d01889a8c79dc",
+        "metadata": {
+          "stage": "PUBLISHING"
+        }
+      },
+      {
+        "auditId": "aab355a980dea83dc5e09093a0a62f14",
+        "timestamp": "2026-10-15T18:24:17.138416Z",
+        "actor": {
+          "sub": "evaluation-worker",
+          "displayName": "Evaluation worker"
+        },
+        "action": "FINDING_DETECTED",
+        "target": {
+          "type": "FINDING",
+          "id": "5b771cf34901ebda4b197697b01a2af9"
+        },
+        "result": "SUCCESS",
+        "requestId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324:finding:5b771cf34901ebda4b197697b01a2af9",
+        "scopeKey": "123456789012#ap-south-1#dev",
+        "eventOrder": "2026-10-15T18:24:17.138416Z#aab355a980dea83dc5e09093a0a62f14",
+        "metadata": {
+          "evaluationId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324",
+          "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+          "intentVersion": 1,
+          "status": "OPEN"
+        }
+      },
+      {
+        "auditId": "aa30a54bde128f2e661758113ffe62a5",
+        "timestamp": "2026-10-15T18:24:17.131435Z",
+        "actor": {
+          "sub": "evaluation-worker",
+          "displayName": "Evaluation worker"
+        },
+        "action": "EVALUATION_STAGE_CHANGED",
+        "target": {
+          "type": "EVALUATION",
+          "id": "7f6ab8df-77d9-4d8f-92c6-e0afade17324"
+        },
+        "result": "SUCCESS",
+        "requestId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324:EVALUATION_STAGE_CHANGED:WRITING_ARTIFACTS",
+        "scopeKey": "123456789012#ap-south-1#dev",
+        "eventOrder": "2026-10-15T18:24:17.131435Z#aa30a54bde128f2e661758113ffe62a5",
+        "metadata": {
+          "stage": "WRITING_ARTIFACTS"
+        }
+      },
+      {
+        "auditId": "404ff650f761a178f77733213582653a",
+        "timestamp": "2026-10-15T18:24:17.126004Z",
+        "actor": {
+          "sub": "evaluation-worker",
+          "displayName": "Evaluation worker"
+        },
+        "action": "EVALUATION_STAGE_CHANGED",
+        "target": {
+          "type": "EVALUATION",
+          "id": "7f6ab8df-77d9-4d8f-92c6-e0afade17324"
+        },
+        "result": "SUCCESS",
+        "requestId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324:EVALUATION_STAGE_CHANGED:EVALUATING",
+        "scopeKey": "123456789012#ap-south-1#dev",
+        "eventOrder": "2026-10-15T18:24:17.126004Z#404ff650f761a178f77733213582653a",
+        "metadata": {
+          "stage": "EVALUATING"
+        }
+      },
+      {
+        "auditId": "fcbdc11aa41760837fa34838648e4a3c",
+        "timestamp": "2026-10-15T18:24:17.119599Z",
+        "actor": {
+          "sub": "evaluation-worker",
+          "displayName": "Evaluation worker"
+        },
+        "action": "EVALUATION_STAGE_CHANGED",
+        "target": {
+          "type": "EVALUATION",
+          "id": "7f6ab8df-77d9-4d8f-92c6-e0afade17324"
+        },
+        "result": "SUCCESS",
+        "requestId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324:EVALUATION_STAGE_CHANGED:COLLECTING",
+        "scopeKey": "123456789012#ap-south-1#dev",
+        "eventOrder": "2026-10-15T18:24:17.119599Z#fcbdc11aa41760837fa34838648e4a3c",
+        "metadata": {
+          "stage": "COLLECTING"
+        }
+      },
+      {
+        "auditId": "1c5f36a5d88cde3a286cfbe25058d91a",
+        "timestamp": "2026-10-15T18:24:17.110521Z",
+        "actor": {
+          "sub": "evaluation-worker",
+          "displayName": "Evaluation worker"
+        },
+        "action": "EVALUATION_STAGE_CHANGED",
+        "target": {
+          "type": "EVALUATION",
+          "id": "7f6ab8df-77d9-4d8f-92c6-e0afade17324"
+        },
+        "result": "SUCCESS",
+        "requestId": "7f6ab8df-77d9-4d8f-92c6-e0afade17324:EVALUATION_STAGE_CHANGED:CLAIMED",
+        "scopeKey": "123456789012#ap-south-1#dev",
+        "eventOrder": "2026-10-15T18:24:17.110521Z#1c5f36a5d88cde3a286cfbe25058d91a",
+        "metadata": {
+          "stage": "CLAIMED"
+        }
+      },
+      {
+        "auditId": "93f478090a350ea18eac30da56a27307",
+        "timestamp": "2026-10-15T18:24:17.096969Z",
+        "actor": {
+          "sub": "contract-user",
+          "displayName": "contract-user"
+        },
+        "action": "EVALUATION_QUEUED",
+        "target": {
+          "type": "EVALUATION",
+          "id": "7f6ab8df-77d9-4d8f-92c6-e0afade17324"
+        },
+        "result": "SUCCESS",
+        "requestId": "20f82f3a-88b2-40b8-9af1-210328562114",
+        "scopeKey": "123456789012#ap-south-1#dev",
+        "eventOrder": "2026-10-15T18:24:17.096969Z#93f478090a350ea18eac30da56a27307",
+        "metadata": {
+          "intentId": "6434ae4f-b422-4dad-8d45-2246178d90c8",
+          "intentVersion": 1,
+          "intentHash": "75bcd00cf276a3406e58110f3cf5adfd3296f270466ea79ef9d0338347d7ec6b"
+        }
+      },
+      {
+        "auditId": "d93a752c046bee9222ae339ff23af18e",
+        "timestamp": "2026-10-15T18:24:17.083009Z",
+        "actor": {
+          "sub": "contract-user",
+          "displayName": "contract-user"
+        },
+        "action": "INTENT_VERSION_APPROVED",
+        "target": {
+          "type": "INTENT",
+          "id": "6434ae4f-b422-4dad-8d45-2246178d90c8"
+        },
+        "result": "SUCCESS",
+        "requestId": "63e6dc7a-1d13-468c-a7b5-abdc92b0995f",
+        "scopeKey": "123456789012#ap-south-1#dev",
+        "eventOrder": "2026-10-15T18:24:17.083009Z#d93a752c046bee9222ae339ff23af18e",
+        "metadata": {
+          "version": 1,
+          "contentHash": "75bcd00cf276a3406e58110f3cf5adfd3296f270466ea79ef9d0338347d7ec6b"
+        }
+      },
+      {
+        "auditId": "37124dbd05b73dad423ae25aaae9f083",
+        "timestamp": "2026-10-15T18:24:17.068387Z",
+        "actor": {
+          "sub": "contract-user",
+          "displayName": "contract-user"
+        },
+        "action": "INTENT_CREATED",
+        "target": {
+          "type": "INTENT",
+          "id": "6434ae4f-b422-4dad-8d45-2246178d90c8"
+        },
+        "result": "SUCCESS",
+        "requestId": "b1fb64b4-2503-415f-9a9a-a37131ab2fc4",
+        "scopeKey": "123456789012#ap-south-1#dev",
+        "eventOrder": "2026-10-15T18:24:17.068387Z#37124dbd05b73dad423ae25aaae9f083",
+        "metadata": {
+          "version": 1,
+          "contentHash": "75bcd00cf276a3406e58110f3cf5adfd3296f270466ea79ef9d0338347d7ec6b"
+        }
+      }
+    ],
+    "count": 11,
+    "limit": 25,
+    "nextToken": null
   }
 }

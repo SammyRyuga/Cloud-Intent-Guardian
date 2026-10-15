@@ -24,6 +24,9 @@ export const ManifestSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   approvedAt: z.string().nullable(),
+  activeVersion: z.number().nullable().optional(),
+  latestVersion: z.number().nullable().optional(),
+  revision: z.number().optional(),
   createdBy: z.string(),
   sourceType: z.string(),
   schemaVersion: z.union([z.literal(1), z.literal(2)]).optional(),
@@ -44,6 +47,52 @@ export const ManifestsSchema = z.object({
 });
 export type Manifest = z.infer<typeof ManifestSchema>;
 
+const VersionManifestSchema = z.object({
+  intentId: z.string(),
+  name: z.string(),
+  description: z.string(),
+  version: z.number(),
+  status: z.enum(["DRAFT", "APPROVED"]),
+  effectiveStatus: z.enum(["DRAFT", "APPROVED", "SUPERSEDED"]).optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  approvedAt: z.string().nullable().optional(),
+  createdBy: z.string(),
+  author: z.object({ sub: z.string(), displayName: z.string().optional() }).optional(),
+  sourceType: z.string().optional(),
+  schemaVersion: z.union([z.literal(1), z.literal(2)]).optional(),
+  contentHash: z.string(),
+  parentVersion: z.number().optional(),
+  components: z.array(BoundedTopologyObjectSchema).max(100).optional(),
+  relationships: z.array(BoundedTopologyObjectSchema).max(250).optional(),
+  trustBoundaries: z.array(BoundedTopologyObjectSchema).max(20).optional(),
+  criticality: z.record(z.enum(["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]))
+    .refine((row) => Object.keys(row).length <= 100, "Criticality may contain at most 100 entries")
+    .optional(),
+  constraints: z.array(ManifestConstraintSchema).max(50),
+}).passthrough();
+export const IntentVersionDetailSchema = z.object({ item: VersionManifestSchema });
+export const IntentVersionsSchema = z.object({
+  items: z.array(VersionManifestSchema),
+  nextToken: z.string().nullable(),
+  count: z.number(),
+  limit: z.number(),
+});
+export const IntentDiffSchema = z.object({
+  item: z.object({
+    intentId: z.string(),
+    fromVersion: z.number(),
+    toVersion: z.number(),
+    components: z.record(z.unknown()),
+    relationships: z.record(z.unknown()),
+    trustBoundaries: z.record(z.unknown()),
+    criticality: z.record(z.unknown()),
+    constraints: z.record(z.unknown()),
+  }).passthrough(),
+});
+export type IntentVersion = z.infer<typeof VersionManifestSchema>;
+export type IntentDiff = z.infer<typeof IntentDiffSchema>["item"];
+
 export const BackendFindingSchema = z
   .object({
     findingId: z.string(),
@@ -57,6 +106,7 @@ export const BackendFindingSchema = z
     region: z.string(),
     firstSeenAt: z.string(),
     updatedAt: z.string(),
+    revision: z.number().optional(),
     remediationAvailable: z.literal(false),
     evidence: z
       .array(
@@ -89,22 +139,65 @@ export const BackendFindingsSchema = z
 export const BackendFindingDetailSchema = z
   .object({ item: BackendFindingSchema })
   .transform((result) => result.item);
-export const EvaluationResultSchema = z
-  .object({
-    evaluation: z.object({
-      evaluationId: z.string(),
-      status: z.enum(["SUCCEEDED", "PARTIAL"]),
-      summary: z.object({
-        resourceCount: z.number(),
-        violationsFound: z.number(),
-        resolvedFindings: z.number(),
-        inventoryPartial: z.boolean(),
-      }),
-    }),
-  })
-  .transform(({ evaluation }) => ({
-    id: evaluation.evaluationId,
-    status: evaluation.status,
-    message: `${evaluation.summary.resourceCount} resources checked; ${evaluation.summary.violationsFound} violations found.`,
-    summary: evaluation.summary,
-  }));
+export const EvaluationStatusSchema = z.enum(["QUEUED", "RUNNING", "SUCCEEDED", "PARTIAL", "FAILED"]);
+const EvaluationSummarySchema = z.object({
+  resourceCount: z.number().optional(),
+  violationsFound: z.number().optional(),
+  resolvedFindings: z.number().optional(),
+  inventoryPartial: z.boolean().optional(),
+}).passthrough();
+export const EvaluationSchema = z.object({
+  evaluationId: z.string(),
+  status: EvaluationStatusSchema,
+  intentId: z.string().nullable().optional(),
+  intentVersion: z.number().nullable().optional(),
+  createdAt: z.string().optional(),
+  startedAt: z.string().nullable().optional(),
+  finishedAt: z.string().nullable().optional(),
+  progressStage: z.string().nullable().optional(),
+  summary: EvaluationSummarySchema.nullable().optional(),
+  error: z.object({ code: z.string(), message: z.string() }).nullable().optional(),
+}).passthrough();
+export const EvaluationAcceptedSchema = z.object({
+  evaluation: z.object({
+    evaluationId: z.string(),
+    status: z.literal("QUEUED"),
+    intentId: z.string().nullable(),
+    intentVersion: z.number().nullable(),
+    createdAt: z.string(),
+  }).passthrough(),
+  statusUrl: z.string(),
+});
+export const EvaluationDetailSchema = z.object({ item: EvaluationSchema });
+export const EvaluationsSchema = z.object({
+  items: z.array(EvaluationSchema),
+  count: z.number(),
+  nextToken: z.string().nullable(),
+  limit: z.number(),
+});
+export type Evaluation = z.infer<typeof EvaluationSchema>;
+export type EvaluationAccepted = z.infer<typeof EvaluationAcceptedSchema>;
+
+export const AuditEventSchema = z.object({
+  auditId: z.string(),
+  timestamp: z.string(),
+  actor: z.object({ sub: z.string(), displayName: z.string().optional() }),
+  action: z.string(),
+  target: z.unknown(),
+  result: z.string(),
+  requestId: z.string(),
+  evaluationId: z.string().optional(),
+  scopeKey: z.string(),
+  metadata: z.record(z.unknown()),
+}).passthrough();
+export const AuditEventsSchema = z.object({
+  items: z.array(AuditEventSchema),
+  count: z.number(),
+  nextToken: z.string().nullable(),
+  limit: z.number(),
+});
+export type AuditEvent = z.infer<typeof AuditEventSchema>;
+export type AuditEvents = z.infer<typeof AuditEventsSchema>;
+
+export const FindingLifecycleActionSchema = z.enum(["ACKNOWLEDGE", "SUPPRESS", "REOPEN"]);
+export const FindingLifecycleResponseSchema = z.object({ item: BackendFindingSchema });

@@ -1,3 +1,4 @@
+from common.auth import require_role, configured_scope
 import base64
 import json
 import os
@@ -8,7 +9,11 @@ from common.http import response, error, query_params
 from common.contracts import finding_view
 
 
+@require_role('viewer')
 def lambda_handler(event, context):
+    if event.get('requestContext', {}).get('http', {}).get('method', 'GET').upper() == 'PATCH':
+        from findings.lifecycle import transition
+        return transition(event, context)
     try:
         table = dynamodb_resource().Table(os.environ["FINDINGS_TABLE"])
     except (ClientError, BotoCoreError) as exc:
@@ -18,7 +23,7 @@ def lambda_handler(event, context):
         limit = max(1, min(int(params.get("limit", "25")), 100))
     except ValueError:
         return error(400, "INVALID_LIMIT", "The limit query parameter must be an integer between 1 and 100.")
-    scan_kwargs = {"Limit": limit}
+    scan_kwargs = {"Limit": limit, "FilterExpression": Attr("scopeKey").eq(configured_scope())}
     token = params.get("nextToken")
     if token:
         try:
@@ -27,7 +32,7 @@ def lambda_handler(event, context):
         except Exception:
             return error(400, "INVALID_CURSOR", "The nextToken cursor is invalid.")
     if params.get("status"):
-        scan_kwargs["FilterExpression"] = Attr("status").eq(params["status"].upper())
+        scan_kwargs["FilterExpression"] &= Attr("status").eq(params["status"].upper())
     if params.get("severity"):
         condition = Attr("severity").eq(params["severity"].upper())
         scan_kwargs["FilterExpression"] = scan_kwargs["FilterExpression"] & condition if "FilterExpression" in scan_kwargs else condition

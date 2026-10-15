@@ -14,10 +14,39 @@ sys.path.insert(0, os.environ.get("CIG_SOURCE_DIR", str(ROOT / "src")))
 from common.dynamodb import dynamodb_resource
 
 TABLES = {
-    "INTENTS_TABLE": ("cloud-intent-guardian-dev-intents", "intentId"),
-    "FINDINGS_TABLE": ("cloud-intent-guardian-dev-findings", "findingId"),
-    "EVALUATIONS_TABLE": ("cloud-intent-guardian-dev-evaluations", "evaluationId"),
+    'INTENTS_TABLE': ('cloud-intent-guardian-dev-intents', 'intentId'),
+    'FINDINGS_TABLE': ('cloud-intent-guardian-dev-findings', 'findingId'),
+    'EVALUATIONS_TABLE': ('cloud-intent-guardian-dev-evaluations', 'evaluationId'),
+    'INTENT_VERSIONS_TABLE': ('cloud-intent-guardian-dev-intent-versions', 'intentId'),
+    'AUDIT_TABLE': ('cloud-intent-guardian-dev-audit', 'auditId'),
+    'EVALUATION_ARTIFACTS_TABLE': ('cloud-intent-guardian-dev-evaluation-artifacts', 'evaluationId'),
 }
+SORT_KEYS = {'INTENT_VERSIONS_TABLE': ('version', 'N'), 'EVALUATION_ARTIFACTS_TABLE': ('artifactKey', 'S')}
+INDEXES = {'FINDINGS_TABLE': ('scope-intent', 'scopeIntentKey', 'findingId'),
+           'EVALUATIONS_TABLE': ('scope-created', 'scopeKey', 'createdOrder'),
+           'AUDIT_TABLE': ('scope-time', 'scopeKey', 'eventOrder')}
+
+
+def table_schema(env_key):
+    key = TABLES[env_key][1]
+    schema = [{'AttributeName': key, 'KeyType': 'HASH'}]
+    definitions = {key: 'S'}
+    if env_key in SORT_KEYS:
+        sort, typ = SORT_KEYS[env_key]
+        schema.append({'AttributeName': sort, 'KeyType': 'RANGE'})
+        definitions[sort] = typ
+    indexes = []
+    if env_key in INDEXES:
+        index, partition, sort = INDEXES[env_key]
+        definitions.update({partition: 'S', sort: 'S'})
+        indexes.append({'IndexName': index, 'KeySchema': [{'AttributeName': partition, 'KeyType': 'HASH'},
+            {'AttributeName': sort, 'KeyType': 'RANGE'}], 'Projection': {'ProjectionType': 'ALL'}})
+    result = {'KeySchema': schema, 'AttributeDefinitions': [
+        {'AttributeName': name, 'AttributeType': typ} for name, typ in definitions.items()]}
+    if indexes:
+        result['GlobalSecondaryIndexes'] = indexes
+    return result
+
 
 
 def report(stage, **fields):
@@ -52,25 +81,39 @@ def configure(args):
 
 def check_tables(resource, initialize):
     client = resource.meta.client
-    for env_key, (_, key) in TABLES.items():
+    for env_key in TABLES:
         name = os.environ[env_key]
+        spec = table_schema(env_key)
         try:
-            table = client.describe_table(TableName=name)["Table"]
+            table = client.describe_table(TableName=name)['Table']
         except client.exceptions.ResourceNotFoundException:
             if not initialize:
-                raise RuntimeError(f"Missing table {name}. If the container uses -inMemory it may have lost its tables. Run init explicitly.")
-            client.create_table(TableName=name, BillingMode="PAY_PER_REQUEST",
-                                AttributeDefinitions=[{"AttributeName": key, "AttributeType": "S"}],
-                                KeySchema=[{"AttributeName": key, "KeyType": "HASH"}])
-            client.get_waiter("table_exists").wait(TableName=name, WaiterConfig={"Delay": 1, "MaxAttempts": 10})
-            table = client.describe_table(TableName=name)["Table"]
-            report("table_created", table=name)
-        if table["KeySchema"] != [{"AttributeName": key, "KeyType": "HASH"}]:
-            raise RuntimeError(f"Incorrect key schema on {name}: {table['KeySchema']}")
-        definitions = {item["AttributeName"]: item["AttributeType"] for item in table["AttributeDefinitions"]}
-        if definitions.get(key) != "S":
-            raise RuntimeError(f"{name}.{key} must be a String")
-        report("table_ok", table=name, key=key, status=table["TableStatus"])
+                raise RuntimeError(f'Missing table {name}. Run init explicitly on this local database.')
+            client.create_table(TableName=name, BillingMode='PAY_PER_REQUEST', **spec)
+            client.get_waiter('table_exists').wait(TableName=name, WaiterConfig={'Delay': 1, 'MaxAttempts': 10})
+            table = client.describe_table(TableName=name)['Table']
+            report('table_created', table=name)
+        if sorted(table['KeySchema'], key=lambda row: row['KeyType']) != sorted(spec['KeySchema'], key=lambda row: row['KeyType']):
+            raise RuntimeError(f'Incorrect key schema on {name}; existing tables are never replaced.')
+        if env_key in INDEXES:
+            index_name = INDEXES[env_key][0]
+            existing = next((row for row in table.get('GlobalSecondaryIndexes', []) if row['IndexName'] == index_name), None)
+            expected = spec['GlobalSecondaryIndexes'][0]
+            if not existing and initialize:
+                client.update_table(TableName=name, AttributeDefinitions=spec['AttributeDefinitions'],
+                    GlobalSecondaryIndexUpdates=[{'Create': expected}])
+                report('index_created', table=name, index=index_name)
+            elif not existing:
+                raise RuntimeError(f'Missing index {name}/{index_name}; run init explicitly.')
+            elif existing['KeySchema'] != expected['KeySchema']:
+                raise RuntimeError(f'Incorrect index schema on {name}; no destructive correction is performed.')
+        definitions = {row['AttributeName']: row['AttributeType'] for row in table['AttributeDefinitions']}
+        for row in spec['KeySchema']:
+            field = row['AttributeName']
+            expected_type = next(value['AttributeType'] for value in spec['AttributeDefinitions'] if value['AttributeName'] == field)
+            if definitions.get(field) != expected_type:
+                raise RuntimeError(f'Incorrect attribute type for {name}.{field}')
+        report('table_ok', table=name, status=table['TableStatus'])
 
 
 def api(base, path, method="GET", body=None):
@@ -129,9 +172,50 @@ def verify(resource, args):
     report("milestone_passed", evidence=str(output))
 
 
+def migrate(resource):
+    """Explicit, resumable local backfill. Never called by read/API paths."""
+    from common.contracts import scan_all
+    from common.auth import configured_scope
+    from common.audit import audit_event, audit_put, transaction_write
+    from common.versions import migrate_legacy
+    scope = configured_scope()
+    actor = {'sub': 'local-migration-operator', 'displayName': 'Local migration operator', 'role': 'admin'}
+    rows, incomplete = scan_all(resource.Table(os.environ['INTENTS_TABLE']))
+    if incomplete:
+        raise RuntimeError('Intent migration scan incomplete; no records changed.')
+    for item in rows:
+        migrate_legacy(resource, item, actor, 'migrate-intent:' + item['intentId'])
+    for env_key, primary in [('EVALUATIONS_TABLE', 'evaluationId'), ('FINDINGS_TABLE', 'findingId')]:
+        table = resource.Table(os.environ[env_key])
+        records, incomplete = scan_all(table)
+        if incomplete:
+            raise RuntimeError(f'{env_key} migration scan incomplete; retry after narrowing local data.')
+        for item in records:
+            if item.get('scopeKey'):
+                continue
+            # This operator command only assigns records from the configured local scope.
+            if item.get('accountId') not in {None, 'fixture-account'} or item.get('region', os.environ['AWS_REGION']) != os.environ['AWS_REGION']:
+                report('record_skipped_other_scope', table=table.name, id=item[primary])
+                continue
+            changed = {**item, 'scopeKey': scope}
+            if env_key == 'EVALUATIONS_TABLE':
+                changed['createdAt'] = item.get('createdAt') or item.get('startedAt') or item.get('finishedAt')
+                if not changed['createdAt']:
+                    raise RuntimeError('Historical evaluation has no source timestamp; reconcile it explicitly.')
+                changed['createdOrder'] = changed['createdAt'] + '#' + item[primary]
+            else:
+                changed['scopeIntentKey'] = scope + '#' + item['intentId']
+                changed['revision'] = item.get('revision', 0)
+            event = audit_event(actor, 'LEGACY_RECORD_BACKFILLED', {'type': env_key, 'id': item[primary]},
+                'migrate:' + table.name + ':' + item[primary], {'historical': True})
+            transaction_write(resource, [{'Put': {'TableName': table.name, 'Item': changed,
+                'ConditionExpression': 'attribute_not_exists(scopeKey)'}}, audit_put(event)])
+    report('migration_completed', scope=scope)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["probe", "init", "verify"])
+    parser.add_argument("action", choices=["probe", "init", "verify", "migrate"])
     parser.add_argument("--endpoint", help="Host: http://127.0.0.1:8000; Docker network: http://cig-dynamodb-local:8000")
     parser.add_argument("--env-file")
     parser.add_argument("--region", default="ap-south-1")
@@ -141,6 +225,8 @@ def main():
     try:
         resource = configure(args)
         check_tables(resource, args.action == "init")
+        if args.action == "migrate":
+            migrate(resource)
         if args.action == "verify":
             verify(resource, args)
         return 0
