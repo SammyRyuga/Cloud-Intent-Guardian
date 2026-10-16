@@ -51,22 +51,20 @@ export function useFinding(id: string) {
   });
 }
 
-export function useAcknowledgeFinding() {
+export function useFindingLifecycle() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, expectedRevision }: { id: string; expectedRevision: number }) =>
+    mutationFn: ({ id, ...request }: { id: string } & B.FindingLifecycleRequest) =>
       apiClient(
         endpoints.findingLifecycle(id),
         B.FindingLifecycleResponseSchema,
-        { method: 'PATCH', body: { action: 'ACKNOWLEDGE', expectedRevision } }
+        { method: 'PATCH', body: B.FindingLifecycleRequestSchema.parse(request) }
       ),
     onSuccess: (_, { id }) => {
-      // Invalidate per AGENTS.md §4.3
       queryClient.invalidateQueries({ queryKey: queryKeys.finding(id) });
-      queryClient.invalidateQueries({ queryKey: ['findings'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['architecture'] });
-      queryClient.invalidateQueries({ queryKey: ['audit'] });
+      for (const queryKey of queryKeys.findingLifecycleResults()) {
+        queryClient.invalidateQueries({ queryKey });
+      }
     },
   });
 }
@@ -186,11 +184,11 @@ export function useAuditEvents(cursor?: string) {
 export function useRunEvaluation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () =>
+    mutationFn: (selection: { intentId: string; intentVersion: number }) =>
       apiClient(
         endpoints.evaluations(),
         B.EvaluationAcceptedSchema,
-        { method: 'POST' }
+        { method: 'POST', body: selection }
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.evaluationLists() });

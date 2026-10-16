@@ -2,7 +2,7 @@ import { useCapability } from '@/hooks/useCapability';
 import { env } from '@/config/env';
 import React, { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useDashboardSummary, useEvaluation, useEvaluations, useRunEvaluation } from '@/hooks/apiHooks';
+import { useDashboardSummary, useEvaluation, useEvaluations, useRunEvaluation, useManifestIntents } from '@/hooks/apiHooks';
 import { queryKeys } from '@/api/queryKeys';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -18,6 +18,12 @@ export function OverviewPage() {
   const { data: summary, isLoading, isError, error, refetch } = useDashboardSummary();
   const queryClient = useQueryClient();
   const runEvaluation = useRunEvaluation();
+  const [intentCursor, setIntentCursor] = useState<string | undefined>();
+  const [selectedIntentId, setSelectedIntentId] = useState('');
+  const intents = useManifestIntents(intentCursor);
+  const approvedIntents = intents.data?.items.filter(item => (item.activeVersion ?? (item.status === 'APPROVED' ? item.version : 0)) > 0) ?? [];
+  const selectedIntent = approvedIntents.find(item => item.intentId === selectedIntentId);
+  const selectedVersion = selectedIntent?.activeVersion ?? selectedIntent?.version;
   const evaluationsEnabled = useCapability('evaluations');
   const [activeEvaluationId, setActiveEvaluationId] = useState<string | null>(null);
   const [historyCursor, setHistoryCursor] = useState<string | undefined>();
@@ -38,7 +44,8 @@ export function OverviewPage() {
   }, [currentStatus, activeEvaluationId, queryClient]);
 
   const handleRunEvaluation = () => {
-    runEvaluation.mutate(undefined, {
+    if (!selectedIntent || !selectedVersion) return;
+    runEvaluation.mutate({ intentId: selectedIntent.intentId, intentVersion: selectedVersion }, {
       onSuccess: ({ evaluation }) => setActiveEvaluationId(evaluation.evaluationId),
     });
   };
@@ -52,16 +59,32 @@ export function OverviewPage() {
             Declared intent vs deployed AWS infrastructure state in <span className="font-mono text-ink">{summary?.evaluatedRegion || env.defaultRegion}</span>
           </p>
         </div>
+        <div className="flex flex-wrap items-end gap-2">
+          <div>
+            <label htmlFor="evaluation-intent" className="block text-xs mb-1">Approved intent to evaluate</label>
+            <select id="evaluation-intent" value={selectedIntentId} disabled={runEvaluation.isPending || isEvaluationActive || intents.isLoading} onChange={(event) => setSelectedIntentId(event.target.value)} className="border border-rule rounded bg-sheet p-2 text-sm max-w-full">
+              <option value="">Select an approved intent</option>
+              {approvedIntents.map(item => <option key={item.intentId} value={item.intentId}>{item.name} (version {item.activeVersion ?? item.version})</option>)}
+            </select>
+          </div>
         <Button
           variant="primary"
           onClick={handleRunEvaluation}
           isLoading={runEvaluation.isPending || isEvaluationActive || Boolean(activeEvaluationId && activeEvaluation.isLoading)}
-          disabled={runEvaluation.isPending || isEvaluationActive || Boolean(activeEvaluationId && activeEvaluation.isLoading) || !evaluationsEnabled}
+          disabled={runEvaluation.isPending || isEvaluationActive || Boolean(activeEvaluationId && activeEvaluation.isLoading) || !evaluationsEnabled || !selectedIntent || !selectedVersion}
         >
           <Play className="w-3.5 h-3.5 mr-2 stroke-[1.5]" />
           {evaluationsEnabled ? 'Run evaluation' : 'AWS evaluation not enabled locally'}
         </Button>
+        </div>
       </div>
+      {intents.isError && <p role="alert" className="text-sm text-sev-critical">Approved intents could not be loaded: {intents.error.message} <Button variant="secondary" size="sm" onClick={() => intents.refetch()}>Retry intents</Button></p>}
+      {intents.data && approvedIntents.length === 0 && <p className="text-sm text-graphite">No approved intent on this page. <Link to="/intents" className="text-prussian underline">Review intents</Link> or check the next page.</p>}
+      {(intentCursor || intents.data?.nextToken) && <div className="flex gap-2">
+        {intentCursor && <Button size="sm" variant="secondary" disabled={runEvaluation.isPending || isEvaluationActive} onClick={() => { setIntentCursor(undefined); setSelectedIntentId(''); }}>First intent page</Button>}
+        {intents.data?.nextToken && <Button size="sm" variant="secondary" disabled={runEvaluation.isPending || isEvaluationActive} onClick={() => { setIntentCursor(intents.data!.nextToken!); setSelectedIntentId(''); }}>Next intent page</Button>}
+      </div>}
+      {selectedIntent && <p className="text-xs text-graphite">Evaluation will use {selectedIntent.name}, approved version {selectedVersion}. Intent ID: <span className="font-mono">{selectedIntent.intentId}</span></p>}
 
       {runEvaluation.isPending && <p role="status" className="text-sm text-graphite">Submitting evaluation request.</p>}
       {runEvaluation.error && <div role="alert" className="text-sm text-sev-critical">

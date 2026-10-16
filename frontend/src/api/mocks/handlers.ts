@@ -9,6 +9,7 @@ import {
   mockAuditEvents,
   mockEvaluation,
 } from './fixtures';
+import { FindingLifecycleRequestSchema } from '@/api/backendSchemas';
 import type { Manifest } from '@/api/backendSchemas';
 
 const now = new Date().toISOString();
@@ -153,13 +154,17 @@ export const handlers = [
     return HttpResponse.json(found);
   }),
 
-  // Acknowledge Finding
+  // Audited finding lifecycle (server authorization remains authoritative in live mode)
   http.patch('/v1/findings/:id', async ({ params, request }) => {
     await delay(200);
-    const body = (await request.json()) as { action: 'ACKNOWLEDGE' | 'SUPPRESS' | 'REOPEN'; reason?: string; expectedRevision: number };
+    const parsed = FindingLifecycleRequestSchema.safeParse(await request.json());
+    if (!parsed.success) return mockApiError(400, 'INVALID_FINDING_REQUEST', 'Provide a valid action, revision and suppression reason.');
+    const body = parsed.data;
     const item = mockFindings.find((f) => f.id === params.id);
     if (item) {
-      if (item.revision !== body.expectedRevision) return HttpResponse.json({ message: 'Revision conflict' }, { status: 409 });
+      const allowed = body.action === 'ACKNOWLEDGE' ? ['OPEN'] : body.action === 'SUPPRESS' ? ['OPEN', 'ACKNOWLEDGED'] : ['ACKNOWLEDGED', 'SUPPRESSED'];
+      if (item.revision !== body.expectedRevision || !allowed.includes(item.status)) return mockApiError(409, 'STATE_CONFLICT', 'The finding changed or this transition is not available.');
+      if (body.action === 'SUPPRESS') { item.suppressionReason = body.reason; item.suppressedAt = new Date().toISOString(); item.suppressedBy = 'mock-approver'; }
       item.status = body.action === 'ACKNOWLEDGE' ? 'ACKNOWLEDGED' : body.action === 'SUPPRESS' ? 'SUPPRESSED' : 'OPEN';
       item.revision = (item.revision || 0) + 1;
       item.updatedAt = new Date().toISOString();
@@ -176,6 +181,9 @@ export const handlers = [
         firstSeenAt: item.detectedAt,
         updatedAt: item.updatedAt,
         revision: item.revision,
+        suppressionReason: item.suppressionReason,
+        suppressedAt: item.suppressedAt,
+        suppressedBy: item.suppressedBy,
         remediationAvailable: false,
       } });
     }

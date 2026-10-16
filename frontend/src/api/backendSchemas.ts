@@ -162,6 +162,9 @@ export const BackendFindingSchema = z
     firstSeenAt: z.string(),
     updatedAt: z.string(),
     revision: z.number().optional(),
+    suppressionReason: z.string().optional(),
+    suppressedAt: z.string().optional(),
+    suppressedBy: z.string().optional(),
     remediationAvailable: z.boolean(),
     remediationActionId: RemediationActionIdSchema.optional(),
     actionEligible: z.boolean().optional(),
@@ -259,6 +262,12 @@ export type AuditEvent = z.infer<typeof AuditEventSchema>;
 export type AuditEvents = z.infer<typeof AuditEventsSchema>;
 
 export const FindingLifecycleActionSchema = z.enum(["ACKNOWLEDGE", "SUPPRESS", "REOPEN"]);
+export const FindingLifecycleRequestSchema = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('ACKNOWLEDGE'), expectedRevision: z.number().int().nonnegative() }),
+  z.object({ action: z.literal('SUPPRESS'), expectedRevision: z.number().int().nonnegative(), reason: z.string().trim().min(1).max(1000) }),
+  z.object({ action: z.literal('REOPEN'), expectedRevision: z.number().int().nonnegative() }),
+]);
+export type FindingLifecycleRequest = z.infer<typeof FindingLifecycleRequestSchema>;
 export const FindingLifecycleResponseSchema = z.object({ item: BackendFindingSchema });
 
 export const RemediationItemSchema = z.object({

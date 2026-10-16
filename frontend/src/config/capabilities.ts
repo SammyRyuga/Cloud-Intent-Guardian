@@ -14,10 +14,10 @@ export function hasCapability(feature: string, status?: SystemStatus): boolean {
   // Role and scope authorization remains authoritative on the backend.
   const implementedLive = [
     'architecture', 'evaluations', 'auditTrail', 'remediation', 'remediation.detail',
-    'remediation.approve', 'remediation.execute', 'findings.update', 'intents.approve', 'intents.diff',
+    'remediation.approve', 'remediation.execute', 'findings.update', 'findings.suppress', 'findings.reopen', 'intents.approve', 'intents.diff',
   ];
   if (!env.localApi) return feature === 'intents' || implementedLive.includes(feature);
-  if (feature === 'intents' || feature === 'auditTrail' || feature === 'findings.update') return true;
+  if (feature === 'intents' || feature === 'auditTrail' || ['findings.update', 'findings.suppress', 'findings.reopen'].includes(feature)) return true;
   if (['intents.approve', 'intents.diff'].includes(feature)) return status?.features?.fixtureInventory === true;
   if (feature === 'architecture') return status?.features?.topology === true;
   if (['remediation', 'remediation.detail', 'remediation.approve', 'remediation.execute'].includes(feature)) {

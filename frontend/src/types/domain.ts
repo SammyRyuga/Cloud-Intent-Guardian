@@ -82,6 +82,9 @@ export interface Finding {
   detectedAt: string;
   updatedAt: string;
   revision?: number;
+  suppressionReason?: string;
+  suppressedAt?: string;
+  suppressedBy?: string;
   description: string;
   remediationAvailable: boolean;
   remediationActionId?: 'REMOVE_OPEN_SSH' | 'ENABLE_S3_BLOCK_PUBLIC_ACCESS';

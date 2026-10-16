@@ -5,6 +5,7 @@
 export const queryKeys = {
   dashboardSummary: (region?: string) => ['dashboard-summary', region ?? 'default'] as const,
   findings: (filters?: Record<string, unknown>) => ['findings', filters ?? {}] as const,
+  findingLifecycleResults: () => [['findings'], ['dashboard-summary'], ['architecture'], ['audit']] as const,
   finding: (findingId: string) => ['finding', findingId] as const,
   architecture: (view: string, filters?: Record<string, unknown>) => ['architecture', view, filters ?? {}] as const,
   intents: () => ['intents'] as const,

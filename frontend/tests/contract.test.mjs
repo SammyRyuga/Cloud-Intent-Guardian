@@ -48,3 +48,25 @@ test('drift snapshot provenance and opaque pagination survive contract parsing',
   assert.equal(result.meta.nextCursor, 'opaque-server-cursor');
   assert.equal(result.items[0].simulated, true);
 });
+
+test('finding lifecycle request validates reason and optimistic revision', () => {
+  const schema = backendSchemas.FindingLifecycleRequestSchema;
+  assert.deepEqual(schema.parse({ action: 'SUPPRESS', expectedRevision: 0, reason: '  Reviewed scope  ' }), { action: 'SUPPRESS', expectedRevision: 0, reason: 'Reviewed scope' });
+  for (const request of [
+    { action: 'SUPPRESS', expectedRevision: 0, reason: '   ' },
+    { action: 'SUPPRESS', expectedRevision: 0, reason: 'x'.repeat(1001) },
+    { action: 'REOPEN', expectedRevision: -1 },
+    { action: 'REOPEN', expectedRevision: 1.5 },
+    { action: 'RESOLVE', expectedRevision: 0 },
+  ]) assert.equal(schema.safeParse(request).success, false);
+  schema.parse({ action: 'REOPEN', expectedRevision: 1 });
+});
+
+test('finding suppression provenance survives mock and backend schemas', () => {
+  const provenance = { suppressionReason: 'Reviewed monitoring scope.', suppressedAt: '2026-10-16T00:00:00Z', suppressedBy: 'approver-test', revision: 2, status: 'SUPPRESSED' };
+  const mock = schemas.FindingSchema.parse({ ...fixtures.mockFindings[0], ...provenance });
+  const live = backendSchemas.FindingLifecycleResponseSchema.parse({ item: { ...fixtures.mockFindings[0], findingId: fixtures.mockFindings[0].id, firstSeenAt: fixtures.mockFindings[0].detectedAt, ...provenance } }).item;
+  assert.equal(live.suppressionReason, mock.suppressionReason);
+  assert.equal(live.suppressedBy, 'approver-test');
+  assert.equal(live.revision, 2);
+});

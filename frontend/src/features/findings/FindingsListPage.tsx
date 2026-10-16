@@ -82,6 +82,7 @@ export function FindingsListPage() {
               <option value="OPEN">Open</option>
               <option value="ACKNOWLEDGED">Acknowledged</option>
               <option value="RESOLVED">Resolved</option>
+              <option value="SUPPRESSED">Suppressed</option>
             </select>
           </div>
         </div>

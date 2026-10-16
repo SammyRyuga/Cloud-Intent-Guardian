@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { hasCapability } from '@/config/capabilities';
 import { useParams, Link } from 'react-router-dom';
-import { useFinding, useAcknowledgeFinding } from '@/hooks/apiHooks';
+import { useFinding, useFindingLifecycle } from '@/hooks/apiHooks';
 import { StateBoundary } from '@/components/common/StateBoundary';
 import { SeverityBadge } from '@/components/common/SeverityBadge';
 import { CopyableId } from '@/components/common/CopyableId';
@@ -13,12 +14,19 @@ import { ArrowLeft, CheckCircle2, Bot, Wrench } from 'lucide-react';
 export function FindingDetailPage() {
   const { findingId } = useParams<{ findingId: string }>();
   const { data: finding, isLoading, isError, error, refetch } = useFinding(findingId || '');
-  const acknowledgeFinding = useAcknowledgeFinding();
+  const lifecycle = useFindingLifecycle();
+  const [suppressionOpen, setSuppressionOpen] = useState(false);
+  const [reason, setReason] = useState('');
+  const busy = lifecycle.isPending;
+  const hasRevision = finding?.revision !== undefined;
 
-  const handleAcknowledge = () => {
-    if (findingId && finding?.revision !== undefined) {
-      acknowledgeFinding.mutate({ id: findingId, expectedRevision: finding.revision });
-    }
+  const transition = (action: 'ACKNOWLEDGE' | 'SUPPRESS' | 'REOPEN') => {
+    if (!findingId || finding?.revision === undefined || busy) return;
+    lifecycle.mutate(action === 'SUPPRESS'
+      ? { id: findingId, action, expectedRevision: finding.revision, reason: reason.trim() }
+      : { id: findingId, action, expectedRevision: finding.revision }, {
+      onSuccess: () => { setSuppressionOpen(false); setReason(''); },
+    });
   };
 
   return (
@@ -51,13 +59,20 @@ export function FindingDetailPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={handleAcknowledge}
-                    isLoading={acknowledgeFinding.isPending}
-                    disabled={acknowledgeFinding.isPending}
+                    onClick={() => transition('ACKNOWLEDGE')}
+                    isLoading={busy}
+                    disabled={busy}
                   >
                     <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 stroke-[1.5]" />
                     Acknowledge
                   </Button>
+                )}
+
+                {['OPEN', 'ACKNOWLEDGED'].includes(finding.status) && hasCapability('findings.suppress') && hasRevision && (
+                  <Button variant="secondary" size="sm" disabled={busy} onClick={() => { lifecycle.reset(); setSuppressionOpen(true); }}>Suppress</Button>
+                )}
+                {['ACKNOWLEDGED', 'SUPPRESSED'].includes(finding.status) && hasCapability('findings.reopen') && hasRevision && (
+                  <Button variant="secondary" size="sm" disabled={busy} isLoading={busy && lifecycle.variables?.action === 'REOPEN'} onClick={() => transition('REOPEN')}>Reopen</Button>
                 )}
 
                 {/* INV-14 & INV-15: Remediation is approval-gated and visible only if available */}
@@ -75,9 +90,26 @@ export function FindingDetailPage() {
                 )}
               </div>
             </div>
-            {acknowledgeFinding.data && <p role="status" className="text-sm">Finding acknowledged.</p>}
-            {finding.status === 'OPEN' && hasCapability('findings.update') && finding.revision === undefined && <p className="text-xs text-graphite">Acknowledge is unavailable because the server did not provide a revision.</p>}
-            {acknowledgeFinding.error && <p role="alert" className="text-sm text-sev-critical">{acknowledgeFinding.error.message}</p>}
+            {lifecycle.data && <p role="status" className="text-sm">Finding {lifecycle.variables?.action === 'SUPPRESS' ? 'suppressed' : lifecycle.variables?.action === 'REOPEN' ? 'reopened' : 'acknowledged'}. Server status: {lifecycle.data.item.status}.</p>}
+            {!hasRevision && hasCapability('findings.update') && <p className="text-xs text-graphite">Status changes are unavailable because the server did not provide a revision.</p>}
+            {lifecycle.error && <div role="alert" className="text-sm text-sev-critical">
+              <p>{lifecycle.error.message}</p>
+              {'requestId' in lifecycle.error && typeof lifecycle.error.requestId === 'string' && <CopyableId id={lifecycle.error.requestId} />}
+              <Button variant="secondary" size="sm" disabled={busy} onClick={() => { lifecycle.reset(); void refetch(); }}>Refresh finding</Button>
+            </div>}
+            {suppressionOpen && ['OPEN', 'ACKNOWLEDGED'].includes(finding.status) && <Card>
+              <CardHeader title="Suppress finding" />
+              <p className="text-sm mb-3">Suppression records an audited monitoring decision. It does not change the AWS resource. Approver or admin access is required.</p>
+              <form onSubmit={(event) => { event.preventDefault(); if (reason.trim()) transition('SUPPRESS'); }}>
+                <label htmlFor="suppression-reason" className="text-sm block mb-1">Suppression reason</label>
+                <textarea id="suppression-reason" required maxLength={1000} value={reason} disabled={busy} onChange={(event) => setReason(event.target.value)} className="w-full border border-rule rounded p-2 text-sm bg-sheet text-ink" rows={3} />
+                <div className="flex gap-2 mt-3">
+                  <Button type="submit" disabled={busy || !reason.trim() || !hasRevision} isLoading={busy && lifecycle.variables?.action === 'SUPPRESS'}>Confirm suppression</Button>
+                  <Button type="button" variant="secondary" disabled={busy} onClick={() => { setSuppressionOpen(false); setReason(''); }}>Cancel</Button>
+                </div>
+              </form>
+            </Card>}
+            {finding.suppressionReason && <Card><CardHeader title={finding.status === 'SUPPRESSED' ? 'Suppression decision' : 'Previous suppression decision'} /><p className="text-sm">{finding.suppressionReason}</p>{finding.suppressedAt && <p className="mt-2 text-xs text-graphite">Recorded {formatDateTime(finding.suppressedAt)}</p>}</Card>}
 
             {finding.evidence && <Card><CardHeader title="Evaluation evidence" /><p className="text-sm mb-3">{finding.explanation}</p>{finding.evidence.map((entry, index) => <div key={index} className="border-t border-rule py-3"><p className="text-xs">{entry.source} - {formatDateTime(entry.observedAt)}</p><CopyableId id={entry.resourceId} /><pre className="text-xs whitespace-pre-wrap break-words mt-2">{JSON.stringify(entry.details, null, 2)}</pre></div>)}</Card>}
             {(finding.tier || finding.reviewStatus || finding.crossValidation || finding.llmConclusion) && (
