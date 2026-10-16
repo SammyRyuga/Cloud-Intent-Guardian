@@ -1,3 +1,26 @@
+## Remaining-work checkpoint (2026-10-16)
+
+Saved locally tested snapshot-drift API/UI and disabled API/IAM/Cognito collector
+prototypes. This checkpoint has **not been deployed**. The live Guardian baseline
+and its seven passing structural rules remain the last verified deployed scope.
+
+Final checks: 187 backend tests, 34 frontend tests, 14 contract tests, SAM lint,
+SAM build and frontend lint/build passed. GPT-6.1 Sol verified the new collectors,
+drift and frontend suites; the final combined backend suite was rerun after all
+changes. Two existing Fast Refresh warnings remain. New drift persistence tests
+use Moto; the eight-table DynamoDB Local drift journey and deployed drift remain
+unverified. Drift defaults off. API/IAM/Cognito collector flags are absent from
+SAM and default off in code until Guardian-only scope filtering/IAM wiring is
+completed. Do not enable the prototypes account-wide as a Guardian-only claim.
+
+Regional Bedrock runtime calls succeeded with synthetic data, but the model's
+output failed the strict conclusion schema. LLM activation stays off. Existing
+Flow Logs/Reachability paths remain absent. DynamoDB plus structured CloudWatch
+records corroborated one historical application write, not packet reachability or
+general effective IAM access. Five earlier findings were reviewed without state
+changes: two reference one real public-SSH group outside Guardian; three reflect
+older EC2 baselines. Details and next steps: [checkpoint](docs/CHECKPOINT.md).
+
 ## Guardian serverless intent and evidence collection (2026-10-16)
 
 The owner confirmed the target is Cloud Intent Guardian itself. The earlier
@@ -664,3 +687,35 @@ The local database was an isolated temporary instance on host port 18000, the AP
 Production uses `VITE_USE_MOCKS=false` and `VITE_LOCAL_API=false`, the deployed API origin, Cognito pool/client/domain outputs and exact OAuth callback/logout URLs. Configure `CognitoCallbackUrl`, `CognitoLogoutUrl` and `AllowedOrigin` together in the SAM deployment review. The template uses classic Cognito hosted login (`ManagedLoginVersion: 1`) with authorization-code flow, keeping the public app client secret-free. Amplify owns the PKCE flow and token/session handling. [Cognito client properties](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html).
 
 No AWS resources were deployed. Live Cognito sign-in, anonymous/invalid-token rejection, AWS inventory, graph discovery and live evaluations need authorized Academy testing. Evaluation remains synchronous and bounded by the Lambda timeout; large accounts require later async orchestration. Full accessibility/component, boundary-lint and production security gates also remain broader work. Do not advertise these as verified.
+
+## Snapshot drift history
+
+`EnableDriftHistory` defaults to `false` for constrained Academy accounts. When
+explicitly enabled, the worker compares immutable inventory artifacts from
+successful, complete evaluations within the same account, region, stage, intent
+and approved intent version. The first complete run establishes the baseline;
+a new version or changed coverage establishes another baseline. Partial or
+missing coverage never produces deletion claims. This records observed snapshot
+changes, not CloudTrail attribution, authorization status, or continuous monitoring.
+
+`GET /v1/drift-events` returns `{items, meta: {nextCursor}}`; pass the opaque
+cursor as `nextToken`. Optional `intentId` and `eventType` filters are cursor-bound.
+`GET /v1/drift-events/{id}` returns `{item}`. Viewer, approver and admin roles can
+read published events. Resource attributes and structural edges come from the
+stored observations; absent before/after states remain absent. Each event carries
+both evaluation IDs and the pinned intent version. Collection timestamps do not
+create configuration changes. Evaluation retry uses deterministic event IDs and
+rejects conflicting evidence. Events staged by a failed or unfinished publication
+remain invisible; the baseline advances atomically with terminal job publication
+under the worker's intent publication lock. Backend audit action
+`DRIFT_SNAPSHOT_PUBLISHED` records each published baseline and event count.
+
+Dashboard `activeDriftCount` retains its wire name for compatibility and means
+**changes in the latest evaluation**, displayed as "Latest Snapshot Changes";
+it is null when drift is disabled or the latest evaluation cannot supply a
+complete count. These historical events do not have an active/resolved lifecycle.
+Changes are bounded to 2,000 events per evaluation and 240 KB per event; exceeding
+a bound fails publication instead of silently dropping evidence. Existing-role
+setups need drift table GetItem/PutItem and scope-time Query access, plus evaluation
+GetItem for publication checks. The local environment example enables simulated
+drift and `local_db.py init` creates the additional table without replacing data.

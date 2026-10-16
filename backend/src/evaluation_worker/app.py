@@ -13,6 +13,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 from common.audit import audit_event, audit_put, transaction_write
 from common.auth import configured_scope
 from common.escalation import escalate
+from common.drift import stage as stage_drift
 from common.contracts import scan_all
 from common.dynamodb import dynamodb_resource
 from common.evaluation_jobs import (JobError, artifact_limit_check,
@@ -330,7 +331,7 @@ def _write_publication(db, job_id, evaluation, resolved_ids):
 
 
 def _publish_terminal(db, job_table, audit_table, job, evaluation, status, actor, error_payload=None,
-                      resolution_operations=None):
+                      resolution_operations=None, drift_baseline=None):
     now = utc_now()
     summary = evaluation.get("summary") if evaluation else job.get("summary")
     conformance = evaluation.get("conformance") if evaluation else job.get("conformance")
@@ -371,7 +372,15 @@ def _publish_terminal(db, job_table, audit_table, job, evaluation, status, actor
                          "ConditionExpression": "publicationLeaseOwner = :owner AND (attribute_not_exists(latestEvaluationOrder) OR latestEvaluationOrder < :order)",
                          "ExpressionAttributeValues": {":order": job["createdOrder"], ":evaluation": job["evaluationId"],
                                                         ":owner": job["evaluationId"]}}
+        if drift_baseline:
+            intent_update["UpdateExpression"] = intent_update["UpdateExpression"].replace(" REMOVE", ", driftBaseline = :baseline REMOVE")
+            intent_update["ExpressionAttributeValues"][":baseline"] = drift_baseline
         operations.append({"Update": intent_update})
+    if drift_baseline:
+        drift_audit = audit_event(actor, "DRIFT_SNAPSHOT_PUBLISHED", {"type": "EVALUATION", "id": job["evaluationId"]},
+            requestId=f"{job['evaluationId']}:drift", metadata={"intentId": job["intentId"], "intentVersion": job["intentVersion"],
+            "eventCount": (summary or {}).get("driftEventCount", 0)}, scope=job["scopeKey"])
+        operations.append(audit_put(drift_audit))
     operations.append(audit_put(event))
     transaction_write(db, operations)
 
@@ -464,6 +473,7 @@ def _process(db, evaluation_id: str) -> dict:
             manifest = _persist_artifacts(db, artifact_name, evaluation_id, snapshot, evaluation, inventory, findings)
         for finding in findings:
             _finding_write(db, db.Table(findings_name), audit_table, job, finding, actor)
+        drift_baseline = stage_drift(db, job, evaluation, inventory, _load_complete_artifacts)
         publication = _load_publication(db, evaluation_id)
         if publication:
             evaluation.update({key: publication[key] for key in ("summary", "conformance", "warnings", "status") if key in publication})
@@ -479,7 +489,7 @@ def _process(db, evaluation_id: str) -> dict:
             raise JobError(500, "ARTIFACTS_INCOMPLETE", "Evaluation artifacts were not marked complete.")
         _state_audit(db, job_table_name, audit_table, job, actor, "EVALUATION_STAGE_CHANGED", "PUBLISHING")
         _publish_terminal(db, job_table, audit_table, job, evaluation, evaluation["status"], actor,
-                          resolution_operations=resolution_operations)
+                          resolution_operations=resolution_operations, drift_baseline=drift_baseline)
         return {"evaluationId": evaluation_id, "result": evaluation["status"]}
     except ObservationUnavailable as exc:
         payload = {"code": "OBSERVATIONS_UNAVAILABLE", "message": str(exc)[:250]}

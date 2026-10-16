@@ -4,6 +4,7 @@ import os
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import BotoCoreError, ClientError
 from common.dynamodb import dynamodb_resource
+from common.drift import enabled as drift_enabled
 from common.contracts import finding_view, scan_all
 from common.http import response, error, query_params
 
@@ -39,11 +40,11 @@ def lambda_handler(event, context):
         if not metrics or evaluation_incomplete or latest.get('status') != 'SUCCEEDED':
             metrics = {'percent': None, 'totalRules': 0, 'passingRules': 0, 'failingRules': 0}
         return response(200, {'conformance': metrics, 'severityCounts': severity,
-                              'totalFindings': len(active), 'activeDriftCount': None,
+                              'totalFindings': len(active), 'activeDriftCount': latest.get('summary', {}).get('driftEventCount') if latest and not evaluations_partial and drift_enabled() else None,
                               'openRemediations': None if proposals_partial else pending_proposals,
                               'lastEvaluatedAt': latest.get('finishedAt') if latest else None,
                               'evaluatedRegion': region, 'partial': incomplete,
                               'evaluationStatus': latest.get('status') if latest else None,
-                              'features': {'driftEvents': False, 'remediation': True}})
+                              'features': {'driftEvents': drift_enabled(), 'remediation': True}})
     except (ClientError, BotoCoreError) as exc:
         return error(502, 'VIEW_READ_FAILED', 'Could not read stored dashboard or finding data.', type(exc).__name__)

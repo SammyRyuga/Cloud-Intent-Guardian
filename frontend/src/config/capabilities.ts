@@ -9,6 +9,7 @@ export function hasCapability(feature: string, status?: SystemStatus): boolean {
   if (env.useMocks) {
     return true;
   }
+  if (feature === 'driftEvents') return status?.features?.driftEvents === true;
   // Live controls are exposed only for handlers wired in this API version.
   // Role and scope authorization remains authoritative on the backend.
   const implementedLive = [

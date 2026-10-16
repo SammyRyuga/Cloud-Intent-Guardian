@@ -12,6 +12,11 @@ Metadata:
         scope: project
 
 Parameters:
+  EnableDriftHistory:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Persist factual changes between complete evaluation snapshots.
   EnableNetworkEvidence:
     Type: String
     Default: 'false'
@@ -158,6 +163,8 @@ Globals:
         BEDROCK_MODEL_ID: !Ref BedrockModelId
         ASYNC_WORKER_ENABLED: !Ref EnableAsyncWorker
         INTENT_VERSIONS_TABLE: !Ref IntentVersionsTable
+        DRIFT_HISTORY_ENABLED: !Ref EnableDriftHistory
+        DRIFT_EVENTS_TABLE: !Ref DriftEventsTable
         AUDIT_TABLE: !Ref AuditEventsTable
         EVALUATION_ARTIFACTS_TABLE: !Ref EvaluationArtifactsTable
         CONFIG_ENABLED: !Ref EnableConfig
@@ -313,6 +320,27 @@ Resources:
         - {AttributeName: eventOrder, AttributeType: S}
       KeySchema:
         - {AttributeName: auditId, KeyType: HASH}
+      GlobalSecondaryIndexes:
+        - IndexName: scope-time
+          KeySchema:
+            - {AttributeName: scopeKey, KeyType: HASH}
+            - {AttributeName: eventOrder, KeyType: RANGE}
+          Projection: {ProjectionType: ALL}
+      SSESpecification: {SSEEnabled: true}
+
+  DriftEventsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub cloud-intent-guardian-${StageName}-drift
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - {AttributeName: id, AttributeType: S}
+        - {AttributeName: scopeKey, AttributeType: S}
+        - {AttributeName: eventOrder, AttributeType: S}
+      KeySchema:
+        - {AttributeName: id, KeyType: HASH}
       GlobalSecondaryIndexes:
         - IndexName: scope-time
           KeySchema:
@@ -735,6 +763,19 @@ Resources:
       Events:
         AuditList: {Type: HttpApi, Properties: {ApiId: !Ref Api, Path: /v1/audit, Method: GET}}
 
+  DriftEventsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !If [UseExistingRole, !Ref ExistingExecutionRoleArn, !Ref AWS::NoValue]
+      CodeUri: src/
+      Handler: drift_events.app.lambda_handler
+      Policies:
+        - DynamoDBReadPolicy: {TableName: !Ref DriftEventsTable}
+        - DynamoDBReadPolicy: {TableName: !Ref EvaluationsTable}
+      Events:
+        DriftList: {Type: HttpApi, Properties: {ApiId: !Ref Api, Path: /v1/drift-events, Method: GET}}
+        DriftDetail: {Type: HttpApi, Properties: {ApiId: !Ref Api, Path: '/v1/drift-events/{id}', Method: GET}}
+
   EvaluationWorkerFunction:
     Type: AWS::Serverless::Function
     Condition: AsyncWorkerEnabled
@@ -773,6 +814,7 @@ Resources:
         - DynamoDBCrudPolicy: {TableName: !Ref FindingsTable}
         - DynamoDBCrudPolicy: {TableName: !Ref EvaluationsTable}
         - DynamoDBCrudPolicy: {TableName: !Ref EvaluationArtifactsTable}
+        - DynamoDBCrudPolicy: {TableName: !Ref DriftEventsTable}
         - Statement:
             - Effect: Allow
               Action: [dynamodb:PutItem, dynamodb:GetItem]

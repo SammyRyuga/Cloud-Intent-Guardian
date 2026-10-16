@@ -180,6 +180,12 @@ export const IntentsResponseSchema = z.object({
 });
 
 export const DriftEventSchema = z.object({
+  evaluationId: z.string().optional(),
+  previousEvaluationId: z.string().optional(),
+  intentId: z.string().optional(),
+  intentVersion: z.number().int().optional(),
+  entityKind: z.enum(['RESOURCE', 'EDGE']).optional(),
+  simulated: z.boolean().optional(),
   id: z.string(),
   timestamp: z.string(),
   resourceId: z.string(),

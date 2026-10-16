@@ -9,6 +9,8 @@
     "FINDINGS_TABLE": "cloud-intent-guardian-dev-findings",
     "EVALUATIONS_TABLE": "cloud-intent-guardian-dev-evaluations",
     "INTENT_VERSIONS_TABLE": "cloud-intent-guardian-dev-intent-versions",
+    "DRIFT_HISTORY_ENABLED": "true",
+    "DRIFT_EVENTS_TABLE": "cloud-intent-guardian-dev-drift",
     "AUDIT_TABLE": "cloud-intent-guardian-dev-audit",
     "EVALUATION_ARTIFACTS_TABLE": "cloud-intent-guardian-dev-evaluation-artifacts",
     "REMEDIATIONS_TABLE": "cloud-intent-guardian-dev-remediations",

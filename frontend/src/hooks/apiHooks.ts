@@ -102,12 +102,13 @@ export function useIntent(id: string) {
   });
 }
 
-export function useDriftEvents() {
+export function useDriftEvents(cursor?: string) {
+  const systemStatus = useSystemStatus();
   return useQuery({
-    queryKey: queryKeys.driftEvents(),
-    queryFn: () => apiClient<T.DriftEventsResponse>(endpoints.driftEvents(), S.DriftEventsResponseSchema),
+    queryKey: queryKeys.driftEvents({ cursor }),
+    queryFn: () => apiClient<T.DriftEventsResponse>(endpoints.driftEvents(cursor ? new URLSearchParams({ nextToken: cursor }).toString() : undefined), S.DriftEventsResponseSchema),
     staleTime: 30000,
-    enabled: hasCapability('driftEvents'),
+    enabled: hasCapability('driftEvents', systemStatus.data),
   });
 }
 

@@ -183,6 +183,12 @@ export interface IntentsResponse {
 }
 
 export interface DriftEvent {
+  evaluationId?: string;
+  previousEvaluationId?: string;
+  intentId?: string;
+  intentVersion?: number;
+  entityKind?: 'RESOURCE' | 'EDGE';
+  simulated?: boolean;
   id: string;
   timestamp: string;
   resourceId: string;

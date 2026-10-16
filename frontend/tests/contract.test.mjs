@@ -41,3 +41,10 @@ test('evaluation states include every asynchronous terminal and polling status',
     schemas.EvaluationSchema.parse({ ...fixtures.mockEvaluation, status });
   }
 });
+
+test('drift snapshot provenance and opaque pagination survive contract parsing', () => {
+  const result = schemas.DriftEventsResponseSchema.parse({ items: [fixtures.mockDriftEvents[0]], meta: { nextCursor: 'opaque-server-cursor' } });
+  assert.equal(result.items[0].previousEvaluationId, 'evaluation-fixture-1');
+  assert.equal(result.meta.nextCursor, 'opaque-server-cursor');
+  assert.equal(result.items[0].simulated, true);
+});

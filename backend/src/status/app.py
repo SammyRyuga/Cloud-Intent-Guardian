@@ -16,7 +16,8 @@ def lambda_handler(event, context):
                              'topology': os.environ.get('TOPOLOGY_ENABLED', 'true').lower() == 'true',
                              'remediationProposals': os.environ.get('INVENTORY_PROVIDER') == 'fixture',
                              'evaluations': os.environ.get('INVENTORY_PROVIDER') == 'fixture',
-                             'remediationExecution': False}
+                             'remediationExecution': False,
+                             'driftEvents': os.environ.get('DRIFT_HISTORY_ENABLED', 'false').lower() == 'true'}
         return response(200, state)
     account_id = None
     sts_status = "CONNECTED"
@@ -77,6 +78,6 @@ def lambda_handler(event, context):
             "awsConfig": {"status": config_status, "note": "AWS Config is optional for this first inventory implementation."},
             "liveInventory": {"status": "AVAILABLE" if discovery_ok else "DEGRADED", "note": "STS and EC2/RDS/S3 list probes succeeded; individual resource security metadata is checked during inventory."},
         },
-        "features": {"remediationProposals": True, "remediationExecution": os.environ.get("REMEDIATION_ENABLED", "false").lower() == "true" and os.environ.get("REMEDIATION_DRY_RUN", "true").lower() == "false"},
+        "features": {"driftEvents": os.environ.get("DRIFT_HISTORY_ENABLED", "false").lower() == "true", "remediationProposals": True, "remediationExecution": os.environ.get("REMEDIATION_ENABLED", "false").lower() == "true" and os.environ.get("REMEDIATION_DRY_RUN", "true").lower() == "false"},
         "warnings": warnings,
     })

@@ -11,6 +11,7 @@ import type {
 } from '@/types/domain';
 
 export const mockSystemStatus: SystemStatus = {
+  features: { driftEvents: true },
   backendReachable: true,
   awsSourcesConnected: true,
   evaluatedRegion: 'us-east-1',
@@ -304,6 +305,8 @@ export const mockIntents: Intent[] = [
 export const mockDriftEvents: DriftEvent[] = [
   {
     id: 'drift-1092',
+    evaluationId: 'evaluation-fixture-2', previousEvaluationId: 'evaluation-fixture-1',
+    intentId: 'intent-fixture', intentVersion: 1, entityKind: 'RESOURCE', simulated: true,
     timestamp: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
     resourceId: 'sg-0a91e2b489c',
     resourceType: 'AWS::EC2::SecurityGroup',
@@ -318,7 +321,7 @@ export const mockDriftEvents: DriftEvent[] = [
     resourceId: 'alb-external-test',
     resourceType: 'AWS::ElasticLoadBalancingV2::LoadBalancer',
     eventType: 'CREATED',
-    diffSummary: 'Unapproved internet-facing Application Load Balancer created in public subnet',
+    diffSummary: 'Application Load Balancer first observed in the newer snapshot',
   },
   {
     id: 'drift-1090',

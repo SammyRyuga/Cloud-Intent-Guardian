@@ -14,6 +14,7 @@ sys.path.insert(0, os.environ.get("CIG_SOURCE_DIR", str(ROOT / "src")))
 from common.dynamodb import dynamodb_resource
 
 TABLES = {
+    'DRIFT_EVENTS_TABLE': ('cloud-intent-guardian-dev-drift', 'id'),
     'INTENTS_TABLE': ('cloud-intent-guardian-dev-intents', 'intentId'),
     'FINDINGS_TABLE': ('cloud-intent-guardian-dev-findings', 'findingId'),
     'EVALUATIONS_TABLE': ('cloud-intent-guardian-dev-evaluations', 'evaluationId'),
@@ -23,7 +24,7 @@ TABLES = {
     'EVALUATION_ARTIFACTS_TABLE': ('cloud-intent-guardian-dev-evaluation-artifacts', 'evaluationId'),
 }
 SORT_KEYS = {'INTENT_VERSIONS_TABLE': ('version', 'N'), 'EVALUATION_ARTIFACTS_TABLE': ('artifactKey', 'S')}
-INDEXES = {'REMEDIATIONS_TABLE': ('scope-created', 'scopeKey', 'createdOrder'), 'FINDINGS_TABLE': ('scope-intent', 'scopeIntentKey', 'findingId'),
+INDEXES = {'DRIFT_EVENTS_TABLE': ('scope-time', 'scopeKey', 'eventOrder'), 'REMEDIATIONS_TABLE': ('scope-created', 'scopeKey', 'createdOrder'), 'FINDINGS_TABLE': ('scope-intent', 'scopeIntentKey', 'findingId'),
            'EVALUATIONS_TABLE': ('scope-created', 'scopeKey', 'createdOrder'),
            'AUDIT_TABLE': ('scope-time', 'scopeKey', 'eventOrder')}
 

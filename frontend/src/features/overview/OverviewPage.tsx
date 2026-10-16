@@ -122,11 +122,11 @@ export function OverviewPage() {
                 </div>
               </Card>
 
-              {/* Active Drift Events */}
+              {/* Latest Snapshot Changes */}
               <Card>
                 <div className="flex items-center gap-2 text-graphite mb-1">
                   <Layers className="w-4 h-4 stroke-[1.5]" />
-                  <span className="text-xs font-medium">Active Drift Events</span>
+                  <span className="text-xs font-medium">Latest Snapshot Changes</span>
                 </div>
                 <div className="flex items-baseline gap-2 mt-2">
                   <span className="font-title text-3xl font-bold text-ink">{driftCount?.label}</span>

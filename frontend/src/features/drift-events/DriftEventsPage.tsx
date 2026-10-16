@@ -1,4 +1,6 @@
-import { hasCapability } from '@/config/capabilities';
+import { useCapability } from '@/hooks/useCapability';
+import { useSearchParams } from 'react-router-dom';
+import { Button } from '@/components/ui/Button';
 import { useDriftEvents } from '@/hooks/apiHooks';
 import { StateBoundary } from '@/components/common/StateBoundary';
 import { CopyableId } from '@/components/common/CopyableId';
@@ -8,25 +10,28 @@ import { Card } from '@/components/ui/Card';
 import type { DriftEvent } from '@/types/domain';
 
 export function DriftEventsPage() {
-  const { data, isLoading, isError, error, refetch } = useDriftEvents();
+  const enabled = useCapability('driftEvents');
+  const [params, setParams] = useSearchParams();
+  const cursor = params.get('nextToken') || undefined;
+  const { data, isLoading, isError, error, refetch } = useDriftEvents(cursor);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
         <h1 className="font-title text-2xl font-bold text-ink">Configuration Drift Events</h1>
         <p className="text-xs text-graphite mt-1">
-          Historical timeline of unapproved or out-of-band modifications captured from AWS CloudTrail and config streams
+          Observed changes between complete evaluation snapshots of the same intent version. Changes do not establish who made them or whether they were authorized.
         </p>
       </div>
 
       <StateBoundary
-        isNotEnabled={!hasCapability('driftEvents')}
+        isNotEnabled={!enabled}
         isLoading={isLoading}
         isError={isError}
         error={error}
         isEmpty={data?.items.length === 0}
-        emptyTitle="No drift events detected"
-        emptyDescription="There are currently no recorded divergence events between deployed cloud state and declared intent."
+        emptyTitle="No snapshot changes on this page"
+        emptyDescription="The first complete evaluation establishes a baseline. Later complete observations can produce changes."
         onRetry={() => refetch()}
       >
         {data && (
@@ -65,6 +70,7 @@ export function DriftEventsPage() {
                     </div>
                   </div>
 
+                  {event.evaluationId && <p className="mt-2 text-xs text-pencil">Intent {event.intentId} v{event.intentVersion} · Evaluations {event.previousEvaluationId} → {event.evaluationId}{event.simulated ? ' · Simulated fixture observations' : ''}</p>}
                   {/* Before / After state per INV-08: never fabricated, render only what was received */}
                   {(event.previousState || event.currentState) && (
                     <div className="mt-3 pt-3 border-t border-rule grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
@@ -78,7 +84,7 @@ export function DriftEventsPage() {
                       )}
                       {event.currentState && (
                         <div className="bg-film p-2.5 rounded border border-rule">
-                          <span className="text-[11px] font-semibold text-graphite block mb-1">Observed Drift State</span>
+                          <span className="text-[11px] font-semibold text-graphite block mb-1">Current Observed State</span>
                           <pre className="font-mono text-[11px] text-ink overflow-x-auto">
                             {JSON.stringify(event.currentState, null, 2)}
                           </pre>
@@ -92,6 +98,10 @@ export function DriftEventsPage() {
           </div>
         )}
       </StateBoundary>
+      <div className="flex gap-2">
+        {cursor && <Button variant="secondary" onClick={() => setParams({})}>First page</Button>}
+        {data?.meta.nextCursor && <Button variant="secondary" onClick={() => setParams({ nextToken: data.meta.nextCursor! })}>Next page</Button>}
+      </div>
     </div>
   );
 }

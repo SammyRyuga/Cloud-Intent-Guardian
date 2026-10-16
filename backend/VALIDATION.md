@@ -1,3 +1,26 @@
+## Remaining-work checkpoint (2026-10-16)
+
+Saved locally tested snapshot-drift API/UI and disabled API/IAM/Cognito collector
+prototypes. This checkpoint has **not been deployed**. The live Guardian baseline
+and its seven passing structural rules remain the last verified deployed scope.
+
+Final checks: 187 backend tests, 34 frontend tests, 14 contract tests, SAM lint,
+SAM build and frontend lint/build passed. GPT-6.1 Sol verified the new collectors,
+drift and frontend suites; the final combined backend suite was rerun after all
+changes. Two existing Fast Refresh warnings remain. New drift persistence tests
+use Moto; the eight-table DynamoDB Local drift journey and deployed drift remain
+unverified. Drift defaults off. API/IAM/Cognito collector flags are absent from
+SAM and default off in code until Guardian-only scope filtering/IAM wiring is
+completed. Do not enable the prototypes account-wide as a Guardian-only claim.
+
+Regional Bedrock runtime calls succeeded with synthetic data, but the model's
+output failed the strict conclusion schema. LLM activation stays off. Existing
+Flow Logs/Reachability paths remain absent. DynamoDB plus structured CloudWatch
+records corroborated one historical application write, not packet reachability or
+general effective IAM access. Five earlier findings were reviewed without state
+changes: two reference one real public-SSH group outside Guardian; three reflect
+older EC2 baselines. Details and next steps: [checkpoint](../docs/CHECKPOINT.md).
+
 ## Guardian serverless intent and evidence collection (2026-10-16)
 
 The owner confirmed the target is Cloud Intent Guardian itself. The earlier
@@ -519,3 +542,13 @@ Use `LOCAL_TESTING.md` to run the runtime probe and the real four-part persisten
 ## Subsequent integration validation
 
 The original limitations above describe the initial patch, not the current validation state. On 2026-10-13, SAM validation/build, real SAM-to-DynamoDB Local persistence, thirteen Python tests, seventeen frontend tests and two browser integration journeys passed. The database was isolated and temporary. See [current integration evidence](../INTEGRATION.md). Live AWS deployment and Cognito remain unverified.
+
+### Snapshot drift implementation checks
+
+Added deterministic snapshot change tests for actual resource attributes, edge
+removal with preserved before-state, collection timestamp noise, partial/missing
+coverage, first baseline, duplicate staging, published-only visibility and scoped
+viewer reads. Five focused drift tests passed with Moto; the preceding complete
+backend suite passed 174 tests. Frontend production build and 14 contract tests
+passed. SAM template lint passed. These are local checks; no drift cloud deployment
+or live evaluation has been performed by this change.
