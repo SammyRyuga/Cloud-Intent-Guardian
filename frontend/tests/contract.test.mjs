@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import * as fixtures from '../src/api/mocks/fixtures.ts';
 import * as schemas from '../src/api/schemas.ts';
@@ -69,4 +70,17 @@ test('finding suppression provenance survives mock and backend schemas', () => {
   assert.equal(live.suppressionReason, mock.suppressionReason);
   assert.equal(live.suppressedBy, 'approver-test');
   assert.equal(live.revision, 2);
+});
+
+// Actual local Python handler responses: activation returns the mutable intent facade.
+test('version approval and rollback envelopes are intent facades, not immutable snapshots', () => {
+  const wire = JSON.parse(readFileSync(new URL('./fixtures/version-decisions-contract.json', import.meta.url), 'utf8'));
+  for (const operation of ['approved', 'rolledBack']) {
+    const item = backendSchemas.ManifestDetailSchema.parse(wire[operation]).item;
+    assert.equal(item.status, 'APPROVED');
+    assert.equal(item.activeVersion, item.version);
+    assert.equal('contentHash' in wire[operation].item, false);
+    assert.equal(backendSchemas.IntentVersionDetailSchema.safeParse(wire[operation]).success, false);
+  }
+  backendSchemas.IntentVersionDetailSchema.parse(wire.draftVersion);
 });

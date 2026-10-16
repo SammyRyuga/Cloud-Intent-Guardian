@@ -1,3 +1,39 @@
+## Owner-approved activation and live evaluation (2026-10-16)
+
+Guardian intent `9af2782d-f80b-41f8-9bd7-eeefddeb672d` version 2 was approved and
+activated through the signed-in Cognito frontend after explicit owner approval.
+The facade now points to version 2 at revision 3; version 1 remains immutable,
+approved history and is presented as SUPERSEDED. The approved content hash is
+`f68b65b30f89413a2038cd08bc2c75e5f6c31c6558412fcc68b6e3d61f5f452e`.
+
+Signed-in evaluation `43ba4996-35e7-4847-a29f-7dcebaa8efec` completed SUCCEEDED
+in one attempt: **217/217 PASS, zero UNKNOWN, zero findings, 100% configuration
+conformance**. It collected 96 account inventory nodes; the intent selects its
+68 Guardian components and 144 required structural relationships. Polling and
+history converged to SUCCEEDED in the browser. Consistent DynamoDB reads verified
+the terminal job, exact content hash, version-2 drift baseline and zero drift
+events. Approval, EVALUATION_SUCCEEDED and DRIFT_SNAPSHOT_PUBLISHED audit events
+were verified with matching version/job IDs. The first complete snapshot is a
+baseline, so zero events is expected. Five findings under older intents remain;
+both previously reviewed real public-SSH findings stay OPEN.
+
+The live approval uncovered a frontend response-parser mismatch: the activation
+endpoint returns an intent facade, while the hook expected a version snapshot
+with contentHash. Approval had succeeded despite the UI error. The hook now uses
+the existing facade schema; the API contract is unchanged. Actual local Python
+handler approval/rollback fixtures reproduce this distinction, and the regression
+checks parsing plus cache invalidation. No approval was repeated to test the fix.
+Current checks: 209 backend tests, 40 frontend tests, 17 contract checks, frontend
+lint/build and SAM lint/build pass. Two existing Fast Refresh warnings remain.
+The five earlier Chrome browser tests and this real signed-in journey are
+separate evidence; no new intercepted browser run was claimed for the parser fix.
+
+Modifying remediation remains disabled/dry-run, confirmed from stack parameters.
+This success covers the approved structural configuration rules. Effective IAM
+access and independent-source packet reachability remain unverified; unavailable
+or conflicting evidence continues to require human review. Full ignored receipts:
+backend/local-evidence/guardian-v2-activation-verification.json.
+
 ## Completion cloud receipts (2026-10-16)
 
 - GitHub application code was pushed through `caf38fb`; backend completion is

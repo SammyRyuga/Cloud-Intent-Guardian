@@ -1,0 +1,113 @@
+{
+  "source": "Actual Python intents/approve_intent/versions handlers against Moto; simulated local evidence",
+  "initial": {
+    "item": {
+      "intentId": "ddda3e84-ff67-45df-9f24-6b39aff822f5",
+      "name": "Version response contract",
+      "description": "Local Moto handler evidence",
+      "constraints": [
+        {
+          "id": "ssh",
+          "type": "SECURITY_GROUP_NO_OPEN_SSH",
+          "severity": "HIGH",
+          "description": "ssh",
+          "enabled": true
+        }
+      ],
+      "version": 1,
+      "status": "APPROVED",
+      "createdAt": "2026-10-16T15:53:16.241412Z",
+      "updatedAt": "2026-10-16T15:53:16.252693Z",
+      "approvedAt": "2026-10-16T15:53:16.252693Z",
+      "createdBy": "contract-user",
+      "sourceType": "JSON_CONSTRAINT_MANIFEST",
+      "scopeKey": "123456789012#ap-south-1#dev",
+      "latestVersion": 1,
+      "revision": 1,
+      "activeVersion": 1
+    }
+  },
+  "draftVersion": {
+    "item": {
+      "intentId": "ddda3e84-ff67-45df-9f24-6b39aff822f5",
+      "version": 2,
+      "name": "Version response contract",
+      "description": "Second immutable revision",
+      "constraints": [
+        {
+          "id": "ssh",
+          "type": "SECURITY_GROUP_NO_OPEN_SSH",
+          "severity": "HIGH",
+          "description": "ssh",
+          "enabled": true
+        }
+      ],
+      "status": "DRAFT",
+      "contentHash": "e09ba3dc883bf7c9eac20e0097529686cf2954006ab8ef3298fc6f015c448c0c",
+      "createdAt": "2026-10-16T15:53:16.264730Z",
+      "updatedAt": "2026-10-16T15:53:16.264730Z",
+      "createdBy": "contract-user",
+      "author": {
+        "sub": "contract-user",
+        "displayName": "contract-user"
+      },
+      "parentVersion": 1,
+      "sourceType": "JSON_CONSTRAINT_MANIFEST",
+      "scopeKey": "123456789012#ap-south-1#dev"
+    }
+  },
+  "approved": {
+    "item": {
+      "intentId": "ddda3e84-ff67-45df-9f24-6b39aff822f5",
+      "name": "Version response contract",
+      "description": "Second immutable revision",
+      "constraints": [
+        {
+          "id": "ssh",
+          "type": "SECURITY_GROUP_NO_OPEN_SSH",
+          "severity": "HIGH",
+          "description": "ssh",
+          "enabled": true
+        }
+      ],
+      "version": 2,
+      "status": "APPROVED",
+      "createdAt": "2026-10-16T15:53:16.241412Z",
+      "updatedAt": "2026-10-16T15:53:16.276299Z",
+      "approvedAt": "2026-10-16T15:53:16.276299Z",
+      "createdBy": "contract-user",
+      "sourceType": "JSON_CONSTRAINT_MANIFEST",
+      "scopeKey": "123456789012#ap-south-1#dev",
+      "latestVersion": 2,
+      "revision": 3,
+      "activeVersion": 2
+    }
+  },
+  "rolledBack": {
+    "item": {
+      "intentId": "ddda3e84-ff67-45df-9f24-6b39aff822f5",
+      "name": "Version response contract",
+      "description": "Local Moto handler evidence",
+      "constraints": [
+        {
+          "id": "ssh",
+          "type": "SECURITY_GROUP_NO_OPEN_SSH",
+          "severity": "HIGH",
+          "description": "ssh",
+          "enabled": true
+        }
+      ],
+      "version": 1,
+      "status": "APPROVED",
+      "createdAt": "2026-10-16T15:53:16.241412Z",
+      "updatedAt": "2026-10-16T15:53:16.287385Z",
+      "approvedAt": "2026-10-16T15:53:16.252693Z",
+      "createdBy": "contract-user",
+      "sourceType": "JSON_CONSTRAINT_MANIFEST",
+      "scopeKey": "123456789012#ap-south-1#dev",
+      "latestVersion": 2,
+      "revision": 4,
+      "activeVersion": 1
+    }
+  }
+}

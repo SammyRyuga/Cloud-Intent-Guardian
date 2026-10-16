@@ -300,7 +300,7 @@ export function useApproveIntentVersion() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ id, version, expectedRevision }: { id: string; version: number; expectedRevision: number }) =>
-      apiClient(endpoints.intentVersionApprove(id, version), B.IntentVersionDetailSchema, {
+      apiClient(endpoints.intentVersionApprove(id, version), B.ManifestDetailSchema, {
         method: 'POST', body: { expectedRevision },
       }),
     onSuccess: (_, { id, version }) => {
