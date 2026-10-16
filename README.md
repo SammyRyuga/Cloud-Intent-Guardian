@@ -2,7 +2,18 @@
 
 Cloud Intent Guardian compares approved architectural intent - components, permitted paths, trust boundaries and criticality - with an evidence-bounded AWS graph, and stores findings with explainable severity and evidence. The current backend uses AWS SAM, Python 3.13 Lambda, API Gateway, Cognito and DynamoDB.
 
-**Prototype:** [cloud-intent-guardian.onrender.com](https://cloud-intent-guardian.onrender.com). The user-authorized AWS backend is deployed in ap-south-1 with Cognito sign-in, an enabled evaluation worker, and dry-run remediation. The owner receives the initial admin invitation directly from Cognito. Local/stubbed workflows and live readiness checks are recorded in [validation](backend/VALIDATION.md); the first real authenticated write journey remains unverified. AWS Academy permissions and optional Bedrock/evidence access remain separate checks.
+**Prototype:** [cloud-intent-guardian.onrender.com](https://cloud-intent-guardian.onrender.com). The user-authorized AWS backend is deployed in ap-south-1 with Cognito sign-in, an enabled evaluation worker, and dry-run remediation. The owner receives the initial admin invitation directly from Cognito. Local/stubbed workflows and live readiness checks are recorded in [validation](backend/VALIDATION.md); signed-in evaluation submission and status/history convergence have been verified. AWS Academy permissions and optional Bedrock/evidence access remain separate checks.
+
+## Guardian serverless baseline
+
+Guardian's Lambda/DynamoDB architecture uses optional `EnableLambdaInventory`,
+`EnableDynamoDBInventory` and `EnableServerlessRelationships` SAM parameters.
+They collect metadata and current stream mappings, without reading table items
+or function environment variables. Boundary `edgeTypes: ["STRUCTURAL"]` selects
+structural assessment; omission retains the network default. See [draft review
+guidance](docs/intents/README.md) for the exact-ID local artifact and evidence limits.
+Owner approval activates a draft. `EnableNetworkEvidence` separately consumes
+existing sources in the worker and never creates or runs analyses.
 
 ## Files and current scope
 

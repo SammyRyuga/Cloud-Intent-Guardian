@@ -49,7 +49,29 @@ DynamoDB Local escalation/remediation scenarios, 33 frontend tests, 13 contract
 tests, frontend lint/build and the rendered Chrome evaluation-status regression.
 Lint retains two existing Fast Refresh warnings. Enabled and disabled stream
 integration tests prove structural conformance without claiming network coverage.
-Live deployment and draft preview verification follow below.
+Released implementation commit `6545469`. AWS stack cloud-intent-guardian-demo
+reached UPDATE_COMPLETE; Render deploy `dep-db8o847f3r2c73eqf5t0` is live.
+Lambda/DynamoDB/serverless mapping discovery is enabled. Network enrichment,
+Bedrock, Config and modifying remediation remain off; remediation stays dry-run.
+The disposable DynamoDB Local verification container was removed.
+
+Deployed ResourcesFunction returned HTTP 200, 48 account resources, no warnings,
+and COMPLETE Lambda/DynamoDB/structural/stream coverage. Of these, the Guardian
+manifest binds 13 Lambda functions and seven tables. The unapproved diagnostic
+preview passed 7/7 with zero findings and was saved separately without publishing
+an evaluation. Exact IDs/inventory stay in ignored local-evidence files.
+
+A review draft was created through the deployed handler as Deployment operator
+(review draft), ID `9af2782d-f80b-41f8-9bd7-eeefddeb672d`. The owner then explicitly
+approved activation and a live evaluation in chat. GPT-6.1 Sol used the signed-in
+Cognito UI to approve version 1 and submit evaluation
+`d9750c08-cc02-49ec-af1d-b1e387ef8fc2`. Its stored status and history both reached
+SUCCEEDED automatically, with 100% conformance and all seven declared rules
+passing. Browser warning/error logs were empty. Actual graph shows the observed
+DYNAMODB_STREAM_TRIGGER. Five active findings from earlier intents remain;
+no finding was suppressed or remediated to obtain the new result. This result
+covers the declared structural baseline, not unmodeled IAM/network/API policies.
+Real positive network-source/Bedrock integration and Academy IAM remain unverified.
 
 ## Evaluation status consistency correction (2026-10-16)
 

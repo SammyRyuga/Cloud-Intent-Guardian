@@ -5,3 +5,9 @@ The exact-ARN draft is stored locally in ignored `backend/local-evidence/guardia
 The draft requires the observed evaluations-table-to-worker stream relationship in the STRUCTURAL family. Compute and data boundaries request STRUCTURAL assessment. This is a structural stream check, not evidence of IAM data authorization or network reachability. Its boundary edgeTypes field is validated by the updated schema/evaluator. The exact local draft passes validate_manifest. Exact IDs and resource counts were read from CloudFormation and ARN-only service projections; no environment variables or secret values were retrieved.
 
 The existing EC2/RDS baseline remains unchanged. Those observed resources belong to other applications and do not have the required tier tags. They are excluded from the Guardian draft.
+
+The owner subsequently approved this concrete draft and activation. Live intent
+`9af2782d-f80b-41f8-9bd7-eeefddeb672d` is APPROVED version 1. Real evaluation
+`d9750c08-cc02-49ec-af1d-b1e387ef8fc2` succeeded with seven passing structural
+rules. Earlier EC2/RDS intents and their findings remain separate historical
+policies; no remediation was performed. See INTEGRATION.md for release evidence.
