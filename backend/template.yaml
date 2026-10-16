@@ -12,6 +12,21 @@ Metadata:
         scope: project
 
 Parameters:
+  EnableNetworkEvidence:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Optional worker-only exact-flow evidence enrichment from existing sources. Never creates or runs analyses.
+  EnableDynamoDBInventory:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Optional read-only table metadata discovery. Never reads table items.
+  EnableServerlessRelationships:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Optional read-only DynamoDB stream-to-Lambda event source mapping discovery.
   EnableEvidenceSources:
     Type: String
     Default: 'false'
@@ -100,7 +115,9 @@ Rules:
         AssertDescription: Optional Bedrock escalation requires an exact model permission ARN.
 
 Conditions:
-  EvidenceSourcesEnabled: !Equals [!Ref EnableEvidenceSources, 'true']
+  NetworkOrEvidenceEnabled: !Or [!Equals [!Ref EnableNetworkEvidence, 'true'], !Equals [!Ref EnableEvidenceSources, 'true']]
+  DynamoDBInventoryEnabled: !Equals [!Ref EnableDynamoDBInventory, 'true']
+  ServerlessRelationshipsEnabled: !Equals [!Ref EnableServerlessRelationships, 'true']
   RemediationWritesEnabled: !And [!Equals [!Ref RemediationEnabled, 'true'], !Equals [!Ref RemediationDryRun, 'false']]
   LLMEnabled: !Equals [!Ref EnableLLM, 'true']
   AsyncWorkerEnabled: !Equals [!Ref EnableAsyncWorker, 'true']
@@ -130,6 +147,9 @@ Globals:
         REMEDIATIONS_TABLE: !Ref RemediationsTable
         REMEDIATION_ENABLED: !Ref RemediationEnabled
         REMEDIATION_DRY_RUN: !Ref RemediationDryRun
+        NETWORK_EVIDENCE_ENABLED: !Ref EnableNetworkEvidence
+        DYNAMODB_INVENTORY_ENABLED: !Ref EnableDynamoDBInventory
+        SERVERLESS_RELATIONSHIPS_ENABLED: !Ref EnableServerlessRelationships
         CROSS_VALIDATION_ENABLED: !Ref EnableEvidenceSources
         FLOW_LOGS_GROUP_NAME: !Ref FlowLogsGroupName
         CROSS_VALIDATION_PATHS_JSON: !Ref CrossValidationPathsJson
@@ -423,7 +443,7 @@ Resources:
       Role: !If [UseExistingRole, !Ref ExistingExecutionRoleArn, !Ref AWS::NoValue]
       CodeUri: src/
       Handler: resources.app.lambda_handler
-      Description: Read-only inventory from EC2, VPC, security groups, RDS and S3 APIs.
+      Description: Read-only bounded resource metadata and optional serverless relationships.
       # Intent comparison is a read; this function must never change intent or AWS resources.
       Environment:
         Variables:
@@ -453,6 +473,20 @@ Resources:
           - Statement:
               - Effect: Allow
                 Action: [lambda:ListFunctions]
+                Resource: '*'
+          - !Ref AWS::NoValue
+        - !If
+          - DynamoDBInventoryEnabled
+          - Statement:
+              - Effect: Allow
+                Action: [dynamodb:ListTables, dynamodb:DescribeTable]
+                Resource: '*'
+          - !Ref AWS::NoValue
+        - !If
+          - ServerlessRelationshipsEnabled
+          - Statement:
+              - Effect: Allow
+                Action: lambda:ListEventSourceMappings
                 Resource: '*'
           - !Ref AWS::NoValue
         - !If
@@ -718,7 +752,7 @@ Resources:
           EVALUATIONS_TABLE: !Ref EvaluationsTable
       Policies:
         - !If
-          - EvidenceSourcesEnabled
+          - NetworkOrEvidenceEnabled
           - Statement:
               - Effect: Allow
                 Action: [ec2:DescribeNetworkInsightsPaths, ec2:DescribeNetworkInsightsAnalyses]
@@ -754,6 +788,20 @@ Resources:
           - Statement:
               - Effect: Allow
                 Action: lambda:ListFunctions
+                Resource: '*'
+          - !Ref AWS::NoValue
+        - !If
+          - DynamoDBInventoryEnabled
+          - Statement:
+              - Effect: Allow
+                Action: [dynamodb:ListTables, dynamodb:DescribeTable]
+                Resource: '*'
+          - !Ref AWS::NoValue
+        - !If
+          - ServerlessRelationshipsEnabled
+          - Statement:
+              - Effect: Allow
+                Action: lambda:ListEventSourceMappings
                 Resource: '*'
           - !Ref AWS::NoValue
         - !If

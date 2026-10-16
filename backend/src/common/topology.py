@@ -23,6 +23,7 @@ MAX_PATH_DEPTH = 64
 STRUCTURAL_TYPES = {
     "BELONGS_TO_VPC", "IN_SUBNET", "USES_SECURITY_GROUP", "IN_VPC",
     "HAS_BELONGS_TO_VPC", "HAS_IN_SUBNET", "HAS_USES_SECURITY_GROUP", "HAS_IN_VPC",
+    "DYNAMODB_STREAM_TRIGGER",
 }
 
 
@@ -258,6 +259,12 @@ def _selected_edges(inventory: dict[str, Any], edge_types: list[str] | None, acc
     edges, unlabeled = _edge_list(inventory, types)
     valid, insufficient = [], unlabeled
     for edge in edges:
+        if edge.get("evidenceScope") == "EXACT_FLOW":
+            # Path/boundary rules currently have no protocol/port selector.
+            # A sampled tuple cannot establish their unscoped predicate or be
+            # joined to another tuple as a transitive path.
+            insufficient = True
+            continue
         edge_types_allowed = accepted or ({"STRUCTURAL"} if edge["_category"] == "STRUCTURAL" else
                                           {"CONFIGURED"} if edge["_category"] == "NETWORK_PERMISSION" else {"OBSERVED"})
         if _adequate_edge(edge, edge_types_allowed):
@@ -280,6 +287,12 @@ def _declaration_matches_edge(edge: dict[str, Any], declaration: dict[str, Any])
     """Match protocol/ports when the observation records them; None is unknown."""
     protocol = declaration.get("protocol")
     ports = declaration.get("ports") or []
+    if edge.get("evidenceScope") == "EXACT_FLOW":
+        if not protocol or not ports:
+            return None
+        observed_ports = edge.get("ports") or []
+        if set(ports) != set(observed_ports):
+            return False if not set(ports).intersection(observed_ports) else None
     if protocol:
         observed_protocol = edge.get("protocol")
         if observed_protocol is None:
@@ -731,11 +744,12 @@ def evaluate_topology(intent: dict[str, Any], inventory: dict[str, Any]) -> list
         crossings = boundary.get("crossingRules", []) or []
         if not crossings:
             rule = {"id": f"boundary:{boundary.get('id')}", "type": "TRUST_BOUNDARY_CROSSING", "from": boundary.get("id"),
-                    "crossingRules": [], "severity": "MEDIUM"}
+                    "crossingRules": [], "severity": "MEDIUM", "edgeTypes": boundary.get("edgeTypes", list(DEFAULT_EDGE_TYPES))}
             outcomes.append(_constraint_outcome(rule, intent, inventory, resolved))
         for crossing in crossings:
             rule = {"id": crossing.get("id"), "type": "TRUST_BOUNDARY_CROSSING", "from": boundary.get("id"),
-                    "crossingRules": [crossing], "severity": crossing.get("severity", "MEDIUM")}
+                    "crossingRules": [crossing], "severity": crossing.get("severity", "MEDIUM"),
+                    "edgeTypes": boundary.get("edgeTypes", list(DEFAULT_EDGE_TYPES))}
             outcomes.append(_constraint_outcome(rule, intent, inventory, resolved))
     return sorted(outcomes, key=lambda row: row["ruleId"])
 

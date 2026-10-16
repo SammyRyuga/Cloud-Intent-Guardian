@@ -19,6 +19,7 @@ from common.evaluation_jobs import (JobError, artifact_limit_check,
                                     chunk_artifacts, resolve_pinned_intent)
 from common.http import utc_now, _json_default
 from common.inventory import collect_inventory
+from common.network_evidence import enrich_network_evidence
 from common.observations import ObservationUnavailable, observations
 from common.versions import content_from, content_hash
 from evaluations.app import run_pinned_evaluation
@@ -453,6 +454,7 @@ def _process(db, evaluation_id: str) -> dict:
                 if not is_local():
                     raise JobError(409, "FIXTURE_PROVIDER_LOCAL_ONLY", "Fixture observations are available only in explicit local mode.")
             inventory = observations(collect_inventory, os.environ.get("AWS_REGION"))
+            inventory = enrich_network_evidence(snapshot, inventory)
             _state_audit(db, job_table_name, audit_table, job, actor, "EVALUATION_STAGE_CHANGED", "EVALUATING")
             evaluation, findings = run_pinned_evaluation(snapshot, inventory, evaluation_id)
             evaluation, findings = escalate(snapshot, inventory, evaluation, findings)

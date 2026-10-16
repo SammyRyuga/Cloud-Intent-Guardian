@@ -355,7 +355,19 @@ def _client(service, region):
         retries={"total_max_attempts": 1, "mode": "standard"}))
 
 
-def collect_verdicts(candidate, inventory, ec2=None, logs=None):
+def _cached_client(service, region, cache):
+    if cache is not None and service in cache:
+        return cache[service]
+    try:
+        client = _client(service, region)
+    except (BotoCoreError, ValueError, TypeError):
+        client = None
+    if cache is not None:
+        cache[service] = client
+    return client
+
+
+def collect_verdicts(candidate, inventory, ec2=None, logs=None, *, network_evidence=False, client_cache=None):
     """Return exactly one closed-schema row for each optional AWS evidence source.
 
     This function only describes configured resources and reads existing Flow Log
@@ -365,7 +377,10 @@ def collect_verdicts(candidate, inventory, ec2=None, logs=None):
     """
     flow = _base_row(candidate if isinstance(candidate, dict) else {}, "flowLogs")
     reachability = _base_row(candidate if isinstance(candidate, dict) else {}, "reachabilityAnalyzer")
-    if is_local() or os.environ.get("CROSS_VALIDATION_ENABLED", "false").lower() != "true":
+    enabled = os.environ.get("CROSS_VALIDATION_ENABLED", "false").lower() == "true"
+    if network_evidence:
+        enabled = os.environ.get("NETWORK_EVIDENCE_ENABLED", "false").lower() == "true"
+    if is_local() or not enabled:
         return [flow, reachability]
     if not _valid_candidate(candidate, inventory):
         return [flow, reachability]
@@ -380,17 +395,11 @@ def collect_verdicts(candidate, inventory, ec2=None, logs=None):
     if group:
         active_logs = logs
         if active_logs is None and isinstance(region, str) and region:
-            try:
-                active_logs = _client("logs", region)
-            except (BotoCoreError, ValueError, TypeError):
-                active_logs = None
+            active_logs = _cached_client("logs", region, client_cache)
         flow = _flow_logs_verdict(candidate, inventory, active_logs, group)
     if configured_path:
         active_ec2 = ec2
         if active_ec2 is None and isinstance(region, str) and region:
-            try:
-                active_ec2 = _client("ec2", region)
-            except (BotoCoreError, ValueError, TypeError):
-                active_ec2 = None
+            active_ec2 = _cached_client("ec2", region, client_cache)
         reachability = _reachability_verdict(candidate, inventory, active_ec2, mapping)
     return [flow, reachability]

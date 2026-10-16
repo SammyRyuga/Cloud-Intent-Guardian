@@ -6,6 +6,9 @@ from datetime import datetime, timezone
 from typing import Any
 
 import boto3
+from common.contracts import is_local
+from common.observations import ObservationUnavailable
+from common.serverless_inventory import collect_serverless, STREAM_EDGE, TABLE_TYPE
 from botocore.exceptions import BotoCoreError, ClientError
 
 MAX_PER_KIND = 250
@@ -17,6 +20,7 @@ RESOURCE_TYPES = {
     "rds": "AWS::RDS::DBInstance",
     "s3": "AWS::S3::Bucket",
     "lambda": "AWS::Lambda::Function",
+    "dynamodb": TABLE_TYPE,
 }
 STRUCTURAL_EDGE_TYPES = {"BELONGS_TO_VPC", "IN_SUBNET", "USES_SECURITY_GROUP", "IN_VPC"}
 
@@ -73,6 +77,8 @@ def _api_error(exc: Exception, warnings: list[dict[str, str]], source: str,
 
 
 def collect_inventory(region: str | None = None) -> dict[str, Any]:
+    if is_local():
+        raise ObservationUnavailable("Live AWS inventory is disabled in local execution. Use the fixture provider.")
     region = region or boto3.session.Session().region_name or "us-east-1"
     session = boto3.session.Session(region_name=region)
     nodes: dict[str, dict[str, Any]] = {}
@@ -370,6 +376,13 @@ def collect_inventory(region: str | None = None) -> dict[str, Any]:
     else:
         resource_coverage[RESOURCE_TYPES["lambda"]] = "UNSUPPORTED"
 
+    stream_coverage = collect_serverless(
+        session, nodes, edges, warnings, resource_coverage, region, account_id, collected_at,
+        tables_enabled=os.environ.get("DYNAMODB_INVENTORY_ENABLED", "false").lower() == "true",
+        mappings_enabled=os.environ.get("SERVERLESS_RELATIONSHIPS_ENABLED", "false").lower() == "true",
+        lambda_enabled=lambda_enabled,
+    )
+
     # Snapshot direct relationships so inverse links never create new inverse-of-inverse links.
     direct = [(node["resourceId"], rel) for node in nodes.values() for rel in list(node.get("relationships", []))]
     for source, rel in direct:
@@ -389,7 +402,7 @@ def collect_inventory(region: str | None = None) -> dict[str, Any]:
     tag_coverage = "COMPLETE"
     if not tag_enabled and (rds_items or bucket_list):
         tag_coverage = "PARTIAL"
-    if lambda_count:
+    if lambda_count or any(node["resourceType"] == TABLE_TYPE for node in nodes.values()):
         tag_coverage = "PARTIAL"
     if any(row.get("source", "").startswith(("rds:tags", "s3:tags:")) for row in warnings):
         tag_coverage = "PARTIAL"
@@ -397,7 +410,9 @@ def collect_inventory(region: str | None = None) -> dict[str, Any]:
     structural_status = "PARTIAL" if any(state != "COMPLETE" for state in resource_coverage.values()
                                            if state != "UNSUPPORTED") else "COMPLETE"
     relationship_coverage = {kind: structural_status for kind in sorted(STRUCTURAL_EDGE_TYPES)}
-    relationship_coverage["STRUCTURAL"] = structural_status
+    relationship_coverage[STREAM_EDGE] = stream_coverage
+    relationship_coverage["STRUCTURAL"] = ("PARTIAL" if os.environ.get("SERVERLESS_RELATIONSHIPS_ENABLED", "false").lower() == "true"
+                                             and stream_coverage != "COMPLETE" else structural_status)
     relationship_coverage["NETWORK_PERMISSION"] = "UNSUPPORTED"
     relationship_coverage["NETWORK_REACHABILITY"] = "UNSUPPORTED"
     relationship_coverage["TAGS"] = tag_coverage

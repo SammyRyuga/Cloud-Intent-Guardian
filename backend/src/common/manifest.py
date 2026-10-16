@@ -308,7 +308,7 @@ def _normalize_boundaries(value: Any, ids: set[str], components: set[str]) -> li
     for index, item in enumerate(value):
         path = f"trustBoundaries[{index}]"
         obj = _object(item, path)
-        _keys(obj, {"id", "members", "crossingRules"}, path)
+        _keys(obj, {"id", "members", "crossingRules", "edgeTypes"}, path)
         zid = _id(obj.get("id"), f"{path}.id")
         _add_id(ids, zid, path)
         zones.add(zid)
@@ -337,7 +337,10 @@ def _normalize_boundaries(value: Any, ids: set[str], components: set[str]) -> li
             if any(component not in components for component in via):
                 _fail("UNKNOWN_COMPONENT_REFERENCE", f"{cpath}.via references an unknown component.")
             normalized_crossings.append({"id": cid, "to": to, "effect": effect, "via": via})
-        result.append({"id": zid, "members": members, "crossingRules": normalized_crossings})
+        normalized_boundary = {"id": zid, "members": members, "crossingRules": normalized_crossings}
+        if "edgeTypes" in obj:
+            normalized_boundary["edgeTypes"] = _edge_types(obj["edgeTypes"], f"{path}.edgeTypes")
+        result.append(normalized_boundary)
     crossing_effects: dict[tuple[str, str], tuple[str, str]] = {}
     for zone in result:
         for crossing in zone["crossingRules"]:

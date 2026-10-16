@@ -101,6 +101,18 @@ test("generated v2 topology contract preserves declarations, graph metadata and 
   const simulated = topology.bypassEvaluation.simulated ?? topology.bypassEvaluation.evaluation?.simulated;
   assert.equal(simulated, true);
 });
+test("boundary structural evidence selection survives transport and legacy omission stays valid", () => {
+  const legacy = B.ManifestDetailSchema.parse(topology.created).item;
+  assert.ok(legacy.trustBoundaries.length > 0);
+  assert.equal(legacy.trustBoundaries[0].edgeTypes, undefined);
+  const payload = structuredClone(topology.created);
+  payload.item.trustBoundaries[0].edgeTypes = ["STRUCTURAL"];
+  const parsed = B.ManifestDetailSchema.parse(payload).item;
+  assert.deepEqual(parsed.trustBoundaries[0].edgeTypes, ["STRUCTURAL"]);
+  assert.deepEqual(parsed.trustBoundaries[0].crossingRules, legacy.trustBoundaries[0].crossingRules);
+  assert.deepEqual(B.ManifestSchema.parse(JSON.parse(JSON.stringify(parsed))).trustBoundaries,
+    parsed.trustBoundaries);
+});
 test("finding adapter preserves IDs, observed timestamps and opaque pagination", () => {
   const list = S.FindingsResponseSchema.parse(
     B.BackendFindingsSchema.parse(wire.findings),

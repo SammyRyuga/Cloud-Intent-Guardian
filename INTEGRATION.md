@@ -1,3 +1,56 @@
+## Guardian serverless intent and evidence collection (2026-10-16)
+
+The owner confirmed the target is Cloud Intent Guardian itself. The earlier
+EC2/RDS tier selectors describe other applications in the account, so they are
+not silently retargeted or approved. A concrete review draft is stored in ignored
+`backend/local-evidence/guardian-intent-review.json`, with exact verified ARNs
+for 12 API Lambda functions, one evaluation worker and seven DynamoDB tables.
+It requires the evaluations-table stream trigger to the worker, and evaluates
+compute/data boundaries with structural evidence. It does not claim API invocation,
+IAM data authorization, or packet-level network coverage.
+
+New opt-in SAM parameters EnableDynamoDBInventory and EnableServerlessRelationships
+add bounded metadata-only ListTables/DescribeTable and ListEventSourceMappings
+reads. EnableLambdaInventory must also be on to resolve both mapping endpoints.
+Only enabled mappings to the current enabled table stream and exact observed
+function/table ARNs produce DYNAMODB_STREAM_TRIGGER edges. Cross-scope,
+unresolved, stale, transitional, denied or capped collection remains incomplete;
+disabled mappings do not emit active edges. Collection never reads table items
+or Lambda environment variables. Local mode blocks SDK client construction.
+Each source is capped at 100 records. Optional services remain off by default.
+
+Intent v2 trustBoundaries now accepts optional edgeTypes using the existing
+STRUCTURAL, NETWORK_PERMISSION, NETWORK_REACHABILITY categories. Omission keeps
+the original network default and normalized content shape, preserving approved
+version hashes. STRUCTURAL includes DynamoDB stream wiring. Existing /v1 paths,
+response envelopes and error shape are unchanged. Frontend transport tests verify
+new field retention and legacy omission.
+
+EnableNetworkEvidence optionally enriches worker evaluations from existing Flow
+Logs and Reachability Analyzer records independently of Bedrock. It is off by
+default, permanently off locally, and does not run in synchronous graph requests.
+At most two exact endpoint/TCP-or-UDP/single-port bindings are queried, with
+invocation-scoped client reuse. Observed accepted flow records produce scoped
+reachability witnesses; Analyzer models configuration and produces permission
+witnesses. Disagreement suppresses promotion. Negative/missing records never
+prove global absence. Scoped witnesses cannot satisfy other protocols, ports,
+unscoped paths or transitive boundary checks; graph coverage remains PARTIAL.
+Integral DynamoDB Decimal ports are normalized safely. No analyses/logs are
+created, and Bedrock/modifying remediation remain disabled in the live prototype.
+
+Academy: the new flags may require unavailable read permissions; service denials
+degrade coverage. Generated execution roles still require IAM role creation or
+an explicitly pre-approved existing role. The normal-account deployment does not
+verify Academy availability. No Step Functions, provisioned capacity or idle
+compute was added.
+
+GPT-6.1 Sol validation passed 170 backend tests, SAM lint/build, all five isolated
+DynamoDB Local escalation/remediation scenarios, 33 frontend tests, 13 contract
+tests, frontend lint/build and the rendered Chrome evaluation-status regression.
+Lint retains two existing Fast Refresh warnings. Enabled and disabled stream
+integration tests prove structural conformance without claiming network coverage.
+Live deployment and draft preview verification follow below.
+
 ## Evaluation status consistency correction (2026-10-16)
 
 Overview no longer treats the POST acceptance snapshot as current job status.
