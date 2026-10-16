@@ -1,5 +1,10 @@
 ## Owner-approved activation and live evaluation (2026-10-16)
 
+Application fix commit `5e9f660` is pushed. Render deployment
+`dep-db94ijajnfac73ai001g` is verified LIVE at that commit. Backend source remains
+the previously deployed `6a034b2`; activation/evaluation used existing endpoints
+and required no new AWS infrastructure rollout.
+
 Guardian intent `9af2782d-f80b-41f8-9bd7-eeefddeb672d` version 2 was approved and
 activated through the signed-in Cognito frontend after explicit owner approval.
 The facade now points to version 2 at revision 3; version 1 remains immutable,
