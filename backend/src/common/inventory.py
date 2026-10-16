@@ -386,6 +386,7 @@ def collect_inventory(region: str | None = None) -> dict[str, Any]:
 
     architecture_coverage = collect_architecture(
         session, nodes, edges, warnings, resource_coverage, region, account_id, collected_at,
+        stack_name=os.environ.get("ARCHITECTURE_STACK_NAME"),
         api_enabled=os.environ.get("API_ARCHITECTURE_INVENTORY_ENABLED", "false").lower() == "true",
         iam_enabled=os.environ.get("IAM_ARCHITECTURE_INVENTORY_ENABLED", "false").lower() == "true",
         cognito_enabled=os.environ.get("COGNITO_ARCHITECTURE_INVENTORY_ENABLED", "false").lower() == "true",

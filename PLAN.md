@@ -435,9 +435,13 @@ responses without replacing existing `evidence` fields.
 
 Deterministic outcomes stop before any model call. Only unknown/unruled topology
 candidates go through `LLMClient` with Bedrock and deterministic mock implementations.
-Return a strict allowlisted schema: verdict, candidate IDs, cited evidence IDs,
-reason and confidence; reject additional executable instructions/actions,
-unrecognized IDs, oversized output and malformed JSON. Model text is never code.
+Return a strict closed model schema containing only candidateId, verdict and
+explanation. Candidate binding, output bounds and duplicate-key validation are
+server enforced. Evidence IDs/provenance come from independent adapters, and
+confidence is computed by the server outside the model. Reject unknown fields,
+unrecognized candidate IDs, oversized output and malformed JSON. A single exact
+whole JSON fence may wrap the object; surrounding prose is rejected. Model text
+is never code.
 
 Corroboration compares the same time-scoped predicate across at least two genuinely
 independent source families; two adapters over the same EC2 response count as one.
@@ -445,19 +449,24 @@ Inventory presence and a CloudTrail change event do not automatically corroborat
 an end-to-end reachability claim. Persist each source's verdict, provenance,
 freshness and limitations. Missing/disagreeing sources produce
 `reviewStatus:NEEDS_HUMAN_REVIEW`, confidence LOW, and no actionable proposal.
-Bedrock disabled/denied/error preserves deterministic results and records the
-unreviewed candidate. Compare snapshot history before calling a difference a new
-change; first-run unruled topology is explicitly labelled baseline ambiguity.
+Bedrock denied/error preserves deterministic results and records the unreviewed
+candidate when escalation is enabled. Disabled escalation makes no model call.
+Unruled topology is baseline ambiguity and makes no historical topology delta
+assertion. Separate snapshot drift history records factual changes; escalation
+does not currently bind its advisory candidate to that historical comparison.
 
 ### Phase 5: gated proposals
 
 Registry contains only prewritten revoke-open-SSH and enable-S3-public-access-block
-actions. Proposal stores exact target/rule, before/after dry-run diff, dependencies,
-blast radius, rollback plan, finding/evidence hash, expiry and approval actor.
+actions. Proposal stores exact target/rule, before/after dry-run diff, rollback
+plan, finding/evidence hash, expiry and approval actor. Dependency and attachment
+blast-radius enumeration are not implemented; their impact remains UNKNOWN.
 Server derives parameters from validated evidence, not arbitrary requested APIs
 or model output. A revoke action identifies the exact ingress permission; never
 remove unrelated rules. S3 rollback distinguishes prior configuration from absence.
-SG impact enumerates all attachments; incomplete/high impact requires human review.
+SG attachment blast radius remains unverified and UNKNOWN. All proposals require
+explicit human approval; modifying remediation stays disabled/dry-run in the live
+prototype. Read-only SG attachment enumeration is a future extension.
 
 Propose existing spec-compatible request/list/detail/decision routes plus a separate
 explicit execute endpoint. Approval never executes as a side effect. Execution

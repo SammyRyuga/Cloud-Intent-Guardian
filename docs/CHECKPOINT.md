@@ -1,3 +1,12 @@
+# Completion status - 2026-10-16
+
+This historical checkpoint has been superseded by the completion release at the
+start of INTEGRATION.md and backend/VALIDATION.md. Follow those current receipts
+for deployed status and remaining evidence limits. The collector scoping, SAM
+wiring, real DynamoDB Local drift journey, strict regional Bedrock parsing and
+three owner-approved finding suppressions described below are now implemented
+and verified within the boundaries documented there.
+
 # Remaining work checkpoint - 2026-10-16
 
 The owner requested that tested work be pushed before usage limits. No new cloud

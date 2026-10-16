@@ -5,6 +5,7 @@ import os
 from boto3.dynamodb.conditions import Attr
 from common.http import _json_default
 from common.evaluation_jobs import JobError
+from common.topology import STRUCTURAL_TYPES
 
 
 def enabled():
@@ -28,7 +29,7 @@ def factual(row):
     # Collection-time evidence is retained in the immutable source artifact, not
     # compared as configuration. Unknown fields are deliberately not copied.
     return {key: row[key] for key in ('id', 'resourceId', 'resourceType', 'type', 'name', 'region', 'accountId', 'properties',
-            'attributes', 'tags', 'sourceId', 'targetId', 'relationship', 'edgeType', 'observationKind', 'status') if key in row}
+            'attributes', 'tags', 'sourceId', 'targetId', 'relationship', 'edgeType', 'protocol', 'ports', 'port', 'direction', 'configurationState', 'mappingState', 'observationKind', 'status') if key in row}
 
 
 def changes(before, after, job, timestamp, previous_id):
@@ -36,12 +37,22 @@ def changes(before, after, job, timestamp, previous_id):
         return []  # coverage changes establish a new baseline, never deletions
     rows = []
     for kind, collection in [('RESOURCE', 'items'), ('EDGE', 'edges')]:
-        if kind == 'EDGE' and (not after.get('meta', {}).get('coverage', {}).get('relationshipTypes') or any(state not in {'COMPLETE', 'UNSUPPORTED'} for state in after.get('meta', {}).get('coverage', {}).get('relationshipTypes', {}).values())):
-            continue
         def identity(row):
             return row.get('resourceId') or row.get('id') or (canonical([row.get('sourceId'), row.get('targetId'), row.get('type')]) if kind == 'EDGE' else None)
-        old = {identity(r): factual(r) for r in before.get(collection, []) if identity(r)}
-        new = {identity(r): factual(r) for r in after.get(collection, []) if identity(r)}
+        def covered(row):
+            if kind != 'EDGE':
+                return True
+            typ = row.get('type') or row.get('relationshipType') or row.get('edgeType')
+            family = 'STRUCTURAL' if typ in STRUCTURAL_TYPES else None
+            # An explicit exact-type status takes precedence over family status.
+            # In particular, PARTIAL cannot inherit COMPLETE from STRUCTURAL.
+            for snapshot in (before, after):
+                states = snapshot.get('meta', {}).get('coverage', {}).get('relationshipTypes', {})
+                if states.get(typ, states.get(family)) != 'COMPLETE':
+                    return False
+            return True
+        old = {identity(r): factual(r) for r in before.get(collection, []) if identity(r) and covered(r)}
+        new = {identity(r): factual(r) for r in after.get(collection, []) if identity(r) and covered(r)}
         for identity in sorted(old.keys() | new.keys()):
             if old.get(identity) == new.get(identity):
                 continue
@@ -51,7 +62,7 @@ def changes(before, after, job, timestamp, previous_id):
                    'timestamp': timestamp, 'resourceId': identity, 'resourceType': (new.get(identity) or old[identity]).get('resourceType', (new.get(identity) or old[identity]).get('type', kind)),
                    'entityKind': kind, 'eventType': event_type, 'diffSummary': f'{kind.title()} {event_type.lower()} between complete observations',
                    'evaluationId': job['evaluationId'], 'previousEvaluationId': previous_id,
-                   'intentId': job['intentId'], 'intentVersion': job['intentVersion'], 'simulated': bool(after.get('simulated'))}
+                   'intentId': job['intentId'], 'intentVersion': job['intentVersion'], 'simulated': bool(after.get('simulated') or after.get('meta', {}).get('simulated'))}
             if identity in old:
                 row['previousState'] = old[identity]
             if identity in new:

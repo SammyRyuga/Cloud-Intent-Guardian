@@ -284,13 +284,13 @@ bash -n scripts/diagnose-local.sh
 sam validate --lint
 ```
 
-The earlier persistence patch passed seven SDK-stubbed tests. The integration work additionally passed thirteen Python tests, seventeen frontend tests, SAM validation/build, real local persistence and two browser journeys. Cognito and live AWS discovery remain unverified; see [INTEGRATION.md](INTEGRATION.md). [Validation record](backend/VALIDATION.md).
+The earlier persistence patch passed seven SDK-stubbed tests. The integration work additionally passed thirteen Python tests, seventeen frontend tests, SAM validation/build, real local persistence and two browser journeys. Those counts describe the initial integration only. Current deployed Cognito and AWS checks are recorded in [INTEGRATION.md](INTEGRATION.md). [Validation record](backend/VALIDATION.md).
 
-Inventory cap handling, bounded evaluation scans, TCP-specific SSH checking, finding-write error handling and conditional approval were corrected during integration. Next add async evaluation/history and audit contracts. Bedrock and remediation remain later phases.
+Inventory cap handling, bounded evaluation scans, TCP-specific SSH checking, finding-write error handling and conditional approval were corrected during integration. Async evaluation/history, audit, advisory Bedrock escalation and gated dry-run remediation are implemented; current release evidence is recorded at the start of INTEGRATION.md and backend/VALIDATION.md.
 
 ## AWS Academy deployment - requires explicit authorization
 
-Do not run deployment as part of local setup. Review the lab-approved region and permissions, whether it permits IAM role creation or requires an existing role, the frontend origin and the SAM change set. The current template creates roles and is not yet verified against Academy restrictions.
+Do not run deployment as part of local setup. Review the lab-approved region and permissions, whether it permits IAM role creation or requires an existing role, the frontend origin and the SAM change set. The current template creates roles unless ExistingExecutionRoleArn supplies a pre-approved role. Academy restrictions remain unverified; the owner-authorized prototype uses a normal AWS account.
 
 Permission review covers packaging S3, CloudFormation, Lambda, IAM, API Gateway, Cognito, DynamoDB, CloudWatch logs and read-only inventory. Review least privilege and indexes against agreed access patterns. Cost review covers Lambda, API Gateway, on-demand DynamoDB, Cognito, logs, packaging S3 and any optional Config recording. No fixed cost or lab entitlement is asserted.
 

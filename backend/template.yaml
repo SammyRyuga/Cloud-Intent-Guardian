@@ -12,6 +12,21 @@ Metadata:
         scope: project
 
 Parameters:
+  EnableAPIArchitecture:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Read-only exact-stack HTTP API route and JWT wiring discovery.
+  EnableIAMArchitecture:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Read-only exact-stack execution role and declared policy discovery. Does not prove effective authorization.
+  EnableCognitoArchitecture:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Verify only the exact-stack Cognito pool referenced by the HTTP API issuer.
   EnableDriftHistory:
     Type: String
     Default: 'false'
@@ -120,6 +135,10 @@ Rules:
         AssertDescription: Optional Bedrock escalation requires an exact model permission ARN.
 
 Conditions:
+  APIArchitectureEnabled: !Equals [!Ref EnableAPIArchitecture, 'true']
+  IAMArchitectureEnabled: !Equals [!Ref EnableIAMArchitecture, 'true']
+  CognitoArchitectureEnabled: !Equals [!Ref EnableCognitoArchitecture, 'true']
+  AnyArchitectureEnabled: !Or [!Equals [!Ref EnableAPIArchitecture, 'true'], !Equals [!Ref EnableIAMArchitecture, 'true'], !Equals [!Ref EnableCognitoArchitecture, 'true']]
   NetworkOrEvidenceEnabled: !Or [!Equals [!Ref EnableNetworkEvidence, 'true'], !Equals [!Ref EnableEvidenceSources, 'true']]
   DynamoDBInventoryEnabled: !Equals [!Ref EnableDynamoDBInventory, 'true']
   ServerlessRelationshipsEnabled: !Equals [!Ref EnableServerlessRelationships, 'true']
@@ -148,6 +167,10 @@ Globals:
         CIG_FIXTURE_SCENARIO: benign
         TOPOLOGY_ENABLED: 'true'
         CIG_ACCOUNT_ID: !Ref AWS::AccountId
+        ARCHITECTURE_STACK_NAME: !Ref AWS::StackName
+        API_ARCHITECTURE_INVENTORY_ENABLED: !Ref EnableAPIArchitecture
+        IAM_ARCHITECTURE_INVENTORY_ENABLED: !Ref EnableIAMArchitecture
+        COGNITO_ARCHITECTURE_INVENTORY_ENABLED: !Ref EnableCognitoArchitecture
         CIG_LOCAL_ROLE: admin
         REMEDIATIONS_TABLE: !Ref RemediationsTable
         REMEDIATION_ENABLED: !Ref RemediationEnabled
@@ -497,6 +520,36 @@ Resources:
                 - s3:GetBucketPolicyStatus
               Resource: '*'
         - !If
+          - AnyArchitectureEnabled
+          - Statement:
+              - Effect: Allow
+                Action: cloudformation:ListStackResources
+                Resource: !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*
+          - !Ref AWS::NoValue
+        - !If
+          - APIArchitectureEnabled
+          - Statement:
+              - Effect: Allow
+                Action: apigateway:GET
+                # Referencing Api here creates an Api -> function -> role -> Api cycle.
+                # The collector gates reads on exact physical IDs from this stack.
+                Resource: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}::/apis/*
+          - !Ref AWS::NoValue
+        - !If
+          - IAMArchitectureEnabled
+          - Statement:
+              - Effect: Allow
+                Action: [iam:ListRolePolicies, iam:GetRolePolicy, iam:ListAttachedRolePolicies, iam:GetPolicy, iam:GetPolicyVersion]
+                Resource: '*'
+          - !Ref AWS::NoValue
+        - !If
+          - CognitoArchitectureEnabled
+          - Statement:
+              - Effect: Allow
+                Action: cognito-idp:DescribeUserPool
+                Resource: !GetAtt UserPool.Arn
+          - !Ref AWS::NoValue
+        - !If
           - LambdaInventoryEnabled
           - Statement:
               - Effect: Allow
@@ -825,6 +878,36 @@ Resources:
             - Effect: Allow
               Action: [sts:GetCallerIdentity, ec2:DescribeInstances, ec2:DescribeVpcs, ec2:DescribeSubnets, ec2:DescribeSecurityGroups, rds:DescribeDBInstances, rds:DescribeDBSubnetGroups, s3:ListAllMyBuckets, s3:GetBucketLocation, s3:GetBucketPublicAccessBlock, s3:GetBucketPolicyStatus]
               Resource: '*'
+        - !If
+          - AnyArchitectureEnabled
+          - Statement:
+              - Effect: Allow
+                Action: cloudformation:ListStackResources
+                Resource: !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*
+          - !Ref AWS::NoValue
+        - !If
+          - APIArchitectureEnabled
+          - Statement:
+              - Effect: Allow
+                Action: apigateway:GET
+                # Referencing Api here creates an Api -> function -> role -> Api cycle.
+                # The collector gates reads on exact physical IDs from this stack.
+                Resource: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}::/apis/*
+          - !Ref AWS::NoValue
+        - !If
+          - IAMArchitectureEnabled
+          - Statement:
+              - Effect: Allow
+                Action: [iam:ListRolePolicies, iam:GetRolePolicy, iam:ListAttachedRolePolicies, iam:GetPolicy, iam:GetPolicyVersion]
+                Resource: '*'
+          - !Ref AWS::NoValue
+        - !If
+          - CognitoArchitectureEnabled
+          - Statement:
+              - Effect: Allow
+                Action: cognito-idp:DescribeUserPool
+                Resource: !GetAtt UserPool.Arn
+          - !Ref AWS::NoValue
         - !If
           - LambdaInventoryEnabled
           - Statement:

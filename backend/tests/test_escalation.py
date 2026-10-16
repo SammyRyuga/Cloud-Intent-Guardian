@@ -130,3 +130,54 @@ class EscalationTests(unittest.TestCase):
                 {'modelId': 'test-model', 'system': ANY, 'messages': ANY, 'inferenceConfig': {'maxTokens': 512, 'temperature': 0}})
             self.assertEqual(BedrockLLMClient(sdk, 'test-model').assess({'candidateId': 'id'}), conclusion)
             stub.assert_no_pending_responses()
+
+
+    def test_exact_whole_json_fence_accepts_only_closed_bound_object(self):
+        good = {'candidateId': 'id', 'verdict': 'UNCERTAIN', 'explanation': 'Insufficient evidence.'}
+        raw = json.dumps(good)
+        self.assertEqual(validate_conclusion('```json\n' + raw + '\n```', 'id'), good)
+        for bad in ('prose\n```json\n' + raw + '\n```',
+                    '```json\n' + raw + '\n```\nprose',
+                    '```json\n' + raw + '\n```\n```json\n' + raw + '\n```',
+                    '```json\n' + raw + raw + '\n```',
+                    '```json\n' + raw[:-1] + ',"command":"execute"}\n```',
+                    '```json\n{"candidateId":"id","candidateId":"id","verdict":"UNCERTAIN","explanation":"x"}\n```',
+                    '```json\n' + raw.replace('"id"', '"other"') + '\n```',
+                    '```json\n' + raw):
+            with self.subTest(raw=bad), self.assertRaises(ValueError):
+                validate_conclusion(bad, 'id')
+
+    def test_bedrock_requires_complete_single_text_response(self):
+        good = {'candidateId': 'id', 'verdict': 'UNCERTAIN', 'explanation': 'Insufficient evidence.'}
+        class Client:
+            def converse(self, **request):
+                return self.response
+        client = Client()
+        for stop, blocks in (('max_tokens', [{'text': json.dumps(good)}]),
+                             ('end_turn', [{'text': json.dumps(good)}, {'text': 'extra'}]),
+                             ('tool_use', [{'toolUse': {}}])):
+            client.response = {'stopReason': stop, 'output': {'message': {'content': blocks}}}
+            with self.subTest(stop=stop, blocks=blocks), self.assertRaises(ValueError):
+                BedrockLLMClient(client, 'test-model').assess({'candidateId': 'id'})
+
+
+    def test_positive_unruled_crossing_survives_partial_coverage(self):
+        inventory = scenario_inventory('unruled-crossing')
+        inventory['meta']['coverage']['relationshipTypes']['NETWORK_REACHABILITY'] = 'PARTIAL'
+        pending = candidates(self.intent, inventory)
+        self.assertTrue(any(c['sourceId'] == 'fixture-db' and c['targetId'] == 'i-fixture-web' for c in pending))
+
+    def test_relationship_scope_without_boundaries_retains_unruled_edge(self):
+        intent = {**self.intent, 'trustBoundaries': []}
+        inventory = scenario_inventory('unruled-crossing')
+        inventory['meta']['coverage']['relationshipTypes']['NETWORK_REACHABILITY'] = 'PARTIAL'
+        pending = candidates(intent, inventory)
+        self.assertTrue(any(c['sourceId'] == 'fixture-db' and c['targetId'] == 'i-fixture-web' for c in pending))
+        self.assertFalse(candidates({**intent, 'relationships': []}, inventory))
+        from common.topology import evaluate_topology
+        rows = evaluate_topology(intent, inventory)
+        self.assertTrue(all(r['outcome'] == 'UNKNOWN' for r in rows if r['type'] == 'UNDECLARED_RELATIONSHIP'))
+        inventory['edges'] = [e for e in inventory['edges'] if e['sourceId'] == 'fixture-db']
+        inventory['edges'][0].pop('observationKind')
+        inventory['edges'][0].pop('status')
+        self.assertFalse(candidates(intent, inventory))

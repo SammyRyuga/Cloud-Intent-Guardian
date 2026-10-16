@@ -10,7 +10,7 @@ class DriftEvidenceTests(unittest.TestCase):
     def setUp(self):
         self.job = {'scopeKey': 'account#region', 'evaluationId': 'new', 'intentId': 'intent', 'intentVersion': 2}
         self.before = {'items': [{'resourceId': 'bucket', 'resourceType': 'AWS::S3::Bucket', 'attributes': {'publicAccessBlockEnabled': True}, 'observedAt': 'old'}],
-                       'edges': [{'sourceId': 'function', 'targetId': 'bucket', 'type': 'USES_RESOURCE', 'evidence': [{'observedAt': 'old'}]}],
+                       'edges': [{'sourceId': 'function', 'targetId': 'bucket', 'type': 'DYNAMODB_STREAM_TRIGGER', 'evidence': [{'observedAt': 'old'}]}],
                        'meta': {'coverage': {'resourceTypes': {'AWS::S3::Bucket': 'COMPLETE'}, 'relationshipTypes': {'STRUCTURAL': 'COMPLETE'}}, 'partial': False}}
 
     def diff(self, after):
@@ -34,6 +34,34 @@ class DriftEvidenceTests(unittest.TestCase):
         removed = next(r for r in events if r['eventType'] == 'DELETED')
         self.assertNotIn('currentState', removed)
         self.assertEqual(events, self.diff(after))
+
+    def test_edge_port_changes_and_simulation_are_factual(self):
+        self.before['edges'][0].update(protocol='tcp', ports=[443])
+        after = copy.deepcopy(self.before)
+        after['meta']['simulated'] = True
+        after['edges'][0]['ports'] = [8443]
+        event, = self.diff(after)
+        self.assertEqual(event['eventType'], 'MODIFIED')
+        self.assertEqual(event['previousState']['ports'], [443])
+        self.assertEqual(event['currentState']['ports'], [8443])
+        self.assertTrue(event['simulated'])
+
+    def test_unrelated_partial_coverage_does_not_hide_complete_edges(self):
+        self.before['meta']['coverage']['relationshipTypes'] = {
+            'TAGS': 'PARTIAL', 'STRUCTURAL': 'PARTIAL', 'DYNAMODB_STREAM_TRIGGER': 'COMPLETE'}
+        self.before['edges'][0]['ports'] = [443]
+        after = copy.deepcopy(self.before)
+        after['edges'][0]['ports'] = [8443]
+        event, = self.diff(after)
+        self.assertEqual(event['eventType'], 'MODIFIED')
+        self.assertEqual(event['currentState']['ports'], [8443])
+
+    def test_selected_partial_edge_type_cannot_inherit_complete_family(self):
+        self.before['meta']['coverage']['relationshipTypes'] = {
+            'TAGS': 'PARTIAL', 'STRUCTURAL': 'COMPLETE', 'DYNAMODB_STREAM_TRIGGER': 'PARTIAL'}
+        after = copy.deepcopy(self.before)
+        after['edges'] = []
+        self.assertEqual(self.diff(after), [])
 
     def test_coverage_change_cannot_claim_removed_resources(self):
         after = copy.deepcopy(self.before)
@@ -111,3 +139,23 @@ class DriftCapabilityTests(unittest.TestCase):
             with self.subTest(enabled=enabled), patch.dict(os.environ, {'CIG_LOCAL': 'true', 'DRIFT_HISTORY_ENABLED': enabled}):
                 state = json.loads(lambda_handler(authed(role='viewer'), None)['body'])
                 self.assertEqual(state['features']['driftEvents'], enabled == 'true')
+
+class DriftWorkerJourneyTests(unittest.TestCase):
+    def test_complete_handler_worker_journey(self):
+        import os
+        import boto3
+        from moto import mock_aws
+        from unittest.mock import patch
+        from phase_support import create_tables
+        from verify_drift import verify
+        with patch.dict(os.environ, {'CIG_LOCAL': 'true', 'AWS_REGION': 'ap-south-1',
+                'DRIFT_HISTORY_ENABLED': 'true', 'INVENTORY_PROVIDER': 'fixture',
+                'LLM_ENABLED': 'false', 'AWS_ACCESS_KEY_ID': 'test', 'AWS_SECRET_ACCESS_KEY': 'test'}, clear=True), mock_aws():
+            db = boto3.resource('dynamodb', region_name='ap-south-1')
+            create_tables(db)
+            from contextlib import ExitStack
+            with ExitStack() as stack:
+                stack.enter_context(patch('common.dynamodb.dynamodb_resource', return_value=db))
+                for module in ('intents', 'approve_intent', 'evaluations', 'drift_events', 'versions'):
+                    stack.enter_context(patch(module + '.app.dynamodb_resource', return_value=db))
+                self.assertTrue(verify(db)['passed'])

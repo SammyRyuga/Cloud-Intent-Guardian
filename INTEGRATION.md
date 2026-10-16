@@ -1,3 +1,53 @@
+## Completion release validation (2026-10-16)
+
+This section supersedes the older checkpoint below. The optional API, IAM and
+Cognito collectors now resolve exact CloudFormation physical IDs, including
+truncated function names, and have SAM feature flags and conditional read-only
+permissions. API routes, JWT authorizers/issuers, function-role associations and
+policy declarations are configuration evidence. Declared IAM allows do not prove
+effective authorization; network and application access remain separate claims.
+The bounded collector uses six role readers, 100 requests, 400 total rows and a
+12-second deadline, with incomplete coverage on denial, caps or missing scope.
+
+Drift now preserves protocol/ports, labels fixture evidence correctly, and gates
+changes by exact resource/edge coverage rather than unrelated partial tag reads.
+The eight-table DynamoDB Local journey passed baseline/change/retry/publication,
+pagination/detail, partial-snapshot deletion prevention and new-version baseline
+checks. It used an isolated loopback-bound official DynamoDB Local JAR because
+Docker Desktop was unavailable; no existing database was replaced. Reproduce with
+`backend/scripts/verify_drift.py` after `local_db.py init`. Receipt (ignored):
+`backend/local-evidence/drift-verification.json`.
+
+Regional synthetic Bedrock calls to `google.gemma-3-4b-it` succeeded twice in
+ap-south-1 (648 total tokens). The exact live response passes the strict client
+parser. Only a whole JSON object or an exact whole json code fence is accepted;
+extra keys, duplicate keys, wrong candidate bindings and surrounding text fail.
+Witnessed unruled crossings remain eligible for review under partial coverage.
+Missing required edges without a witnessed path never become path-present model
+candidates. Relationship-only v2 policies also surface positive undeclared
+relationships; legacy attribute-only manifests keep their existing behavior.
+Two independent predicate/snapshot-bound sources remain mandatory for accepting
+an advisory conclusion. Missing sources, disagreement, model errors and access
+denial remain human-review outcomes. This does not prove deployed worker-role
+Bedrock invocation or real packet reachability. No cross-region inference or
+Marketplace agreements were used.
+
+Owner-approved review suppressed exactly three historical missing-EC2 findings
+through the deployed lifecycle handler, with optimistic revisions and an atomic
+audit event for each. Both previously reviewed public-SSH findings remain OPEN;
+newer findings were not changed. No AWS resource remediation occurred.
+
+Local checks: 207 backend tests and SAM lint/build passed after the collector
+fixes. Frontend checks: 37 tests, 16 contract checks, strict TypeScript production
+build and lint passed (two existing Fast Refresh warnings). Lifecycle controls
+require a suppression reason and expected revision, preserve server failures,
+and expose audited suppression/reopen provenance. Evaluation submission uses an
+explicit approved intent and active version, with paginated selection; no silent
+newest-intent fallback. Cloud rollout receipts will be recorded below after execution. Academy IAM role creation, optional service permissions
+and Bedrock entitlement remain unverified in an Academy account. The normal
+owner-authorized ap-south-1 account is distinct from Academy. Remediation remains
+disabled/dry-run; unsupported or absent evidence is never converted to PASS.
+
 ## Remaining-work checkpoint (2026-10-16)
 
 Saved locally tested snapshot-drift API/UI and disabled API/IAM/Cognito collector

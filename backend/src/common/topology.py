@@ -623,7 +623,7 @@ def _boundary_outcome(rule: dict[str, Any], intent: dict[str, Any], inventory: d
         return _outcome(rid, "TRUST_BOUNDARY_CROSSING", "VIOLATION", severity, "An explicit boundary DENY or bypassed required intermediary has a witnessed path.", witnesses, evidence)
     # Unlisted crossings are intentionally ambiguous candidates, not violations.
     if incomplete:
-        return _outcome(rid, "TRUST_BOUNDARY_CROSSING", "UNKNOWN", severity, "Boundary membership or directed edge coverage is insufficient to assess crossings.", evidence=evidence)
+        return _outcome(rid, "TRUST_BOUNDARY_CROSSING", "UNKNOWN", severity, "Boundary membership or directed edge coverage is insufficient to assess all crossings; any supplied witnesses remain baseline ambiguities.", unlisted_witnesses, evidence)
     if unlisted_witnesses:
         evidence.append({"candidateCrossings": unlisted_witnesses})
         return _outcome(rid, "TRUST_BOUNDARY_CROSSING", "UNKNOWN", severity, "An observed boundary crossing has no explicit rule and remains an ambiguous candidate.", unlisted_witnesses, evidence)
@@ -752,6 +752,34 @@ def evaluate_topology(intent: dict[str, Any], inventory: dict[str, Any]) -> list
                     "crossingRules": [crossing], "severity": crossing.get("severity", "MEDIUM"),
                     "edgeTypes": boundary.get("edgeTypes", list(DEFAULT_EDGE_TYPES))}
             outcomes.append(_constraint_outcome(rule, intent, inventory, resolved))
+    # Relationship declarations establish a comparison scope even without zones.
+    # Only positively evidenced edges of declared types between unambiguous mapped
+    # components qualify. Legacy attribute-only intents never enter this path.
+    if intent.get("relationships") and not intent.get("trustBoundaries"):
+        declarations = intent["relationships"]
+        selected_types = {_edge_category({"type": d.get("relationshipType", DEFAULT_EDGE_TYPES[0])}) for d in declarations}
+        observed, _ = _edge_list(inventory, selected_types)
+        mapped = {rid: cid.get("id") for cid in (intent.get("components") or [])
+                  for rid in _component_ids(resolved, cid.get("id"))
+                  if not resolved.get("unknown", {}).get(cid.get("id"))}
+        represented_edges = {(e.get("sourceId"), e.get("targetId"))
+                             for row in outcomes for w in row.get("witnesses", [])
+                             for e in w.get("path", [])}
+        for edge in observed:
+            source, target = edge.get("sourceId"), edge.get("targetId")
+            if source not in mapped or target not in mapped or (source, target) in represented_edges:
+                continue
+            if not _adequate_edge(edge, {_expected_edge_kind(str(edge.get("type", "")))}):
+                continue
+            if any(source in _component_ids(resolved, d.get("from"))
+                   and target in _component_ids(resolved, d.get("to"))
+                   and _edge_category({"type": d.get("relationshipType", DEFAULT_EDGE_TYPES[0])}) == _edge_category(edge)
+                   and _declaration_matches_edge(edge, d) is not False for d in declarations):
+                continue
+            key = hashlib.sha256(f"{source}|{target}|{edge.get('type')}".encode()).hexdigest()[:24]
+            outcomes.append(_outcome("unruled:" + key, "UNDECLARED_RELATIONSHIP", "UNKNOWN", "MEDIUM",
+                "An observed directed relationship between mapped components has no matching declaration; baseline ambiguity requires review.",
+                [{"resourceId": target, "sourceId": source, "targetId": target, "path": [_witness_edge(edge)]}]))
     return sorted(outcomes, key=lambda row: row["ruleId"])
 
 
