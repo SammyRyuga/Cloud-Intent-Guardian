@@ -134,7 +134,11 @@ export function ManifestIntentsPage() {
         <label htmlFor="manifest" className="block text-sm mb-2">
           JSON manifest
         </label>
+        <p id="manifest-starter-help" className="text-sm text-graphite mb-3">
+          The starter is a fictional EC2/RDS example. Replace its components and selectors with your target application's actual resource IDs or tags. Review the full manifest before approving it as the monitoring baseline.
+        </p>
         <textarea
+          aria-describedby="manifest-starter-help"
           id="manifest"
           value={manifest}
           onChange={(event) => setManifest(event.target.value)}
