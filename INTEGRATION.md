@@ -1,3 +1,35 @@
+## Evaluation status consistency correction (2026-10-16)
+
+Overview no longer treats the POST acceptance snapshot as current job status.
+Its acceptance acknowledgement contains the evaluation ID; the polled detail
+supplies the current status. Terminal transitions invalidate evaluation history
+and dependent results, keyed by evaluation ID so consecutive runs ending in the
+same status also refresh. The visible history page polls unfinished jobs for a
+bounded window, covering runs started before this page was opened and brief GSI
+propagation delays. Polling stops for terminal jobs and forbidden/not-found responses.
+Existing /v1 routes, 202 acceptance envelopes and stored statuses are unchanged.
+
+PARTIAL detail explains that full conformance is unavailable and displays
+server-provided UNKNOWN rule explanations and warnings. This does not upgrade
+incomplete evidence to success. Strongly consistent inspection of the reported
+job b965dfb2-5911-4a1e-b1f8-e6fab74ac6c4 confirmed PARTIAL, 25 resources,
+two violations, four unknown rules and no warnings. Unknowns concern database
+component resolution, boundary membership/edge coverage and relationship endpoint
+resolution. The dashboard counts active findings across the configured scope;
+that count is distinct from violations produced by this individual run.
+
+GPT-6.1 Sol independently ran all 145 backend tests, SAM lint/build and the
+isolated DynamoDB Local five-scenario verifier with escalation and remediation.
+All passed, including version/audit checks and dry-run proposals. Evidence:
+`/private/tmp/cig-status-validation-topology.json`. The temporary verification
+container was removed. The GPT-6.1 Sol frontend verification passed 32 unit
+tests, 13 contract tests, lint (two existing Fast Refresh warnings), production
+TypeScript/Vite build and a controlled rendered Chrome regression. The regression
+covers pre-existing QUEUED history plus four successive runs: PARTIAL, PARTIAL,
+SUCCEEDED and FAILED, checking convergence, explanations, errors and button state.
+Installed Chrome was used via a temporary Playwright configuration because the
+bundled Chromium executable was unavailable. Release verification follows below.
+
 ## Overview evaluation and proposal count correction (2026-10-16)
 
 A live read found no saved intents in the demo account. Evaluation therefore

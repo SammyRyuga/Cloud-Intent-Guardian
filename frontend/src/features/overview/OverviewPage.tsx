@@ -31,12 +31,11 @@ export function OverviewPage() {
 
   useEffect(() => {
     if (currentStatus === 'SUCCEEDED' || currentStatus === 'PARTIAL' || currentStatus === 'FAILED') {
-      queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary() });
-      queryClient.invalidateQueries({ queryKey: ['findings'] });
-      queryClient.invalidateQueries({ queryKey: ['architecture'] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.audit() });
+      for (const queryKey of [...queryKeys.evaluationResults(), queryKeys.evaluationLists()]) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
     }
-  }, [currentStatus, queryClient]);
+  }, [currentStatus, activeEvaluationId, queryClient]);
 
   const handleRunEvaluation = () => {
     runEvaluation.mutate(undefined, {
@@ -56,8 +55,8 @@ export function OverviewPage() {
         <Button
           variant="primary"
           onClick={handleRunEvaluation}
-          isLoading={runEvaluation.isPending || isEvaluationActive}
-          disabled={runEvaluation.isPending || isEvaluationActive || !evaluationsEnabled}
+          isLoading={runEvaluation.isPending || isEvaluationActive || Boolean(activeEvaluationId && activeEvaluation.isLoading)}
+          disabled={runEvaluation.isPending || isEvaluationActive || Boolean(activeEvaluationId && activeEvaluation.isLoading) || !evaluationsEnabled}
         >
           <Play className="w-3.5 h-3.5 mr-2 stroke-[1.5]" />
           {evaluationsEnabled ? 'Run evaluation' : 'AWS evaluation not enabled locally'}
@@ -71,9 +70,15 @@ export function OverviewPage() {
           {evaluationErrorGuidance.label}
         </Link>}
       </div>}
-      {runEvaluation.data && <p role="status" className="text-sm">Evaluation accepted as {runEvaluation.data.evaluation.status}. ID: {runEvaluation.data.evaluation.evaluationId}</p>}
+      {runEvaluation.data && <p role="status" className="text-sm">Evaluation request accepted. ID: {runEvaluation.data.evaluation.evaluationId}</p>}
       {activeEvaluation.error && <p role="alert" className="text-sm text-sev-critical">Evaluation status could not be loaded: {activeEvaluation.error.message}</p>}
       {activeEvaluation.data && <div className="flex items-center gap-3 text-sm"><p role="status">Evaluation {activeEvaluation.data.item.status.toLowerCase()}. ID: {activeEvaluation.data.item.evaluationId}{activeEvaluation.data.item.progressStage ? ` · ${activeEvaluation.data.item.progressStage}` : ''}</p><Button variant="secondary" size="sm" onClick={() => activeEvaluation.refetch()}>Refresh status</Button></div>}
+      {activeEvaluation.data?.item.status === 'PARTIAL' && <div role="status" className="text-sm text-sev-medium">
+        <p>Evaluation completed with incomplete coverage. Review the reported coverage gaps before using these results.</p>
+        {activeEvaluation.data.item.ruleResults?.filter((rule) => rule.outcome === 'UNKNOWN').map((rule) => <p key={rule.ruleId}>{rule.ruleId}: {rule.explanation || 'The backend could not evaluate this rule with the available evidence.'}</p>)}
+        {activeEvaluation.data.item.warnings?.map((warning, index) => <p key={index}>{warning.source ? `${warning.source}: ` : ''}{warning.message}</p>)}
+      </div>}
+      {activeEvaluation.data?.item.error && <p role="alert" className="text-sm text-sev-critical">{activeEvaluation.data.item.error.message}</p>}
       {summary?.partial && <p role="status" className="text-sm text-sev-medium">Stored data is incomplete. Some counts or conformance results may be unavailable.</p>}
       <StateBoundary
         isLoading={isLoading}

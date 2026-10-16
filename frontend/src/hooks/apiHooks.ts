@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+import { evaluationPollInterval } from '@/utils/evaluationPolling';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/api/apiClient';
 import { endpoints } from '@/api/endpoints';
@@ -190,13 +192,15 @@ export function useRunEvaluation() {
         { method: 'POST' }
       ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.evaluations() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.evaluationLists() });
       queryClient.invalidateQueries({ queryKey: queryKeys.audit() });
     },
   });
 }
 
 export function useEvaluations(filters?: { cursor?: string; intentId?: string; status?: string }) {
+  const pollStartedAt = useRef<number | null>(null);
+  useEffect(() => { pollStartedAt.current = Date.now(); }, [filters?.cursor, filters?.intentId, filters?.status]);
   const systemStatus = useSystemStatus();
   const params = new URLSearchParams({ limit: '25' });
   if (filters?.cursor) params.set('nextToken', filters.cursor);
@@ -207,10 +211,17 @@ export function useEvaluations(filters?: { cursor?: string; intentId?: string; s
     queryFn: () => apiClient(endpoints.evaluations(params.toString()), B.EvaluationsSchema),
     staleTime: 10000,
     enabled: hasCapability('evaluations', systemStatus.data),
+    refetchInterval: (query) => {
+      if (query.state.error instanceof ApiError && [403, 404].includes(query.state.error.status ?? 0)) return false;
+      return evaluationPollInterval(query.state.data?.items, pollStartedAt.current ?? Date.now());
+    },
+    refetchIntervalInBackground: false,
   });
 }
 
 export function useEvaluation(evaluationId: string | null) {
+  const pollStartedAt = useRef<number | null>(null);
+  useEffect(() => { pollStartedAt.current = Date.now(); }, [evaluationId]);
   return useQuery({
     queryKey: queryKeys.evaluation(evaluationId || ''),
     queryFn: () => apiClient(endpoints.evaluation(evaluationId || ''), B.EvaluationDetailSchema),
@@ -222,8 +233,7 @@ export function useEvaluation(evaluationId: string | null) {
     refetchInterval: (query) => {
       const error = query.state.error;
       if (error instanceof ApiError && (error.status === 403 || error.status === 404)) return false;
-      const status = query.state.data?.item.status;
-      if (status === 'SUCCEEDED' || status === 'PARTIAL' || status === 'FAILED') return false;
+      if (!evaluationPollInterval(query.state.data ? [query.state.data.item] : undefined, pollStartedAt.current ?? Date.now())) return false;
       const createdAt = query.state.data?.item.createdAt;
       if (createdAt && Date.now() - Date.parse(createdAt) >= 15 * 60 * 1000) return false;
       const retryDelay = Math.min(2500 * (2 ** Math.max(0, query.state.fetchFailureCount - 1)), 15000);

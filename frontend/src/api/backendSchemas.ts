@@ -213,6 +213,8 @@ export const EvaluationSchema = z.object({
   finishedAt: z.string().nullable().optional(),
   progressStage: z.string().nullable().optional(),
   summary: EvaluationSummarySchema.nullable().optional(),
+  ruleResults: z.array(z.object({ ruleId: z.string(), outcome: z.string(), explanation: z.string().optional() }).passthrough()).optional(),
+  warnings: z.array(z.object({ source: z.string().optional(), code: z.string().optional(), message: z.string() })).optional(),
   error: z.object({ code: z.string(), message: z.string() }).nullable().optional(),
 }).passthrough();
 export const EvaluationAcceptedSchema = z.object({
