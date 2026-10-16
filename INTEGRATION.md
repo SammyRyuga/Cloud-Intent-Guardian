@@ -1,7 +1,14 @@
 ## Completion cloud receipts (2026-10-16)
 
-- GitHub `main` was pushed through `74168ef` (backend `bf4e836`). Render deploy
-  `dep-db8vvmff3r2c73fkck50` is live at that application commit.
+- GitHub application code was pushed through `caf38fb`; backend completion is
+  `6a034b2` (including `bf4e836`). Render deploy `dep-db904aavcj2c73becemg`
+  is live at `caf38fb`. The final SAM rollout also reached UPDATE_COMPLETE.
+- The deployed normalized-manifest regression passed input validation and
+  returned the expected STALE_INTENT_REVISION 409 with a deliberately stale
+  revision. Consistent before/after reads proved no intent state change.
+  All 209 backend tests, 37 frontend tests, 16 contract checks, frontend lint/build,
+  SAM lint/build and the five earlier Chrome browser journeys passed.
+  The intent editor now labels its fictional EC2/RDS starter explicitly.
 - The AWS stack reached UPDATE_COMPLETE with drift, exact-stack API/IAM/Cognito
   discovery, regional Gemma advisory escalation and evidence adapters enabled.
   Config, tag enrichment and network promotion remain off. Modifying remediation
@@ -72,7 +79,7 @@ A live version-creation check exposed a manifest round-trip defect: normalized
 boundary crossings include `via: []`, which input validation previously rejected.
 Empty optional boundary intermediaries are now accepted without changing canonical
 content or hashes; REQUIRED_INTERMEDIARY still requires a nonempty list.
-Cloud rollout receipts will be recorded below after execution. Academy IAM role creation, optional service permissions
+Current rollout receipts are recorded at the beginning of this document. Academy IAM role creation, optional service permissions
 and Bedrock entitlement remain unverified in an Academy account. The normal
 owner-authorized ap-south-1 account is distinct from Academy. Remediation remains
 disabled/dry-run; unsupported or absent evidence is never converted to PASS.
