@@ -9,6 +9,7 @@ import boto3
 from common.contracts import is_local
 from common.observations import ObservationUnavailable
 from common.serverless_inventory import collect_serverless, STREAM_EDGE, TABLE_TYPE
+from common.architecture_inventory import collect_architecture
 from botocore.exceptions import BotoCoreError, ClientError
 
 MAX_PER_KIND = 250
@@ -383,6 +384,13 @@ def collect_inventory(region: str | None = None) -> dict[str, Any]:
         lambda_enabled=lambda_enabled,
     )
 
+    architecture_coverage = collect_architecture(
+        session, nodes, edges, warnings, resource_coverage, region, account_id, collected_at,
+        api_enabled=os.environ.get("API_ARCHITECTURE_INVENTORY_ENABLED", "false").lower() == "true",
+        iam_enabled=os.environ.get("IAM_ARCHITECTURE_INVENTORY_ENABLED", "false").lower() == "true",
+        cognito_enabled=os.environ.get("COGNITO_ARCHITECTURE_INVENTORY_ENABLED", "false").lower() == "true",
+    )
+
     # Snapshot direct relationships so inverse links never create new inverse-of-inverse links.
     direct = [(node["resourceId"], rel) for node in nodes.values() for rel in list(node.get("relationships", []))]
     for source, rel in direct:
@@ -410,6 +418,7 @@ def collect_inventory(region: str | None = None) -> dict[str, Any]:
     structural_status = "PARTIAL" if any(state != "COMPLETE" for state in resource_coverage.values()
                                            if state != "UNSUPPORTED") else "COMPLETE"
     relationship_coverage = {kind: structural_status for kind in sorted(STRUCTURAL_EDGE_TYPES)}
+    relationship_coverage.update(architecture_coverage)
     relationship_coverage[STREAM_EDGE] = stream_coverage
     relationship_coverage["STRUCTURAL"] = ("PARTIAL" if os.environ.get("SERVERLESS_RELATIONSHIPS_ENABLED", "false").lower() == "true"
                                              and stream_coverage != "COMPLETE" else structural_status)
