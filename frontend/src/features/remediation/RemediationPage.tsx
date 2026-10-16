@@ -1,3 +1,4 @@
+import { AttachmentImpactPanel } from '@/components/common/AttachmentImpactPanel';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useCapability } from '@/hooks/useCapability';
@@ -9,7 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { formatDateTime } from '@/utils/dates';
 
 function JsonValue({ value }: { value: unknown }) {
-  return <pre className="p-2 bg-film rounded border border-rule font-mono text-[11px] whitespace-pre-wrap break-words">{JSON.stringify(value, null, 2)}</pre>;
+  return <pre className="p-2 bg-film rounded border border-rule font-mono text-xs whitespace-pre-wrap break-words">{JSON.stringify(value, null, 2)}</pre>;
 }
 
 export function RemediationPage() {
@@ -122,6 +123,7 @@ export function RemediationPage() {
               <div><h3 className="mb-1 text-xs font-semibold">Rollback</h3><JsonValue value={item.plan.rollback} /></div>
               <div><h3 className="mb-1 text-xs font-semibold">Server plan</h3><p className="text-sm">{item.plan.description}</p>{item.execution && <div className="mt-2 text-xs">Execution: {item.execution.status}{item.execution.completedAt ? ` · ${formatDateTime(item.execution.completedAt)}` : ''}</div>}</div>
             </div>
+            {item.resourceType === 'AWS::EC2::SecurityGroup' && <div className="mt-5"><AttachmentImpactPanel impact={item.plan.attachmentImpact} /></div>}
             {canApprove && <div className="mt-4 border-t border-rule pt-4 space-y-2">
               <label htmlFor="approval-reason" className="block text-xs font-medium">Approval reason</label>
               <textarea id="approval-reason" value={approvalReason} onChange={(event) => setApprovalReason(event.target.value)} rows={2} maxLength={500} className="w-full border border-rule rounded p-2 text-sm" />

@@ -4,7 +4,15 @@ import { StateBoundary } from '@/components/common/StateBoundary';
 import { formatDateTime } from '@/utils/dates';
 import { useSearchParams } from 'react-router-dom';
 import type { AuditEvent } from '@/api/backendSchemas';
+import { CopyableId } from '@/components/common/CopyableId';
 import { Button } from '@/components/ui/Button';
+
+function AuditTarget({ target }: { target: unknown }) {
+  if (target && typeof target === 'object' && 'id' in target && typeof target.id === 'string') {
+    return <div className="mt-1 space-y-1"><p className="text-xs text-graphite">{'type' in target && typeof target.type === 'string' ? target.type : 'Target'}</p><CopyableId id={target.id} /></div>;
+  }
+  return <pre className="text-xs whitespace-pre-wrap break-words">{typeof target === 'string' ? target : JSON.stringify(target)}</pre>;
+}
 
 export function AuditTrailPage() {
   const auditEnabled = useCapability('auditTrail');
@@ -15,9 +23,9 @@ export function AuditTrailPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="font-title text-2xl font-bold text-ink">Immutable Audit Trail</h1>
+        <h1 className="font-title text-2xl font-bold text-ink">Audit trail</h1>
         <p className="text-xs text-graphite mt-1">
-          Server-generated activity in the configured scope (INV-17)
+          Trace evaluation, approval and finding decisions through the server audit record.
         </p>
       </div>
 
@@ -32,8 +40,8 @@ export function AuditTrailPage() {
         onRetry={() => refetch()}
       >
         {data && (
-          <div className="rounded-[12px] border border-rule bg-sheet overflow-hidden">
-            <table className="w-full text-left text-xs">
+          <div className="rounded-[12px] border border-rule bg-sheet overflow-x-auto">
+            <table className="w-full min-w-[800px] text-left text-sm">
               <thead className="bg-film border-b border-rule text-graphite font-medium">
                 <tr>
                   <th className="py-2.5 px-4">Timestamp</th>
@@ -47,16 +55,16 @@ export function AuditTrailPage() {
                 {data.items.map((item: AuditEvent) => (
                   <tr key={item.auditId} className="hover:bg-film/60">
                     <td className="py-3 px-4 text-pencil whitespace-nowrap">{formatDateTime(item.timestamp)}</td>
-                    <td className="py-3 px-4 font-mono font-medium text-ink">{item.actor.displayName || item.actor.sub}</td>
+                    <td className="py-3 px-4 font-medium text-ink">{item.actor.displayName || item.actor.sub}</td>
                     <td className="py-3 px-4">
-                      <span className="font-mono text-[11px] bg-film px-1.5 py-0.5 rounded border border-rule text-ink">
+                      <span className="font-mono text-xs bg-film px-1.5 py-0.5 rounded border border-rule text-ink">
                         {item.action}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-ink/90">
                       <div>{item.result}</div>
-                      <pre className="mt-1 max-w-lg whitespace-pre-wrap break-words font-mono text-[11px] text-pencil">{typeof item.target === 'string' ? item.target : JSON.stringify(item.target)}</pre>
-                      {item.evaluationId && <div className="mt-1 font-mono text-[11px]">Evaluation {item.evaluationId}</div>}
+                      <AuditTarget target={item.target} />
+                      {item.evaluationId && <div className="mt-1 font-mono text-xs">Evaluation {item.evaluationId}</div>}
                     </td>
                     <td className="py-3 px-4 font-mono text-pencil">{item.requestId}</td>
                   </tr>

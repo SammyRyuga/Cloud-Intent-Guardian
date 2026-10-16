@@ -13,7 +13,7 @@ export function Card({
   const paddings = {
     none: 'p-0',
     sm: 'p-3',
-    md: 'p-4',
+    md: 'p-5',
     lg: 'p-6',
   };
 
@@ -42,9 +42,9 @@ export function CardHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className={cn('flex items-start justify-between border-b border-rule pb-3 mb-4', className)}>
+    <div className={cn('flex items-start justify-between border-b border-rule pb-4 mb-4', className)}>
       <div>
-        <h3 className="font-title text-base font-semibold text-ink leading-tight">{title}</h3>
+        <h3 className="text-base font-semibold text-ink leading-tight">{title}</h3>
         {subtitle && <p className="text-xs text-pencil mt-0.5">{subtitle}</p>}
       </div>
       {action && <div>{action}</div>}

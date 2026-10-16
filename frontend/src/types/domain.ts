@@ -95,7 +95,8 @@ export interface Finding {
     citedEvidence: string[];
   };
   evidence?: Array<{source: string; resourceId: string; observedAt: string; details: Record<string, unknown>}>;
-  observed?: Record<string, unknown>;
+  history?: CandidateHistory;
+  observed?: { attachmentImpact?: AttachmentImpact; history?: CandidateHistory; [key: string]: unknown };
   expected?: Record<string, unknown>;
   explanation?: string;
 }
@@ -224,7 +225,7 @@ export interface RemediationRequest {
   reason?: string;
   resourceId: string;
   resourceType: string;
-  plan: { before?: unknown; after?: unknown; rollback?: unknown; description: string };
+  plan: { before?: unknown; after?: unknown; rollback?: unknown; description: string; attachmentImpact?: AttachmentImpact };
   execution?: { dryRun: boolean; status: string; completedAt?: string };
 }
 
@@ -281,4 +282,16 @@ export interface EvaluationRecord {
   progressStage?: string | null;
   summary?: Record<string, unknown> | null;
   error?: { code: string; message: string } | null;
+}
+
+export interface AttachmentImpact {
+  coverage: 'COMPLETE' | 'PARTIAL'; sourceCoverage: Record<string, string>;
+  knownAttachmentCount: number; attachmentCount: number | null;
+  attachments: Array<{ resourceId: string; resourceType: string; source: string | null; interfaceType?: string; status?: string; vpcId?: string; subnetId?: string; instanceId?: string | null }>;
+  observedAt?: string; requiresHumanApproval: true; interpretation: string;
+}
+export interface CandidateHistory {
+  status: 'FIRST_OBSERVATION' | 'PREVIOUSLY_OBSERVED' | 'NEW' | 'UNKNOWN'; reason: string;
+  previousEvaluationId: string | null; driftEventIds: string[];
+  comparisonScope: 'SAME_INTENT_VERSION'; isHistoricalChange: boolean;
 }

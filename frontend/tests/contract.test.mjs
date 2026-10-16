@@ -84,3 +84,22 @@ test('version approval and rollback envelopes are intent facades, not immutable 
   }
   backendSchemas.IntentVersionDetailSchema.parse(wire.draftVersion);
 });
+
+test('attachment impact preserves partial lower bounds and explicit human approval', () => {
+  const impact = { coverage: 'PARTIAL', sourceCoverage: { ec2: 'COMPLETE', lambda: 'PARTIAL' }, knownAttachmentCount: 1, attachmentCount: null, attachments: [{ resourceId: 'eni-fixture', resourceType: 'AWS::EC2::NetworkInterface', source: 'DescribeNetworkInterfaces', interfaceType: 'interface' }], observedAt: '2026-10-16T00:00:00Z', requiresHumanApproval: true, interpretation: 'Attachment records are not a unique workload count.' };
+  const raw = { ...fixtures.mockFindings[0], findingId: fixtures.mockFindings[0].id, firstSeenAt: fixtures.mockFindings[0].detectedAt, observed: { attachmentImpact: impact } };
+  const item = backendSchemas.BackendFindingDetailSchema.parse({ item: raw });
+  assert.equal(item.observed.attachmentImpact.attachmentCount, null);
+  assert.equal(item.observed.attachmentImpact.knownAttachmentCount, 1);
+  assert.equal(item.observed.attachmentImpact.requiresHumanApproval, true);
+  assert.deepEqual(schemas.FindingSchema.parse(item).observed.attachmentImpact, impact);
+});
+
+test('candidate history preserves first observations without inventing historical change', () => {
+  const history = { status: 'FIRST_OBSERVATION', reason: 'The first complete snapshot establishes a baseline.', previousEvaluationId: null, driftEventIds: [], comparisonScope: 'SAME_INTENT_VERSION', isHistoricalChange: false };
+  const raw = { ...fixtures.mockFindings[0], findingId: fixtures.mockFindings[0].id, firstSeenAt: fixtures.mockFindings[0].detectedAt, tier: 'TIER_2', history, observed: { history } };
+  const item = backendSchemas.BackendFindingDetailSchema.parse({ item: raw });
+  assert.deepEqual(item.history, history);
+  assert.equal(schemas.FindingSchema.parse(item).history.isHistoricalChange, false);
+  assert.equal(item.observed.history.previousEvaluationId, null);
+});

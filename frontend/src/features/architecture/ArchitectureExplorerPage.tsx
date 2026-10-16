@@ -1,10 +1,12 @@
 import { env } from '@/config/env';
 import { useCapability } from '@/hooks/useCapability';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   ReactFlow,
   Background,
+  BackgroundVariant,
+  MarkerType,
   Controls,
   type Node,
   type Edge,
@@ -21,52 +23,42 @@ import { formatDiffState } from '@/utils/severity';
 import { formatResourceType } from '@/utils/format';
 import type { GraphNode, DiffState, GraphView } from '@/types/domain';
 import { GraphViewSchema } from '@/api/schemas';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Search, Network, Database, Cpu, Shield, Box, X } from 'lucide-react';
 
 // Custom Node Component per AGENTS.md §5.5
 function ArchitectureNode({ data }: { data: GraphNode }) {
-  const getOutlineClass = (diffState: DiffState) => {
-    switch (diffState) {
-      case 'MATCHED':
-        return 'border-rule-strong bg-sheet';
-      case 'ADDED':
-        return 'border-2 border-sev-medium bg-sheet'; // Unmatched: 2px amber outline
-      case 'MISSING':
-        return 'border-[1.5px] border-dashed border-ink bg-sheet'; // Missing: dashed ink
-      case 'CHANGED':
-        return 'border-2 border-sev-critical bg-sheet'; // Changed: highest finding severity colour
-      case 'UNEXPECTED':
-        return 'border-2 border-graphite bg-sheet'; // UNEXPECTED is a topology classification, not severity
-      case 'UNKNOWN':
-        return 'border-[1.5px] border-dotted border-graphite bg-film'; // UNKNOWN: dotted graphite, neutral (INV-07)
-    }
-  };
-
+  const category = /DynamoDB|RDS|S3/.test(data.resourceType) ? 'data' : /IAM|Cognito/.test(data.resourceType) ? 'identity' : /Lambda|Instance/.test(data.resourceType) ? 'compute' : /ApiGateway|EC2::VPC|Subnet|SecurityGroup/.test(data.resourceType) ? 'network' : 'other';
+  const frame = { compute: 'M12 1H229V77L217 89H1V13Z', network: 'M14 1H216L229 45L216 89H14L1 45Z', data: 'M1 1H229V79H1Z', identity: 'M28 1H202Q229 1 229 28V62Q229 89 202 89H28Q1 89 1 62V28Q1 1 28 1Z', other: 'M1 1H229V89H1Z' }[category];
+  const stateColor = data.diffState === 'CHANGED' ? `var(--color-sev-${(data.severity ?? 'HIGH').toLowerCase()})` : data.diffState === 'ADDED' ? 'var(--color-sev-medium)' : data.diffState === 'MISSING' ? 'var(--color-ink)' : ['UNKNOWN', 'UNEXPECTED'].includes(data.diffState) ? 'var(--color-graphite)' : 'var(--color-rule-strong)';
+  const dash = data.diffState === 'MISSING' ? '6 4' : data.diffState === 'UNKNOWN' ? '2 3' : undefined;
+  const ResourceIcon = /DynamoDB|RDS|S3/.test(data.resourceType) ? Database : /IAM|Cognito/.test(data.resourceType) ? Shield : /Lambda|Instance/.test(data.resourceType) ? Cpu : /ApiGateway|EC2::VPC|Subnet|SecurityGroup/.test(data.resourceType) ? Network : Box;
   return (
-    <div className={`px-4 py-3 rounded-lg shadow-none min-w-[200px] border ${getOutlineClass(data.diffState)} ${data.highlighted ? 'ring-4 ring-prussian ring-offset-2' : ''}`}>
-      <Handle type="target" position={Position.Top} className="!bg-graphite" />
+    <div className={`relative px-5 py-3 shadow-none w-[230px] min-h-[90px] ${data.highlighted ? 'ring-2 ring-prussian ring-offset-4' : ''}`}>
+      <svg className="absolute inset-0 w-full h-full pointer-events-none -z-1" viewBox="0 0 230 90" preserveAspectRatio="none" aria-hidden="true"><path d={frame} fill={data.diffState === 'UNKNOWN' ? 'var(--color-film)' : 'var(--color-sheet)'} stroke={stateColor} strokeWidth={data.diffState === 'MATCHED' ? 1 : 1.5} strokeDasharray={dash} vectorEffect="non-scaling-stroke" />{category === 'data' && <path d="M5 84H225M9 89H221" fill="none" stroke={stateColor} vectorEffect="non-scaling-stroke" />}</svg>
+      {data.diffState === 'CHANGED' && <span className="absolute -top-2 -right-2 text-xs text-sev-high" aria-label="Changed revision">△</span>}
+      <Handle type="target" position={Position.Left} className="!bg-graphite" />
       <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="text-[11px] font-mono text-pencil truncate uppercase">
+        <span className="text-xs text-graphite truncate">
           {formatResourceType(data.resourceType)}
         </span>
         {data.diffState !== 'MATCHED' && (
-          <span className="text-[10px] font-medium font-sans px-1.5 py-0.5 rounded bg-film border border-rule">
+          <span className="text-xs font-medium font-sans px-1.5 py-0.5 rounded bg-film border border-rule">
             {formatDiffState(data.diffState)}
           </span>
         )}
       </div>
 
-      <div className="font-mono text-xs font-semibold text-ink truncate mb-2" title={data.label}>
-        {data.label}
+      <div className="text-sm font-semibold text-ink truncate flex items-center gap-2 mb-2" title={data.label}>
+        <ResourceIcon className="w-4 h-4 shrink-0 stroke-[1.5]" />{data.label}
       </div>
 
       {data.severity && (
         <div className="pt-1.5 border-t border-rule flex items-center justify-between">
           <SeverityBadge severity={data.severity} compact />
-          <span className="text-[11px] text-pencil">{data.findingCount || 1} finding</span>
+          <span className="text-xs text-pencil">{data.findingCount !== undefined ? `${data.findingCount} findings` : 'Finding reported'}</span>
         </div>
       )}
-      <Handle type="source" position={Position.Bottom} className="!bg-graphite" />
+      <Handle type="source" position={Position.Right} className="!bg-graphite" />
     </div>
   );
 }
@@ -88,10 +80,10 @@ const diffStateLegend: Array<{ state: DiffState; swatch: string }> = [
 function getLayoutedElements(nodes: Node[], edges: Edge[]) {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
-  dagreGraph.setGraph({ rankdir: 'TB', ranksep: 60, nodesep: 50 });
+  dagreGraph.setGraph({ rankdir: 'LR', ranksep: 110, nodesep: 32 });
 
   nodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: 220, height: 90 });
+    dagreGraph.setNode(node.id, { width: 230, height: 90 });
   });
 
   edges.forEach((edge) => {
@@ -105,7 +97,7 @@ function getLayoutedElements(nodes: Node[], edges: Edge[]) {
     return {
       ...node,
       position: {
-        x: nodeWithPosition.x - 110,
+        x: nodeWithPosition.x - 115,
         y: nodeWithPosition.y - 45,
       },
     };
@@ -127,6 +119,13 @@ export function ArchitectureExplorerPage() {
   const intents = useManifestIntents();
   const versions = useIntentVersions(intentId || '', undefined);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const [resourceSearch, setResourceSearch] = useState('');
+  const [surface, setSurface] = useState<'canvas' | 'list'>(() => window.matchMedia('(max-width: 767px)').matches ? 'list' : 'canvas');
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
+  const inspectNode = (node: GraphNode) => { previousFocus.current = document.activeElement as HTMLElement; setSelectedNode(node); };
+  const closeDetails = () => { setSelectedNode(null); previousFocus.current?.focus(); };
+  useEffect(() => { if (selectedNode) drawerRef.current?.focus(); }, [selectedNode]);
 
   const { data: graphData, isLoading, isError, error, refetch } = useArchitectureGraph(currentView, { intentId, version });
 
@@ -163,7 +162,12 @@ export function ArchitectureExplorerPage() {
         id: e.id,
         source: e.source,
         target: e.target,
-        label: e.relationshipType,
+        label: ({ NETWORK_REACHABILITY: 'Network reachability', NETWORK_PERMISSION: 'Network permission', DYNAMODB_STREAM_TRIGGER: 'Stream trigger', API_ROUTE: 'API route', API_INTEGRATION: 'API integration', JWT_AUTHORIZER: 'JWT authorizer', JWT_ISSUER: 'JWT issuer', ASSUMES_ROLE: 'Assumes role', IAM_DECLARED_PERMISSION: 'Declared permission', IN_SUBNET: 'In subnet', BELONGS_TO_VPC: 'Belongs to VPC', USES_SECURITY_GROUP: 'Uses security group', IN_VPC: 'In VPC' } as Record<string, string>)[e.relationshipType] ?? e.relationshipType,
+        ariaLabel: e.relationshipType,
+        type: 'smoothstep',
+        markerEnd: { type: MarkerType.ArrowClosed, width: 14, height: 14 },
+        labelStyle: { fontSize: 12, fill: 'var(--color-graphite)' },
+        labelBgStyle: { fill: 'var(--color-sheet)' },
         style: { stroke: strokeStyle, strokeDasharray: strokeDash, strokeWidth: 1.5 },
       };
     });
@@ -171,6 +175,11 @@ export function ArchitectureExplorerPage() {
     const layouted = getLayoutedElements(initialNodes, initialEdges);
     return { flowNodes: layouted.nodes, flowEdges: layouted.edges };
   }, [graphData, componentId]);
+
+  const presentedNodes = useMemo(() => flowNodes.map(node => {
+    const matches = !resourceSearch || `${node.data.label} ${node.id} ${node.data.resourceType}`.toLowerCase().includes(resourceSearch.toLowerCase());
+    return { ...node, data: { ...node.data, highlighted: Boolean(node.data.highlighted || (resourceSearch && matches)) }, style: { opacity: matches ? 1 : 0.4 } };
+  }), [flowNodes, resourceSearch]);
 
   const handleViewChange = (v: GraphView) => {
     const next = new URLSearchParams(searchParams);
@@ -188,12 +197,12 @@ export function ArchitectureExplorerPage() {
   ]))).sort();
 
   return (
-    <div className="flex flex-col h-[calc(100vh-6.5rem)] relative">
-      <div className="flex items-center justify-between pb-4">
+    <div className="architecture-workspace flex flex-col min-h-[720px] h-[calc(100dvh-8.5rem)] relative gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-title text-xl font-bold text-ink">Architecture Explorer</h1>
           <p className="text-xs text-graphite">
-            Backend-provided topology and comparison classifications
+            Review declared intent against the observed resource relationships.
           </p>
         </div>
 
@@ -243,44 +252,51 @@ export function ArchitectureExplorerPage() {
         </div>
       )}
 
-      {!env.useMocks && graphData && <p className="text-xs text-graphite mb-3">Showing {graphData.nodes.length} resources in the {currentView.toLowerCase()} view.</p>}
       {graphData?.partial && <p role="status" className="text-sm text-sev-medium">Inventory is partial: {graphData.warnings?.map(row => row.message).join('; ')}</p>}
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="flex items-center gap-2 border border-rule-strong rounded-lg px-3 bg-sheet min-h-10 flex-1 max-w-md"><Search className="w-4 h-4 text-graphite stroke-[1.5]" /><input aria-label="Search loaded architecture resources" placeholder="Find a resource in this snapshot" className="min-w-0 w-full bg-transparent text-sm py-2" value={resourceSearch} onChange={event => setResourceSearch(event.target.value)} /></label>
+        <div className="flex border border-rule rounded-lg bg-sheet p-1 gap-1" aria-label="Architecture presentation">
+          {(['canvas', 'list'] as const).map(value => <button type="button" key={value} aria-pressed={surface === value} onClick={() => setSurface(value)} className={`px-3 py-1.5 rounded text-sm ${surface === value ? 'bg-prussian-tint text-prussian font-semibold' : 'text-graphite'}`}>{value === 'canvas' ? 'Canvas' : 'Resource list'}</button>)}
+        </div>
+      </div>
       <StateBoundary isNotEnabled={!architectureEnabled} isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
-        <div className="flex-1 rounded-[12px] border border-rule bg-sheet overflow-hidden relative">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 p-3 border-b border-rule text-xs" aria-label="Diff state legend">
-            {diffStateLegend.map(({ state, swatch }) => (
-              <span key={state} className="inline-flex items-center gap-2 text-graphite">
-                <span aria-hidden="true" className={`w-3 h-3 rounded-sm border ${swatch}`} />
-                {formatDiffState(state)}
-              </span>
-            ))}
+        <div className="architecture-sheet flex-1 min-h-0 rounded-xl border border-rule-strong bg-sheet overflow-hidden relative flex flex-col">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-rule bg-sheet text-xs">
+            <span><strong>{graphData?.nodes.length ?? 0}</strong> resources shown; <strong>{graphData?.edges.length ?? 0}</strong> relationships</span>
+            <span className="text-graphite">{graphData?.intentVersion !== undefined ? `Intent version ${graphData.intentVersion}` : 'Observed inventory'}{graphData?.simulated ? ' / Simulated evidence' : ''}</span>
           </div>
-          <details className="p-3 border-b border-rule text-xs"><summary>Resource list</summary><ul className="max-h-40 overflow-auto">{graphData?.nodes.map(node => <li key={node.id}><button className="p-2 text-left underline" onClick={() => setSelectedNode(node)}>{node.label}</button></li>)}</ul></details>
-          <ReactFlow
-            nodes={flowNodes}
-            edges={flowEdges}
-            nodeTypes={nodeTypes}
-            onNodeClick={(_, node) => setSelectedNode(node.data as unknown as GraphNode)}
-            fitView
-          >
-            <Background color="#E2E8F0" gap={16} />
-            <Controls className="!bg-sheet !border-rule !shadow-none" />
-          </ReactFlow>
-
+          <div className="architecture-body flex flex-1 min-h-0">
+            <aside aria-label="Snapshot resources" className={`${surface === 'canvas' ? 'hidden xl:block w-60 shrink-0 border-r border-rule' : 'w-full'} overflow-y-auto bg-sheet`}>
+              <div className="p-4 border-b border-rule"><h2 className="text-sm font-semibold">Snapshot resources</h2><p className="mt-1 text-xs text-graphite">Select a resource to inspect its evidence.</p></div>
+              <ul className="divide-y divide-rule">{graphData?.nodes.filter(node => `${node.label} ${node.id} ${node.resourceType}`.toLowerCase().includes(resourceSearch.toLowerCase())).map(node => <li key={node.id}><button type="button" aria-label={`Inspect resource ${node.label}`} className={`w-full px-4 py-3 text-left ${selectedNode?.id === node.id ? 'bg-prussian-tint' : 'hover:bg-film'}`} onClick={() => inspectNode(node)}><span className="block text-sm font-medium truncate">{node.label}</span><span className="block mt-1 text-xs text-graphite truncate">{formatResourceType(node.resourceType)}</span><span className="block mt-1 text-xs text-graphite">{formatDiffState(node.diffState)}</span></button></li>)}</ul>
+              {graphData && !graphData.nodes.some(node => `${node.label} ${node.id} ${node.resourceType}`.toLowerCase().includes(resourceSearch.toLowerCase())) && <p className="p-4 text-sm text-graphite">No loaded resources match this search.</p>}
+            </aside>
+            {surface === 'canvas' && <div className="flex-1 min-w-0 relative bg-film">
+              <ReactFlow nodes={presentedNodes} edges={flowEdges} nodeTypes={nodeTypes} onNodeClick={(_, node) => inspectNode(node.data as unknown as GraphNode)} fitView minZoom={0.1} maxZoom={2} onlyRenderVisibleElements>
+                <Background variant={BackgroundVariant.Lines} color="var(--color-rule)" gap={24} />
+                <Controls className="!bg-sheet !border-rule !shadow-none" />
+              </ReactFlow>
+              <details className="absolute bottom-4 right-4 max-w-[calc(100%-5rem)] bg-sheet border border-rule-strong rounded p-3 text-xs z-5">
+                <summary className="cursor-pointer font-semibold">Drawing key</summary>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-3" aria-label="Diff state legend">{diffStateLegend.map(({ state, swatch }) => <span key={state} className="inline-flex items-center gap-2 text-graphite"><span aria-hidden="true" className={`w-3 h-3 rounded-sm border ${swatch}`} />{formatDiffState(state)}</span>)}</div>
+                {graphData?.asOf && <p className="mt-3 pt-2 border-t border-rule text-graphite">Observed {new Date(graphData.asOf).toLocaleString()}</p>}
+              </details>
+            </div>}
+          </div>
           {/* Details Drawer per AGENTS.md §5.3 */}
           {selectedNode && (
-            <div className="absolute top-0 right-0 w-80 h-full bg-sheet border-l border-rule p-4 shadow-none flex flex-col z-10 transition-transform duration-180">
+            <div ref={drawerRef} tabIndex={-1} role="dialog" aria-label="Resource details" onKeyDown={event => { if (event.key === 'Escape') closeDetails(); }} className="absolute top-0 right-0 w-full sm:w-80 h-full bg-sheet border-l border-rule-strong p-5 shadow-none flex flex-col z-10">
               <div className="flex items-start justify-between pb-3 border-b border-rule">
                 <div>
                   <h3 className="font-title text-sm font-semibold text-ink">{selectedNode.label}</h3>
-                  <span className="text-[11px] font-mono text-pencil">{selectedNode.resourceType}</span>
+                  <span className="text-xs font-mono text-pencil">{selectedNode.resourceType}</span>
                 </div>
                 <button
                   type="button"
-                  aria-label="Close resource details" onClick={() => setSelectedNode(null)}
+                  aria-label="Close resource details" onClick={closeDetails}
                   className="text-graphite hover:text-ink text-sm px-1.5 py-0.5 rounded border border-rule"
                 >
-                  ✕
+                  <X className="w-4 h-4 stroke-[1.5]" />
                 </button>
               </div>
 
@@ -295,6 +311,9 @@ export function ArchitectureExplorerPage() {
                   <CopyableId id={selectedNode.id} />
                 </div>
 
+                <div><span className="text-xs text-pencil block mb-1">Resource type</span><p className="text-sm break-words">{formatResourceType(selectedNode.resourceType)}</p></div>
+                {selectedNode.explanation && <div><span className="text-xs text-pencil block mb-1">Evidence context</span><p className="text-sm">{selectedNode.explanation}</p></div>}
+                <div><span className="text-xs text-pencil block mb-2">Observed relationships</span><ul className="divide-y divide-rule">{graphData?.edges.filter(edge => edge.source === selectedNode.id || edge.target === selectedNode.id).map(edge => <li key={edge.id} className="py-2 text-xs break-words"><p className="font-medium">{edge.relationshipType}</p><p className="text-graphite mt-1">{edge.source === selectedNode.id ? 'To' : 'From'} {graphData.nodes.find(node => node.id === (edge.source === selectedNode.id ? edge.target : edge.source))?.label ?? (edge.source === selectedNode.id ? edge.target : edge.source)}</p><p className="text-graphite">{formatDiffState(edge.diffState)}</p></li>)}</ul></div>
                 {selectedNode.severity && (
                   <div>
                     <span className="text-xs text-pencil block mb-1">Highest Severity</span>

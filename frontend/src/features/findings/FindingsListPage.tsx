@@ -38,20 +38,20 @@ export function FindingsListPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="font-title text-2xl font-bold text-ink">Architecture Findings</h1>
+        <h1 className="font-title text-2xl font-bold text-ink">Findings</h1>
         <p className="text-xs text-graphite mt-1">
-          Detailed drift and security policy compliance violations detected across monitored workloads
+          Review observed violations against approved intent and enabled security checks.
         </p>
       </div>
 
       {/* Filter Bar */}
-      <Card padding="sm">
+      <Card padding="md">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 flex-1 min-w-[200px] bg-film px-3 py-1.5 rounded border border-rule">
             <Search className="w-3.5 h-3.5 text-graphite stroke-[1.5]" />
             <input
               type="text"
-              placeholder="Search findings, resources, or rule IDs..."
+              aria-label="Search loaded findings" placeholder="Find a rule, resource or finding"
               value={searchQuery}
               onChange={(e) => updateParam('q', e.target.value)}
               className="bg-transparent text-xs text-ink placeholder:text-pencil focus:outline-none w-full"
@@ -61,11 +61,11 @@ export function FindingsListPage() {
           <div className="flex items-center gap-2">
             <Filter className="w-3.5 h-3.5 text-graphite stroke-[1.5]" />
             <select
-              value={severityFilter}
+              aria-label="Finding severity" value={severityFilter}
               onChange={(e) => updateParam('severity', e.target.value)}
               className="bg-film text-xs text-ink border border-rule rounded px-2.5 py-1.5 focus:outline-none"
             >
-              <option value="">All Severities</option>
+              <option value="">All severities</option>
               <option value="CRITICAL">Critical</option>
               <option value="HIGH">High</option>
               <option value="MEDIUM">Medium</option>
@@ -74,11 +74,11 @@ export function FindingsListPage() {
             </select>
 
             <select
-              value={statusFilter}
+              aria-label="Finding status" value={statusFilter}
               onChange={(e) => updateParam('status', e.target.value)}
               className="bg-film text-xs text-ink border border-rule rounded px-2.5 py-1.5 focus:outline-none"
             >
-              <option value="">All Statuses</option>
+              <option value="">All statuses</option>
               <option value="OPEN">Open</option>
               <option value="ACKNOWLEDGED">Acknowledged</option>
               <option value="RESOLVED">Resolved</option>
@@ -99,8 +99,10 @@ export function FindingsListPage() {
         onRetry={() => refetch()}
       >
         {data && (
-          <div className="rounded-[12px] border border-rule bg-sheet overflow-hidden">
-            <table className="w-full text-left text-xs">
+          <div className="space-y-3">
+            <div className="sm:hidden divide-y divide-rule border border-rule rounded-xl bg-sheet">{displayed.map(item => <article key={item.id} className="p-4 space-y-3"><div className="flex items-center justify-between gap-3"><SeverityBadge severity={item.severity} /><span className="text-xs text-graphite">{item.status}</span></div><Link to={`/findings/${item.id}`} className="block font-semibold text-sm text-ink">{item.title}</Link><p className="text-xs text-graphite break-all">{item.resourceId}</p><p className="text-xs text-graphite">{formatDateTime(item.detectedAt)}</p></article>)}</div>
+            <div className="hidden sm:block rounded-xl border border-rule bg-sheet overflow-x-auto">
+            <table className="w-full min-w-[780px] text-left text-sm">
               <thead className="bg-film border-b border-rule text-graphite font-medium">
                 <tr>
                   <th className="py-2.5 px-4">Severity</th>
@@ -120,14 +122,14 @@ export function FindingsListPage() {
                       <Link to={`/findings/${item.id}`} className="font-medium text-ink hover:text-prussian block">
                         {item.title}
                       </Link>
-                      <span className="font-mono text-[11px] text-pencil">{item.ruleId}</span>
+                      <span className="font-mono text-xs text-pencil">{item.ruleId}</span>
                     </td>
                     <td className="py-3 px-4">
-                      <div className="font-mono text-ink text-[11px]">{item.resourceId}</div>
-                      <div className="text-[10px] text-pencil uppercase">{formatResourceType(item.resourceType)}</div>
+                      <div className="font-mono text-ink text-xs">{item.resourceId}</div>
+                      <div className="text-xs text-pencil">{formatResourceType(item.resourceType)}</div>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-medium border border-rule bg-film text-ink">
+                      <span className="px-2 py-0.5 rounded text-xs font-medium border border-rule bg-film text-ink">
                         {item.status}
                       </span>
                     </td>
@@ -138,6 +140,7 @@ export function FindingsListPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </StateBoundary>

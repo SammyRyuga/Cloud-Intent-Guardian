@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { SeverityBadge } from '@/components/common/SeverityBadge';
 import { StateBoundary } from '@/components/common/StateBoundary';
 import { formatDateTime } from '@/utils/dates';
-import { Play, ShieldCheck, AlertTriangle, Layers } from 'lucide-react';
+import { Play, Network } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getEvaluationErrorGuidance } from './evaluationErrorGuidance';
 import { getOptionalCountPresentation } from './optionalCountPresentation';
@@ -51,18 +51,18 @@ export function OverviewPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-7xl mx-auto overview-workspace">
+      <div className="space-y-5">
         <div>
-          <h1 className="font-title text-2xl font-bold text-ink">Architecture Conformance Overview</h1>
+          <h1 className="font-title text-2xl font-bold text-ink">Overview</h1>
           <p className="text-xs text-graphite mt-1">
-            Declared intent vs deployed AWS infrastructure state in <span className="font-mono text-ink">{summary?.evaluatedRegion || env.defaultRegion}</span>
+            Architecture conformance for your AWS environment in <span className="font-mono text-ink">{summary?.evaluatedRegion || env.defaultRegion}</span>
           </p>
         </div>
-        <div className="flex flex-wrap items-end gap-2">
+        <div className="review-command flex flex-wrap items-end gap-3">
           <div>
-            <label htmlFor="evaluation-intent" className="block text-xs mb-1">Approved intent to evaluate</label>
-            <select id="evaluation-intent" value={selectedIntentId} disabled={runEvaluation.isPending || isEvaluationActive || intents.isLoading} onChange={(event) => setSelectedIntentId(event.target.value)} className="border border-rule rounded bg-sheet p-2 text-sm max-w-full">
+            <label htmlFor="evaluation-intent" className="block text-sm font-medium mb-2">Approved intent to evaluate</label>
+            <select id="evaluation-intent" value={selectedIntentId} disabled={runEvaluation.isPending || isEvaluationActive || intents.isLoading} onChange={(event) => setSelectedIntentId(event.target.value)} className="border border-rule-strong rounded-lg bg-sheet px-3 py-2 text-sm max-w-full">
               <option value="">Select an approved intent</option>
               {approvedIntents.map(item => <option key={item.intentId} value={item.intentId}>{item.name} (version {item.activeVersion ?? item.version})</option>)}
             </select>
@@ -76,6 +76,7 @@ export function OverviewPage() {
           <Play className="w-3.5 h-3.5 mr-2 stroke-[1.5]" />
           {evaluationsEnabled ? 'Run evaluation' : 'AWS evaluation not enabled locally'}
         </Button>
+          <Link to="/architecture" className="inline-flex items-center gap-2 text-sm text-prussian px-2 py-2"><Network className="w-4 h-4 stroke-[1.5]" />View architecture</Link>
         </div>
       </div>
       {intents.isError && <p role="alert" className="text-sm text-sev-critical">Approved intents could not be loaded: {intents.error.message} <Button variant="secondary" size="sm" onClick={() => intents.refetch()}>Retry intents</Button></p>}
@@ -111,99 +112,38 @@ export function OverviewPage() {
       >
         {summary && (
           <>
-            {/* Top Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Conformance Card (INV-04: percent === null shows — and 'Not evaluated yet') */}
-              <Card>
-                <div className="flex items-center gap-2 text-graphite mb-1">
-                  <ShieldCheck className="w-4 h-4 stroke-[1.5]" />
-                  <span className="text-xs font-medium">Architecture Conformance</span>
+            <section className="grid xl:grid-cols-[minmax(0,1.8fr)_minmax(280px,1fr)] gap-6" aria-label="Evaluation review">
+              <div className="border border-rule rounded-xl bg-sheet overflow-hidden">
+                <div className="p-6 md:p-8">
+                  <div className="flex justify-between items-start gap-4">
+                    <h2 className="text-base font-semibold">Architecture conformance</h2>
+                    <span className="text-xs text-graphite">Latest evaluation</span>
+                  </div>
+                  <div className="mt-6 flex flex-wrap items-end gap-x-6 gap-y-2">
+                    <strong className="font-title text-5xl md:text-6xl font-semibold tracking-tight tabular-nums">{summary.conformance.percent !== null ? `${summary.conformance.percent}%` : '—'}</strong>
+                    <p className="text-sm text-graphite max-w-64 pb-1">{summary.conformance.percent !== null
+                      ? `${summary.conformance.passingRules} of ${summary.conformance.totalRules} evaluated constraints passing`
+                      : summary.lastEvaluatedAt ? 'Conformance unavailable for the latest evaluation' : 'Not evaluated yet'}</p>
+                  </div>
+                  {summary.conformance.percent !== null && <meter className="conformance-meter mt-6 w-full h-2" min={0} max={Math.max(1, summary.conformance.totalRules)} value={summary.conformance.passingRules} aria-label="Passing evaluated constraints" />}
+                  <p className="mt-6 text-xs text-graphite">Compare the approved declaration with the observed architecture. Incomplete evidence remains unknown.</p>
                 </div>
-                <div className="flex items-baseline gap-2 mt-2">
-                  <span className="font-title text-3xl font-bold text-ink">
-                    {summary.conformance.percent !== null ? `${summary.conformance.percent}%` : '—'}
-                  </span>
-                  <span className="text-xs text-pencil">
-                    {summary.conformance.percent !== null
-                      ? `${summary.conformance.passingRules}/${summary.conformance.totalRules} evaluated constraints passing`
-                      : summary.lastEvaluatedAt ? 'Conformance unavailable for the latest evaluation' : 'Not evaluated yet'}
-                  </span>
-                </div>
-              </Card>
-
-              {/* Total Findings */}
-              <Card>
-                <div className="flex items-center gap-2 text-graphite mb-1">
-                  <AlertTriangle className="w-4 h-4 stroke-[1.5]" />
-                  <span className="text-xs font-medium">Active Findings</span>
-                </div>
-                <div className="flex items-baseline gap-2 mt-2">
-                  <span className="font-title text-3xl font-bold text-ink">{summary.totalFindings}</span>
-                  <Link to="/findings" className="text-xs text-prussian hover:underline">
-                    View findings
-                  </Link>
-                </div>
-              </Card>
-
-              {/* Latest Snapshot Changes */}
-              <Card>
-                <div className="flex items-center gap-2 text-graphite mb-1">
-                  <Layers className="w-4 h-4 stroke-[1.5]" />
-                  <span className="text-xs font-medium">Latest Snapshot Changes</span>
-                </div>
-                <div className="flex items-baseline gap-2 mt-2">
-                  <span className="font-title text-3xl font-bold text-ink">{driftCount?.label}</span>
-                  {driftCount?.showLink && <Link to="/drift-events" className="text-xs text-prussian hover:underline">
-                    Inspect drift
-                  </Link>}
-                </div>
-              </Card>
-
-              {/* Open Remediations */}
-              <Card>
-                <div className="flex items-center gap-2 text-graphite mb-1">
-                  <span className="text-xs font-medium">Pending Remediations</span>
-                </div>
-                <div className="flex items-baseline gap-2 mt-2">
-                  <span className="font-title text-3xl font-bold text-ink">{remediationCount?.label}</span>
-                  {remediationCount?.showLink && <Link to="/remediation" className="text-xs text-prussian hover:underline">
-                    Review actions
-                  </Link>}
-                </div>
-              </Card>
-            </div>
-
-            {/* Severity Distribution */}
-            <Card>
-              <CardHeader
-                title="Active Violations by Severity"
-                subtitle="All counts provided by backend telemetry evaluation"
-              />
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                <div className="p-3 bg-film rounded-lg border border-rule flex flex-col gap-1">
-                  <SeverityBadge severity="CRITICAL" />
-                  <span className="font-title text-2xl font-bold text-ink">{summary.severityCounts.critical}</span>
-                </div>
-                <div className="p-3 bg-film rounded-lg border border-rule flex flex-col gap-1">
-                  <SeverityBadge severity="HIGH" />
-                  <span className="font-title text-2xl font-bold text-ink">{summary.severityCounts.high}</span>
-                </div>
-                <div className="p-3 bg-film rounded-lg border border-rule flex flex-col gap-1">
-                  <SeverityBadge severity="MEDIUM" />
-                  <span className="font-title text-2xl font-bold text-ink">{summary.severityCounts.medium}</span>
-                </div>
-                <div className="p-3 bg-film rounded-lg border border-rule flex flex-col gap-1">
-                  <SeverityBadge severity="LOW" />
-                  <span className="font-title text-2xl font-bold text-ink">{summary.severityCounts.low}</span>
-                </div>
-                <div className="p-3 bg-film rounded-lg border border-rule flex flex-col gap-1">
-                  <SeverityBadge severity="INFO" />
-                  <span className="font-title text-2xl font-bold text-ink">{summary.severityCounts.info}</span>
+                <div className="review-register grid sm:grid-cols-3 divide-x divide-rule">
+                  <div className="review-metric !block"><span className="block text-xs text-graphite">Active findings</span><div className="mt-1 flex items-baseline gap-3"><strong>{summary.totalFindings}</strong><Link to="/findings" className="text-xs text-prussian">View findings</Link></div></div>
+                  <div className="review-metric !block"><span className="block text-xs text-graphite">Latest snapshot changes</span><div className="mt-1 flex items-baseline gap-3"><strong className={driftCount?.showLink ? undefined : "!text-sm !font-medium"}>{driftCount?.label}</strong>{driftCount?.showLink && <Link to="/drift-events" className="text-xs text-prussian">Inspect drift</Link>}</div></div>
+                  <div className="review-metric !block"><span className="block text-xs text-graphite">Pending remediations</span><div className="mt-1 flex items-baseline gap-3"><strong className={remediationCount?.showLink ? undefined : "!text-sm !font-medium"}>{remediationCount?.label}</strong>{remediationCount?.showLink && <Link to="/remediation" className="text-xs text-prussian">Review actions</Link>}</div></div>
                 </div>
               </div>
-            </Card>
+              <section className="bg-sheet border border-rule rounded-xl p-6" aria-labelledby="severity-heading">
+                <h2 id="severity-heading" className="text-base font-semibold">Findings to review</h2>
+                <p className="mt-1 mb-4 text-xs text-graphite">Active findings by server-reported severity</p>
+                <div className="severity-register">
+                  {(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'] as const).map(severity => <Link key={severity} to={`/findings?severity=${severity}`}><SeverityBadge severity={severity} /><strong>{summary.severityCounts[severity.toLowerCase() as keyof typeof summary.severityCounts]}</strong></Link>)}
+                </div>
+              </section>
+            </section>
 
-            <div className="text-xs text-pencil flex items-center justify-between">
+            <div className="text-xs text-graphite flex flex-wrap gap-2 items-center justify-between">
               <span>Last evaluated: {formatDateTime(summary.lastEvaluatedAt)}</span>
               <span>Region: {summary.evaluatedRegion}</span>
             </div>
@@ -215,7 +155,7 @@ export function OverviewPage() {
                 {history.isError && <p role="alert" className="text-sm text-sev-critical">Evaluation history could not be loaded: {history.error.message}</p>}
                 {history.data?.items.length === 0 && <p className="text-sm text-graphite">No history yet. Run an evaluation to start the trend.</p>}
                 {history.data && history.data.items.length > 0 && (
-                  <ul className="divide-y divide-rule">
+                  <ul className="evaluation-register divide-y divide-rule">
                     {history.data.items.map((item) => (
                       <li key={item.evaluationId} className="py-2 flex flex-wrap items-center justify-between gap-2 text-sm">
                         <button className="font-mono text-xs underline text-left" onClick={() => setActiveEvaluationId(item.evaluationId)} aria-label={`Inspect evaluation ${item.evaluationId}`}>{item.evaluationId}</button>

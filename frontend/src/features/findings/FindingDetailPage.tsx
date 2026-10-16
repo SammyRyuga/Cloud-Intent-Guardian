@@ -1,3 +1,5 @@
+import { AttachmentImpactPanel } from '@/components/common/AttachmentImpactPanel';
+import { CandidateHistoryPanel } from '@/components/common/CandidateHistoryPanel';
 import { useState } from 'react';
 import { hasCapability } from '@/config/capabilities';
 import { useParams, Link } from 'react-router-dom';
@@ -51,10 +53,10 @@ export function FindingDetailPage() {
                     {finding.status}
                   </span>
                 </div>
-                <h1 className="font-title text-xl font-bold text-ink">{finding.title}</h1>
+                <h1 className="font-title text-xl font-semibold text-ink max-w-[65ch]">{finding.title}</h1>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
                 {finding.status === 'OPEN' && hasCapability('findings.update') && finding.revision !== undefined && (
                   <Button
                     variant="secondary"
@@ -111,6 +113,8 @@ export function FindingDetailPage() {
             </Card>}
             {finding.suppressionReason && <Card><CardHeader title={finding.status === 'SUPPRESSED' ? 'Suppression decision' : 'Previous suppression decision'} /><p className="text-sm">{finding.suppressionReason}</p>{finding.suppressedAt && <p className="mt-2 text-xs text-graphite">Recorded {formatDateTime(finding.suppressedAt)}</p>}</Card>}
 
+            {finding.resourceType === 'AWS::EC2::SecurityGroup' && <AttachmentImpactPanel impact={finding.observed?.attachmentImpact} />}
+            {finding.tier === 'TIER_2' && <CandidateHistoryPanel history={finding.history ?? finding.observed?.history} />}
             {finding.evidence && <Card><CardHeader title="Evaluation evidence" /><p className="text-sm mb-3">{finding.explanation}</p>{finding.evidence.map((entry, index) => <div key={index} className="border-t border-rule py-3"><p className="text-xs">{entry.source} - {formatDateTime(entry.observedAt)}</p><CopyableId id={entry.resourceId} /><pre className="text-xs whitespace-pre-wrap break-words mt-2">{JSON.stringify(entry.details, null, 2)}</pre></div>)}</Card>}
             {(finding.tier || finding.reviewStatus || finding.crossValidation || finding.llmConclusion) && (
               <Card>
@@ -132,7 +136,7 @@ export function FindingDetailPage() {
                           {verdict.eligible !== undefined && <span>{verdict.eligible ? 'Eligible' : 'Not eligible'}</span>}
                         </div>
                         <p className="text-xs">{verdict.predicate}</p>
-                        <div className="flex flex-wrap gap-2 text-[11px] text-graphite">
+                        <div className="flex flex-wrap gap-2 text-xs text-graphite">
                           <span>Observed {formatDateTime(verdict.observedAt)}</span>
                           {verdict.evidenceId && <span>Evidence <CopyableId id={verdict.evidenceId} /></span>}
                           {verdict.originId && <span>Origin <CopyableId id={verdict.originId} /></span>}
@@ -255,14 +259,14 @@ export function FindingDetailPage() {
 
                     <div>
                       <span className="text-pencil font-medium block mb-1">Cited Evidence</span>
-                      <ul className="list-disc pl-4 space-y-1 text-pencil font-mono text-[11px]">
+                      <ul className="list-disc pl-4 space-y-1 text-pencil font-mono text-xs">
                         {finding.aiExplanation.citedEvidence.map((ev, idx) => (
                           <li key={idx}>{ev}</li>
                         ))}
                       </ul>
                     </div>
 
-                    <div className="pt-2 border-t border-rule text-[11px] text-pencil italic">
+                    <div className="pt-2 border-t border-rule text-xs text-pencil italic">
                       "This explanation is advisory. Check it against the evidence."
                     </div>
                   </div>

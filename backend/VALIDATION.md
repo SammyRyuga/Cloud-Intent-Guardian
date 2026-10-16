@@ -1,3 +1,22 @@
+## Frontend review-workspace checkpoint (2026-10-16)
+
+The redesigned React workspace is implemented and locally validated, pending
+cloud rollout. It preserves API/authentication behavior and adds a compact
+workflow shell, complete mobile navigation, an asymmetric evaluation/attention
+summary, and an architecture canvas with resource-category shapes, a searchable
+resource index and keyboard-accessible evidence drawer. Findings, intent editing,
+remediation and audit use coherent review layouts. Optional attachment-impact and
+candidate-history fields are validated and displayed with explicit lower-bound
+and unknown states. Mock fixtures remain development-only.
+
+42 frontend tests, 19 contract tests, lint/TypeScript production build and ten
+Chrome browser tests passed. Two existing lint warnings remain. Two screenshot
+critique rounds covered six pages at 390/768/1440 pixels, including overflow,
+keyboard focus, full navigation, lifecycle errors and evaluation polling. The
+browser tests use explicit intercepted local fixtures; they do not prove cloud
+connectivity. See docs/FRONTEND_DESIGN.md. Backend checkpoint 86b2271 also passed
+SAM lint/build. Live rollout and runtime diagnostic verification remain pending.
+
 ## Evidence and impact completion checkpoint (2026-10-16)
 
 Local backend implementation is complete; this checkpoint has not yet been

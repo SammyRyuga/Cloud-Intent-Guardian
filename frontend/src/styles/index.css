@@ -10,6 +10,7 @@
   --color-rule: #E2E8F0;
   --color-rule-strong: #CBD5E1;
   --color-prussian: #183B87;
+  --color-prussian-tint: #E8EEF9;
   --color-prussian-hover: #122C66;
   --color-survey: #1B7A4B;
   --color-sev-critical: #B42318;
@@ -43,5 +44,68 @@
   /* No shadows on cards or containers per AGENTS.md §5.7 */
   .no-shadow {
     box-shadow: none !important;
+  }
+}
+
+@layer base {
+  :where(button, a, input, select, textarea, summary):focus-visible {
+    outline: 2px solid var(--color-prussian);
+    outline-offset: 3px;
+  }
+  :where(input, select, textarea) { max-width: 100%; }
+  :where(h1, h2, h3) { text-wrap: balance; }
+  :where(p) { overflow-wrap: break-word; }
+  :where(pre) { max-width: 100%; }
+  :where(button, select) { touch-action: manipulation; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  }
+}
+@layer components {
+  .guardian-main > div { width: 100%; max-width: 1600px; }
+  .guardian-main h1 { font-size: 28px; line-height: 1.15; font-weight: 600; font-stretch: condensed; letter-spacing: -0.035em; }
+  .guardian-main h1 + p { max-width: 76ch; margin-top: 10px; font-size: 14px; line-height: 1.5; }
+  .guardian-main label { color: var(--color-graphite); }
+  .guardian-main select { min-height: 36px; }
+  .guardian-main table { font-size: 13px; }
+  .guardian-main th { font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .guardian-main td { vertical-align: top; }
+  .guardian-main [role="alert"] { padding: 12px 16px; border-left: 3px solid var(--color-sev-critical); background: var(--color-sheet); border-radius: 4px; }
+  .guardian-nav-active { box-shadow: inset 2px 0 var(--color-prussian); }
+  .guardian-skip-link { position: fixed; top: 8px; left: 8px; transform: translateY(-160%); z-index: 100; padding: 10px 16px; background: var(--color-sheet); border: 2px solid var(--color-prussian); border-radius: 8px; }
+  .guardian-skip-link:focus { transform: translateY(0); }
+  .review-command { border: 1px solid var(--color-rule-strong); border-radius: 12px; padding: 20px 24px; background: var(--color-sheet); }
+  .review-command select { min-width: 280px; max-width: 520px; }
+  .review-register { border-block: 1px solid var(--color-rule); background: var(--color-sheet); }
+  .review-register > * + * { border-top: 1px solid var(--color-rule); }
+  .review-metric { padding: 20px 24px; display: flex; align-items: baseline; gap: 16px; }
+  .review-metric strong { font-family: var(--font-title); font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .severity-register > a { display: flex; align-items: center; justify-content: space-between; min-height: 46px; border-bottom: 1px solid var(--color-rule); }
+  .severity-register > a:last-child { border-bottom: 0; }
+  .severity-register strong { font-family: var(--font-title); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .evaluation-register li { min-height: 56px; }
+  .evaluation-register li button { max-width: 100%; overflow-wrap: anywhere; text-decoration: none; }
+  .evaluation-register li button:hover { text-decoration: underline; }
+  @media (max-width: 639px) {
+    .guardian-main h1 { font-size: 24px; }
+    .review-command { padding: 16px; }
+    .review-command select { min-width: 0; width: 100%; }
+    .review-metric { padding: 16px; }
+    .guardian-main .min-w-72 { min-width: 0; width: 100%; }
+    .guardian-main .min-w-56 { min-width: 0; width: 100%; }
+  }
+}
+@layer components {
+  .conformance-meter { appearance: none; border: 0; border-radius: 4px; background: var(--color-rule); }
+  .conformance-meter::-webkit-meter-bar { background: var(--color-rule); border: 0; border-radius: 4px; }
+  .conformance-meter::-webkit-meter-optimum-value { background: var(--color-prussian); border-radius: 4px; }
+  .conformance-meter::-moz-meter-bar { background: var(--color-prussian); border-radius: 4px; }
+}
+@layer components {
+  .react-flow__background { opacity: 0.45; }
+  .architecture-sheet .react-flow__node:focus-visible { outline: 2px solid var(--color-prussian); outline-offset: 3px; }
+  @media (max-width: 639px) {
+    .review-register .review-metric { display: flex !important; justify-content: space-between; align-items: center; gap: 20px; }
+    .review-register .review-metric > div { margin-top: 0; flex-shrink: 0; }
   }
 }

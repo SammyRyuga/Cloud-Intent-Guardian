@@ -1,4 +1,16 @@
 import { z } from "zod";
+export const AttachmentImpactSchema = z.object({
+  coverage: z.enum(['COMPLETE', 'PARTIAL']), sourceCoverage: z.record(z.string()),
+  knownAttachmentCount: z.number().nonnegative(), attachmentCount: z.number().nullable(),
+  attachments: z.array(z.object({ resourceId: z.string(), resourceType: z.string(), source: z.string().nullable(), interfaceType: z.string().optional(), status: z.string().optional(), vpcId: z.string().optional(), subnetId: z.string().optional(), instanceId: z.string().nullable().optional() }).passthrough()),
+  observedAt: z.string().optional(), requiresHumanApproval: z.literal(true), interpretation: z.string(),
+}).passthrough();
+export const CandidateHistorySchema = z.object({
+  status: z.enum(['FIRST_OBSERVATION', 'PREVIOUSLY_OBSERVED', 'NEW', 'UNKNOWN']), reason: z.string(),
+  previousEvaluationId: z.string().nullable(), driftEventIds: z.array(z.string()),
+  comparisonScope: z.literal('SAME_INTENT_VERSION'), isHistoricalChange: z.boolean(),
+}).passthrough();
+
 
 // These validate the existing backend wire format before adapting names for the UI.
 const ManifestConstraintSchema = z.object({
@@ -178,7 +190,8 @@ export const BackendFindingSchema = z
         }),
       )
       .optional(),
-    observed: z.record(z.unknown()).optional(),
+    history: CandidateHistorySchema.optional(),
+    observed: z.object({ attachmentImpact: AttachmentImpactSchema.optional(), history: CandidateHistorySchema.optional() }).passthrough().optional(),
     expected: z.record(z.unknown()).optional(),
     explanation: z.string().optional(),
   })
@@ -285,7 +298,7 @@ export const RemediationItemSchema = z.object({
   reason: z.string().optional(),
   resourceId: z.string(),
   resourceType: z.string(),
-  plan: z.object({ before: z.unknown(), after: z.unknown(), rollback: z.unknown(), description: z.string() }).passthrough(),
+  plan: z.object({ before: z.unknown(), after: z.unknown(), rollback: z.unknown(), description: z.string(), attachmentImpact: AttachmentImpactSchema.optional() }).passthrough(),
   execution: z.object({ dryRun: z.boolean(), status: z.string(), completedAt: z.string().optional() }).passthrough().optional(),
 }).passthrough();
 export const RemediationDetailSchema = z.object({ item: RemediationItemSchema });

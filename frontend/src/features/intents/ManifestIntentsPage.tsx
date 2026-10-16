@@ -129,8 +129,9 @@ export function ManifestIntentsPage() {
           Create and review versioned JSON manifests. Schema version 2 topology declarations are preserved in each immutable version.
         </p>
       </div>
-      <Card>
-        <CardHeader title="Create draft intent" />
+      <div className="grid xl:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)] gap-6 items-start">
+      <Card className="intent-editor">
+        <CardHeader title="Create draft intent" subtitle="Declare the architecture you want to monitor." />
         <label htmlFor="manifest" className="block text-sm mb-2">
           JSON manifest
         </label>
@@ -142,8 +143,8 @@ export function ManifestIntentsPage() {
           id="manifest"
           value={manifest}
           onChange={(event) => setManifest(event.target.value)}
-          rows={10}
-          className="w-full border border-rule rounded p-3 font-mono text-xs"
+          rows={12}
+          className="w-full border border-rule-strong rounded-lg p-4 font-mono text-xs leading-relaxed bg-film"
         />
         <p className="text-xs text-pencil my-2">
           Do not include passwords, keys or other secrets.
@@ -197,6 +198,7 @@ export function ManifestIntentsPage() {
           </ul>
         </Card>
       </StateBoundary>
+      </div>
       <div className="flex gap-2">
         {cursor && (
           <Button

@@ -101,14 +101,17 @@ test("local feature gates follow backend-advertised capabilities", async ({
     }
   });
   await page.goto("/overview");
-  await expect(page.getByRole("heading", { name: "Architecture Conformance Overview" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
   await expect.poll(() => status?.features).toBeTruthy();
   const features = status!.features!;
   const evaluationButton = page.getByRole("button", { name: /Run evaluation|AWS evaluation not enabled locally/ });
-  if (features.evaluations) await expect(evaluationButton).toBeEnabled();
-  else await expect(evaluationButton).toBeDisabled();
+  await expect(evaluationButton).toBeDisabled();
+  if (features.evaluations) {
+    await page.getByLabel('Approved intent to evaluate').selectOption({ index: 1 });
+    await expect(evaluationButton).toBeEnabled();
+  }
   await page.goto("/findings");
-  await expect(page.getByRole("heading", { name: "Architecture Findings" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Findings", exact: true })).toBeVisible();
   await page.goto("/architecture");
   if (features.topology) await expect(page.getByRole("heading", { name: "Architecture Explorer" })).toBeVisible();
   else await expect(page.getByRole("heading", { name: "Not enabled" })).toBeVisible();
@@ -116,6 +119,6 @@ test("local feature gates follow backend-advertised capabilities", async ({
   if (features.remediationProposals) await expect(page.getByRole("heading", { name: "Remediation proposals" })).toBeVisible();
   else await expect(page.getByRole("heading", { name: "Not enabled" })).toBeVisible();
   await page.goto("/audit-trail");
-  await expect(page.getByRole("heading", { name: "Immutable Audit Trail" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Audit trail", exact: true })).toBeVisible();
   expect(failures).toEqual([]);
 });
