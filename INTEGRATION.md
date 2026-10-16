@@ -1,3 +1,58 @@
+## Evidence and impact completion checkpoint (2026-10-16)
+
+Local backend implementation is complete; this checkpoint has not yet been
+rolled out. AWS Academy validation is excluded at the owner's request.
+
+- `EnableSGAttachmentInventory` defaults off. Its bounded metadata-only helper
+  combines existing EC2/RDS/Lambda SG relationships with filtered network-interface
+  reads. Findings and proposal plans preserve attachment records, source coverage,
+  observation time and an unknown total when coverage is incomplete. Counts are
+  configuration attachment records, not unique affected workloads. Typed
+  `SG_ATTACHMENT_IMPACT` coverage makes enabling a new source establish a fresh
+  drift baseline instead of fabricating resource modifications. No network
+  interfaces or security-group rules are created or changed.
+- Tier 2 history is pinned to account/region/stage, intent version, exact path
+  facts and published prior artifacts. It distinguishes FIRST_OBSERVATION,
+  PREVIOUSLY_OBSERVED, NEW and UNKNOWN; drift links reference deterministic exact
+  edge events only when the matching baseline permits actual staging/publication.
+- Factual observation completeness is separate from policy ambiguity. Published
+  SUCCEEDED or PARTIAL evaluations may establish/compare drift when actual
+  resource observations are complete. Partial source data, missing artifacts,
+  changed coverage and insufficient edge coverage still prevent absence claims.
+  This does not upgrade conformance, confidence or remediation eligibility.
+- `EnableBedrockDiagnostic` defaults off and applies only to the worker. Exact
+  IAM-invoked hardcoded synthetic input permits one bounded regional inference;
+  caller text, inventory and job IDs cannot enter it. Local mode and disabled
+  flags prevent the SDK call. It processes no evaluation job or database state.
+  The existing exact-model InvokeModel permission is sufficient.
+
+227 backend tests passed, including SDK-stubbed bounds/denials and diagnostic
+isolation. A real loopback DynamoDB Local six-evaluation journey verified first,
+repeat and newly observed topology, exact persisted drift-event links, partial
+source handling and attachment evidence in an approval-required proposal. No
+cloud changes were made by that journey. Reproduce with
+`backend/scripts/verify_candidate_history.py`; receipt is ignored under
+backend/local-evidence/candidate-history-verification.json.
+
+A fresh signed-in application write was separately verified in AWS:
+`2f52463d-88cd-46b9-a238-cd4fe3e39df1` remains an unapproved diagnostic draft.
+A consistent DynamoDB read and exact same-stream structured CloudWatch start/
+success records independently corroborated that specific application operation.
+This is observed application-role access, not a global IAM authorization or
+packet-reachability claim. Receipt:
+backend/local-evidence/fresh-application-access-verification.json.
+
+The ENI permission was derived from the actual helper using IAM Policy Autopilot
+0.3.0 (`generate-policies backend/src/common/sg_attachments.py --region ap-south-1
+--account 513371322240 --service-hints ec2 --pretty`). Only the generated
+`ec2:DescribeNetworkInterfaces` read permission is added conditionally to the
+inventory and evaluation roles; generated policies were not uploaded directly.
+All other source files, feature flags and `/v1` envelopes remain compatible.
+
+The frontend redesign and final live worker verification are still in progress
+at this checkpoint. No new older-finding decisions or real remediation have yet
+been applied during this completion pass.
+
 ## Owner-approved activation and live evaluation (2026-10-16)
 
 Application fix commit `5e9f660` is pushed. Render deployment

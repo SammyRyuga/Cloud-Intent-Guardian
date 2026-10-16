@@ -392,6 +392,11 @@ def collect_inventory(region: str | None = None) -> dict[str, Any]:
         cognito_enabled=os.environ.get("COGNITO_ARCHITECTURE_INVENTORY_ENABLED", "false").lower() == "true",
     )
 
+    attachment_coverage = "UNSUPPORTED"
+    if os.environ.get("SG_ATTACHMENT_INVENTORY_ENABLED", "false").lower() == "true":
+        from common.sg_attachments import collect_attachments
+        attachment_coverage = collect_attachments(session, nodes, edges, warnings, resource_coverage, region, account_id, collected_at)
+
     # Snapshot direct relationships so inverse links never create new inverse-of-inverse links.
     direct = [(node["resourceId"], rel) for node in nodes.values() for rel in list(node.get("relationships", []))]
     for source, rel in direct:
@@ -421,6 +426,7 @@ def collect_inventory(region: str | None = None) -> dict[str, Any]:
     relationship_coverage = {kind: structural_status for kind in sorted(STRUCTURAL_EDGE_TYPES)}
     relationship_coverage.update(architecture_coverage)
     relationship_coverage[STREAM_EDGE] = stream_coverage
+    relationship_coverage["SG_ATTACHMENT_IMPACT"] = attachment_coverage
     relationship_coverage["STRUCTURAL"] = ("PARTIAL" if os.environ.get("SERVERLESS_RELATIONSHIPS_ENABLED", "false").lower() == "true"
                                              and stream_coverage != "COMPLETE" else structural_status)
     relationship_coverage["NETWORK_PERMISSION"] = "UNSUPPORTED"

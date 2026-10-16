@@ -129,6 +129,7 @@ def candidates(intent, inventory):
             rows.append({'candidateId': hashlib.sha256(raw.encode()).hexdigest()[:32],
                          'ruleId': rule['ruleId'], 'sourceId': source, 'targetId': target,
                          'predicate': 'DIRECTED_PATH_PRESENT',
+                         'pathEdges': [{key: item.get(key) for key in ('sourceId', 'targetId', 'type', 'protocol', 'ports', 'observationKind')} for item in path],
                          'snapshotId': snapshot_id, 'protocol': edge.get('protocol'), 'ports': edge.get('ports') or [],
                          'observedAt': inventory.get('meta', {}).get('collectedAt'),
                          'explanation': rule.get('explanation', '')})
@@ -174,7 +175,7 @@ def cross_validate(candidate, inventory, source_verdicts=None):
             'simulated': valid_fixture}
 
 
-def escalate(intent, inventory, evaluation, findings, client=None):
+def escalate(intent, inventory, evaluation, findings, client=None, history=None):
     """Extend Tier 1 artifacts with advisory candidates; never change deterministic results."""
     if os.environ.get('LLM_ENABLED', 'false').lower() != 'true':
         return evaluation, findings
@@ -189,6 +190,8 @@ def escalate(intent, inventory, evaluation, findings, client=None):
     except Exception:
         unavailable = True
     for candidate in pending[:MAX_CANDIDATES]:
+        from common.candidate_history import candidate_history
+        candidate["history"] = candidate_history(candidate, inventory, history)
         source_verdicts = None
         if not is_local() and inventory.get('meta', {}).get('simulated') is not True:
             try:
@@ -224,6 +227,7 @@ def escalate(intent, inventory, evaluation, findings, client=None):
                    'severity': 'LOW' if accepted and conclusion['verdict'] == 'BENIGN' else 'MEDIUM',
                    'confidence': 'MEDIUM' if accepted else 'LOW',
                    'reviewStatus': 'CORROBORATED' if accepted else 'NEEDS_HUMAN_REVIEW',
+                   'history': candidate['history'],
                    'actionEligible': False, 'crossValidation': validation, 'llmConclusion': conclusion,
                    'llmStatus': failure or 'VALIDATED', 'firstSeenAt': now, 'lastSeenAt': now, 'updatedAt': now,
                    'simulated': inventory.get('meta', {}).get('simulated', False)}

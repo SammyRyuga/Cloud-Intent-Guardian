@@ -53,10 +53,12 @@ def build_plan(finding):
         permissions = ssh_permissions(rules)
         if not permissions:
             raise ValueError('No exact public SSH ingress permission was evidenced.')
-        return {'description': 'Revoke only the evidenced public CIDR ingress permissions that include SSH.',
+        impact = observed.get('attachmentImpact')
+        attachment_fields = {'attachmentImpact': impact} if isinstance(impact, dict) else {}
+        return {**attachment_fields, 'description': 'Revoke only the evidenced public CIDR ingress permissions that include SSH.',
                 'before': {'publicSshPermissions': permissions}, 'after': {'publicSshPermissions': []},
                 'rollback': {'operation': 'authorize_security_group_ingress', 'permissions': permissions},
-                'impact': 'May affect every resource attached to this group. Attachment coverage is unknown; approval is mandatory.'}
+                'impact': ('Potential configuration attachment records are listed with dated coverage in attachmentImpact; this does not prove an outage. Human approval is mandatory.' if attachment_fields else 'May affect every resource attached to this group. Attachment coverage is unknown; approval is mandatory.')}
     config = observed.get('publicAccessBlock')
     # Inventory's normalized fields are preserved in the finding; do not invent unknown prior state.
     missing = observed.get('publicAccessBlockMissing') is True
@@ -85,6 +87,9 @@ def current_plan(finding, client):
                     rules.append({'protocol': permission['IpProtocol'], 'fromPort': permission.get('FromPort'),
                                   'toPort': permission.get('ToPort'), 'cidr': entry.get(cidr_key)})
         current['observed'] = {'ingressRules': rules}
+        if isinstance((finding.get('observed') or {}).get('attachmentImpact'), dict):
+            # Retain the explicitly dated advisory impact reviewed with this proposal.
+            current['observed']['attachmentImpact'] = finding['observed']['attachmentImpact']
     else:
         from botocore.exceptions import ClientError
         try:

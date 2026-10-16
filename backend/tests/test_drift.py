@@ -22,6 +22,20 @@ class DriftEvidenceTests(unittest.TestCase):
         after['edges'][0]['evidence'][0]['observedAt'] = 'new'
         self.assertEqual(self.diff(after), [])
 
+    def test_attachment_collector_activation_establishes_baseline_not_a_config_change(self):
+        after=copy.deepcopy(self.before)
+        after['items'][0]['attributes']['attachmentImpact']={'coverage':'COMPLETE','knownAttachmentCount':0}
+        after['meta']['coverage']['relationshipTypes']['SG_ATTACHMENT_IMPACT']='COMPLETE'
+        self.assertEqual(self.diff(after),[])
+
+    def test_attachment_provenance_clock_is_not_configuration_drift(self):
+        self.before['items'][0]['attributes']['attachmentImpact']={'coverage':'COMPLETE','knownAttachmentCount':1,'observedAt':'old'}
+        after=copy.deepcopy(self.before)
+        after['items'][0]['attributes']['attachmentImpact']['observedAt']='new'
+        self.assertEqual(self.diff(after),[])
+        after['items'][0]['attributes']['attachmentImpact']['knownAttachmentCount']=2
+        self.assertEqual(len(self.diff(after)),1)
+
     def test_actual_attribute_and_edge_removal_retain_observed_before(self):
         after = copy.deepcopy(self.before)
         after['items'][0]['attributes']['publicAccessBlockEnabled'] = False
@@ -71,8 +85,9 @@ class DriftEvidenceTests(unittest.TestCase):
 
     def test_partial_or_missing_coverage_is_not_baseline(self):
         self.assertTrue(complete(self.before, {'status': 'SUCCEEDED'}))
-        for inventory, evaluation in [({}, {'status': 'SUCCEEDED'}), (self.before, {'status': 'PARTIAL'}),
-                                       (self.before, {'status': 'SUCCEEDED', 'summary': {'inventoryPartial': True}})]:
+        self.assertTrue(complete(self.before, {'status': 'PARTIAL', 'summary': {'inventoryPartial': True}}))
+        for inventory, evaluation in [({}, {'status': 'SUCCEEDED'}), (self.before, {'status': 'FAILED'}),
+                                       ({**self.before, 'meta': {**self.before['meta'], 'partial': True}}, {'status': 'SUCCEEDED'})]:
             self.assertFalse(complete(inventory, evaluation))
 
 class DriftPersistenceTests(unittest.TestCase):

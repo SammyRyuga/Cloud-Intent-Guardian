@@ -12,6 +12,16 @@ Metadata:
         scope: project
 
 Parameters:
+  EnableSGAttachmentInventory:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Bounded read-only attachment impact for observed security groups. Incomplete collection remains unknown.
+  EnableBedrockDiagnostic:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Operator-only hardcoded synthetic worker inference verification. No API route or application data.
   EnableAPIArchitecture:
     Type: String
     Default: 'false'
@@ -135,6 +145,7 @@ Rules:
         AssertDescription: Optional Bedrock escalation requires an exact model permission ARN.
 
 Conditions:
+  SGAttachmentInventoryEnabled: !Equals [!Ref EnableSGAttachmentInventory, 'true']
   APIArchitectureEnabled: !Equals [!Ref EnableAPIArchitecture, 'true']
   IAMArchitectureEnabled: !Equals [!Ref EnableIAMArchitecture, 'true']
   CognitoArchitectureEnabled: !Equals [!Ref EnableCognitoArchitecture, 'true']
@@ -168,6 +179,7 @@ Globals:
         TOPOLOGY_ENABLED: 'true'
         CIG_ACCOUNT_ID: !Ref AWS::AccountId
         ARCHITECTURE_STACK_NAME: !Ref AWS::StackName
+        SG_ATTACHMENT_INVENTORY_ENABLED: !Ref EnableSGAttachmentInventory
         API_ARCHITECTURE_INVENTORY_ENABLED: !Ref EnableAPIArchitecture
         IAM_ARCHITECTURE_INVENTORY_ENABLED: !Ref EnableIAMArchitecture
         COGNITO_ARCHITECTURE_INVENTORY_ENABLED: !Ref EnableCognitoArchitecture
@@ -519,6 +531,15 @@ Resources:
                 - s3:GetBucketPublicAccessBlock
                 - s3:GetBucketPolicyStatus
               Resource: '*'
+        # Generated from common/sg_attachments.py by IAM Policy Autopilot 0.3.0.
+        # DescribeNetworkInterfaces does not support per-interface ARN scoping.
+        - !If
+          - SGAttachmentInventoryEnabled
+          - Statement:
+              - Effect: Allow
+                Action: ec2:DescribeNetworkInterfaces
+                Resource: '*'
+          - !Ref AWS::NoValue
         - !If
           - AnyArchitectureEnabled
           - Statement:
@@ -841,6 +862,7 @@ Resources:
       MemorySize: 512
       Environment:
         Variables:
+          BEDROCK_DIAGNOSTIC_ENABLED: !Ref EnableBedrockDiagnostic
           INTENTS_TABLE: !Ref IntentsTable
           FINDINGS_TABLE: !Ref FindingsTable
           EVALUATIONS_TABLE: !Ref EvaluationsTable
@@ -878,6 +900,15 @@ Resources:
             - Effect: Allow
               Action: [sts:GetCallerIdentity, ec2:DescribeInstances, ec2:DescribeVpcs, ec2:DescribeSubnets, ec2:DescribeSecurityGroups, rds:DescribeDBInstances, rds:DescribeDBSubnetGroups, s3:ListAllMyBuckets, s3:GetBucketLocation, s3:GetBucketPublicAccessBlock, s3:GetBucketPolicyStatus]
               Resource: '*'
+        # Generated from common/sg_attachments.py by IAM Policy Autopilot 0.3.0.
+        # DescribeNetworkInterfaces does not support per-interface ARN scoping.
+        - !If
+          - SGAttachmentInventoryEnabled
+          - Statement:
+              - Effect: Allow
+                Action: ec2:DescribeNetworkInterfaces
+                Resource: '*'
+          - !Ref AWS::NoValue
         - !If
           - AnyArchitectureEnabled
           - Statement:

@@ -23,7 +23,7 @@ def _violates(constraint, resource):
             public_source = cidr in {"0.0.0.0/0", "::/0"}
             if port_covers_ssh and public_source:
                 matching.append(rule)
-        return bool(matching), {"matchingIngressRules": matching}, "The security group permits SSH (TCP/22) from the public internet."
+        return bool(matching), {"matchingIngressRules": matching, **({"attachmentImpact": {**attrs["attachmentImpact"], "observedAt": resource.get("lastObservedAt")}} if "attachmentImpact" in attrs else {})}, "The security group permits SSH (TCP/22) from the public internet."
     return False, {}, "Constraint does not apply to this resource type."
 
 

@@ -19,8 +19,9 @@ def canonical(value):
 def complete(inventory, evaluation):
     coverage = inventory.get('meta', {}).get('coverage', {})
     resources = coverage.get('resourceTypes', {})
-    return (evaluation.get('status') == 'SUCCEEDED' and not inventory.get('meta', {}).get('partial')
-            and not evaluation.get('summary', {}).get('inventoryPartial')
+    # Policy UNKNOWN produces PARTIAL even with complete source observations.
+    # Factual history depends on observation coverage, never a conformance score.
+    return (evaluation.get('status') in {'SUCCEEDED', 'PARTIAL'} and not inventory.get('meta', {}).get('partial')
             and bool(resources) and all(state in {'COMPLETE', 'UNSUPPORTED'} for state in resources.values())
             and any(state == 'COMPLETE' for state in resources.values()))
 
@@ -28,8 +29,15 @@ def complete(inventory, evaluation):
 def factual(row):
     # Collection-time evidence is retained in the immutable source artifact, not
     # compared as configuration. Unknown fields are deliberately not copied.
-    return {key: row[key] for key in ('id', 'resourceId', 'resourceType', 'type', 'name', 'region', 'accountId', 'properties',
+    result = {key: row[key] for key in ('id', 'resourceId', 'resourceType', 'type', 'name', 'region', 'accountId', 'properties',
             'attributes', 'tags', 'sourceId', 'targetId', 'relationship', 'edgeType', 'protocol', 'ports', 'port', 'direction', 'configurationState', 'mappingState', 'observationKind', 'status') if key in row}
+    if isinstance(result.get('attributes', {}).get('attachmentImpact'), dict):
+        # Retain provenance in artifacts; collection time is not configuration drift.
+        result['attributes'] = dict(result['attributes'])
+        impact = dict(result['attributes']['attachmentImpact'])
+        impact.pop('observedAt', None)
+        result['attributes']['attachmentImpact'] = impact
+    return result
 
 
 def changes(before, after, job, timestamp, previous_id):

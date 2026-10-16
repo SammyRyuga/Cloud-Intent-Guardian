@@ -466,7 +466,9 @@ def _process(db, evaluation_id: str) -> dict:
             inventory = enrich_network_evidence(snapshot, inventory)
             _state_audit(db, job_table_name, audit_table, job, actor, "EVALUATION_STAGE_CHANGED", "EVALUATING")
             evaluation, findings = run_pinned_evaluation(snapshot, inventory, evaluation_id)
-            evaluation, findings = escalate(snapshot, inventory, evaluation, findings)
+            from common.candidate_history import prepare_history
+            history = prepare_history(db, job, evaluation, inventory, _load_complete_artifacts)
+            evaluation, findings = escalate(snapshot, inventory, evaluation, findings, history=history)
             evaluation["startedAt"] = job.get("startedAt") or evaluation["startedAt"]
             evaluation["finishedAt"] = utc_now()
             _state_audit(db, job_table_name, audit_table, job, actor, "EVALUATION_STAGE_CHANGED", "WRITING_ARTIFACTS")
@@ -562,6 +564,9 @@ def reconcile_expired(db=None, evaluation_id: str | None = None) -> list[dict]:
 
 
 def lambda_handler(event, context):
+    if isinstance(event, dict) and event.get('diagnostic') == 'BEDROCK_SYNTHETIC':
+        from common.runtime_verification import verify_bedrock_runtime
+        return verify_bedrock_runtime(event)
     local = os.environ.get("CIG_LOCAL", "").lower() == "true" or os.environ.get("AWS_SAM_LOCAL", "").lower() == "true"
     if local and os.environ.get("INVENTORY_PROVIDER") != "fixture":
         raise RuntimeError("Local evaluation worker requires INVENTORY_PROVIDER=fixture.")
