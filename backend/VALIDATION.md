@@ -27,8 +27,21 @@ tests, 13 contract tests, lint (two existing Fast Refresh warnings), production
 TypeScript/Vite build and a controlled rendered Chrome regression. The regression
 covers pre-existing QUEUED history plus four successive runs: PARTIAL, PARTIAL,
 SUCCEEDED and FAILED, checking convergence, explanations, errors and button state.
-Installed Chrome was used via a temporary Playwright configuration because the
-bundled Chromium executable was unavailable. Release verification follows below.
+The controlled browser test ran with
+`CIG_E2E_BROWSER_CHANNEL=chrome npm run test:e2e -- evaluation-status.spec.ts`
+from frontend/. Its optional per-test channel setting uses installed Chrome when
+the bundled Chromium executable is unavailable.
+
+Released application commit `3c49207`; Render deployment
+`dep-db8nugbl550s73eisthg` is live. GPT-6.1 Sol verified the deployed app in a
+fresh signed-in Brave tab: the original evaluation shows its four UNKNOWN
+explanations. A new real evaluation, `189e311b-5456-4f98-8111-6028b63ea7d6`,
+progressed from RUNNING/COLLECTING to PARTIAL automatically. Current status and
+history both became PARTIAL without manual refresh, last-evaluated updated,
+the Run evaluation button re-enabled, and no browser error logs were recorded.
+The acceptance acknowledgement remained neutral rather than showing stale
+QUEUED. No intent approval or modifying remediation was performed. Optional
+Bedrock and evidence-source runtime integrations remain disabled/unverified.
 
 ## Overview evaluation and proposal count correction (2026-10-16)
 
