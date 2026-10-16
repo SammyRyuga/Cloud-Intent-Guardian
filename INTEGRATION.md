@@ -1,3 +1,26 @@
+## Completion cloud receipts (2026-10-16)
+
+- GitHub `main` was pushed through `74168ef` (backend `bf4e836`). Render deploy
+  `dep-db8vvmff3r2c73fkck50` is live at that application commit.
+- The AWS stack reached UPDATE_COMPLETE with drift, exact-stack API/IAM/Cognito
+  discovery, regional Gemma advisory escalation and evidence adapters enabled.
+  Config, tag enrichment and network promotion remain off. Modifying remediation
+  remains disabled/dry-run. No Flow Logs group or Analyzer paths were invented.
+- Deployed ResourcesFunction invocation under its own execution role returned
+  HTTP 200, 96 account inventory nodes and 169 edges, no warnings; these totals
+  include other applications, while the intent selects exact Guardian assets.
+  Resource and structural coverage are complete; IAM declarations are partial,
+  network evidence unsupported and tag coverage partial as explicitly reported.
+- Public health returned 200. Anonymous resources, audit and drift requests each
+  returned 401. Signed-in browser showed Connected, required approved selection,
+  SUPPRESSED finding status with the approved reason, and a working empty drift
+  history view. Browser checks did not modify findings.
+- Expanded Guardian version 2 is a saved DRAFT. Preview: 68 components, 144
+  structural relationships, four zones and 217 PASS. Activation and its live
+  evaluation await owner approval. See the version 2 review document in
+  docs/intents/guardian-v2-review.md. No successful evaluation is inferred from
+  the pure preview.
+
 ## Completion release validation (2026-10-16)
 
 This section supersedes the older checkpoint below. The optional API, IAM and
@@ -37,13 +60,19 @@ through the deployed lifecycle handler, with optimistic revisions and an atomic
 audit event for each. Both previously reviewed public-SSH findings remain OPEN;
 newer findings were not changed. No AWS resource remediation occurred.
 
-Local checks: 207 backend tests and SAM lint/build passed after the collector
+Local checks: 209 backend tests and SAM lint/build passed after the collector
 fixes. Frontend checks: 37 tests, 16 contract checks, strict TypeScript production
 build and lint passed (two existing Fast Refresh warnings). Lifecycle controls
 require a suppression reason and expected revision, preserve server failures,
 and expose audited suppression/reopen provenance. Evaluation submission uses an
 explicit approved intent and active version, with paginated selection; no silent
-newest-intent fallback. Cloud rollout receipts will be recorded below after execution. Academy IAM role creation, optional service permissions
+newest-intent fallback. Five Chrome browser journeys also passed, including lifecycle success, 403/409
+failures, terminal status/history convergence and paginated approved selection.
+A live version-creation check exposed a manifest round-trip defect: normalized
+boundary crossings include `via: []`, which input validation previously rejected.
+Empty optional boundary intermediaries are now accepted without changing canonical
+content or hashes; REQUIRED_INTERMEDIARY still requires a nonempty list.
+Cloud rollout receipts will be recorded below after execution. Academy IAM role creation, optional service permissions
 and Bedrock entitlement remain unverified in an Academy account. The normal
 owner-authorized ap-south-1 account is distinct from Academy. Remediation remains
 disabled/dry-run; unsupported or absent evidence is never converted to PASS.

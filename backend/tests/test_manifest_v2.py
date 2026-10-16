@@ -151,6 +151,27 @@ class ManifestV2Tests(unittest.TestCase):
         self.assertEqual(validate_manifest(normalized), normalized)
         self.assertEqual(validate_manifest(dynamodb_numbers(normalized)), normalized)
 
+    def test_boundary_optional_via_normalization_is_idempotent(self):
+        payload = v2(
+            relationships=[{"id": "web-api", "from": "web", "to": "api", "effect": "ALLOW", "required": True, "relationshipType": "STRUCTURAL"}],
+            trustBoundaries=[
+                {"id": "ingress", "members": ["web"], "crossingRules": [
+                    {"id": "ingress-services", "to": "services", "effect": "ALLOW"}]},
+                {"id": "services", "members": ["api"], "crossingRules": [
+                    {"id": "services-data", "to": "data", "effect": "DENY", "via": []}]},
+                {"id": "data", "members": ["database"], "crossingRules": []},
+            ])
+        normalized = validate_manifest(payload)
+        self.assertEqual(normalized["trustBoundaries"][0]["crossingRules"][0]["via"], [])
+        self.assertEqual(validate_manifest(normalized), normalized)
+        self.assertEqual(validate_manifest(dynamodb_numbers(normalized)), normalized)
+        from common.versions import content_hash
+        self.assertEqual(content_hash(normalized), content_hash(validate_manifest(normalized)))
+
+    def test_required_intermediary_still_rejects_empty_via(self):
+        self.assert_code("INVALID_MANIFEST", v2(constraints=[{
+            "id": "via-api", "type": "REQUIRED_INTERMEDIARY", "from": "web", "to": "database", "via": []}]))
+
     def test_dynamodb_decimal_rule_values_normalize_and_fractional_values_fail(self):
         payload = v2(
             constraints=[{"id": "blast", "type": "EXPOSURE_BLAST_RADIUS", "from": "web", "maxReachableNodes": Decimal("2.0")}],

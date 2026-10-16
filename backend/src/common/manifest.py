@@ -333,7 +333,7 @@ def _normalize_boundaries(value: Any, ids: set[str], components: set[str]) -> li
             effect = str(rule.get("effect", "")).upper()
             if effect not in {"ALLOW", "DENY"}:
                 _fail("INVALID_TRUST_BOUNDARY_RULE", f"{cpath}.effect must be ALLOW or DENY.")
-            via = _string_list(rule["via"], f"{cpath}.via", maximum=MAX_COMPONENTS, identifiers=True) if "via" in rule else []
+            via = _string_list(rule["via"], f"{cpath}.via", minimum=0, maximum=MAX_COMPONENTS, identifiers=True) if "via" in rule else []
             if any(component not in components for component in via):
                 _fail("UNKNOWN_COMPONENT_REFERENCE", f"{cpath}.via references an unknown component.")
             normalized_crossings.append({"id": cid, "to": to, "effect": effect, "via": via})
