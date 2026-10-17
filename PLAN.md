@@ -451,22 +451,26 @@ freshness and limitations. Missing/disagreeing sources produce
 `reviewStatus:NEEDS_HUMAN_REVIEW`, confidence LOW, and no actionable proposal.
 Bedrock denied/error preserves deterministic results and records the unreviewed
 candidate when escalation is enabled. Disabled escalation makes no model call.
-Unruled topology is baseline ambiguity and makes no historical topology delta
-assertion. Separate snapshot drift history records factual changes; escalation
-does not currently bind its advisory candidate to that historical comparison.
+First observations are baseline ambiguities, not historical changes. Advisory
+candidates now bind exact path facts to prior complete, version-pinned published
+snapshots. Historical context distinguishes first, previous, new and unknown
+observations, and links exact staged/published drift events when available.
+Policy ambiguity does not invalidate otherwise complete factual observations.
 
 ### Phase 5: gated proposals
 
 Registry contains only prewritten revoke-open-SSH and enable-S3-public-access-block
 actions. Proposal stores exact target/rule, before/after dry-run diff, rollback
-plan, finding/evidence hash, expiry and approval actor. Dependency and attachment
-blast-radius enumeration are not implemented; their impact remains UNKNOWN.
+plan, finding/evidence hash, expiry and approval actor. Optional bounded SG
+attachment enumeration preserves observed configuration attachment records and
+per-source coverage. A partial count is a lower bound and the total stays unknown.
 Server derives parameters from validated evidence, not arbitrary requested APIs
 or model output. A revoke action identifies the exact ingress permission; never
 remove unrelated rules. S3 rollback distinguishes prior configuration from absence.
-SG attachment blast radius remains unverified and UNKNOWN. All proposals require
-explicit human approval; modifying remediation stays disabled/dry-run in the live
-prototype. Read-only SG attachment enumeration is a future extension.
+SG attachment records may include both workloads and their ENIs, so the count
+is not presented as unique affected workloads or outage/traffic proof. All
+proposals still require explicit human approval; modifying remediation remains
+disabled/dry-run in the live prototype.
 
 Propose existing spec-compatible request/list/detail/decision routes plus a separate
 explicit execute endpoint. Approval never executes as a side effect. Execution

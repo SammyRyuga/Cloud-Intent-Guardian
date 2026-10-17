@@ -1,7 +1,63 @@
+## Deployed completion verification (2026-10-17)
+
+Backend commit `86b2271` is deployed in ap-south-1; CloudFormation is
+UPDATE_COMPLETE. Frontend commit `1e687e6` is LIVE on Render deployment
+`dep-db94rie7bikc73dnjb10` at https://cloud-intent-guardian.onrender.com.
+The older checkpoints below are historical records, not the current deployment
+state. AWS Academy validation remains excluded at the owner's request.
+
+The final signed-in Cognito evaluation `cedc8394-63a1-4456-9c8a-91e7e0826163`
+used Guardian intent `9af2782d-f80b-41f8-9bd7-eeefddeb672d`, approved version 2.
+Its persisted terminal record and live overview agree: SUCCEEDED, 217/217 PASS,
+100% conformance, zero unknown rules, zero violations and zero drift events,
+96 observed resources and no warnings. This score covers that approved structural
+intent; account-wide findings from other sample intents remain separate.
+
+The deployed worker's exact regional model `google.gemma-3-4b-it` passed the
+strict-JSON synthetic Bedrock diagnostic under its actual execution role
+(request `58e5c647-0213-4e78-afbd-3fb8801a1937`, 312 total tokens). Its fictional
+empty-evidence conclusion was UNCERTAIN. The diagnostic was then disabled and
+an additional invocation returned DISABLED without inference. This proves worker
+runtime/model access, not positive real network-path corroboration. The separate
+signed-in application write below was corroborated by DynamoDB and structured
+CloudWatch records; that proves one application operation, not general IAM access.
+No traffic-generating infrastructure or cross-region inference was added.
+
+The five historical findings identified in the completion review were changed
+from OPEN to ACKNOWLEDGED through the lifecycle handler, with reasons and atomic
+audit events. Two concern the older EC2 sample intent; three repeat the confirmed
+public-SSH group. Suppression was not expanded beyond the three findings the
+owner had explicitly approved earlier. Newer sample-intent findings were left
+unchanged. Acknowledgement does not resolve or remove an active violation.
+
+Fresh proposal `5db12ea2-22e6-4ea6-acc5-9196d72da4a1` references refreshed SSH
+finding `3a077f45fe42f09c056e4a89e2c2994e` after acknowledgement. It is PROPOSED,
+revision 1, dryRun=true, approvalRequired=true, with the exact before/after rule
+and reversible rollback plan. Its dated attachment evidence reports COMPLETE
+coverage and zero configuration attachment records. This is not outage or packet
+reachability proof. The earlier sample-intent proposal remains historical and
+must pass finding-fingerprint/expiry checks before approval. Neither proposal
+was approved or executed; no security-group or S3 configuration was modified.
+
+Verified live flags: EnableSGAttachmentInventory=true,
+EnableBedrockDiagnostic=false, RemediationEnabled=false, RemediationDryRun=true.
+Config and network evidence remain optional/off. Real positive VPC Flow Logs /
+Reachability Analyzer corroboration is not verified for this serverless baseline;
+missing or disagreeing evidence continues to require human review.
+
+Final checks: 227 backend tests passed again; frontend lint, 42 tests, 19 contract
+tests and production build passed. Lint retains two existing Fast Refresh
+warnings. SAM lint/build and ten Chrome fixture-based browser tests passed for
+these unchanged application commits. The real DynamoDB Local six-evaluation
+history/attachment-proposal journey passed separately. Local fixture tests are
+not live AWS proof. Ignored receipts under backend/local-evidence include
+final-guardian-evaluation.json, final-release-audit-verification.json,
+final-finding-review-summary.json and final-ssh-dry-run-proposal.json. The audit
+receipt verifies all five acknowledgements, proposal creation and terminal success.
+
 ## Frontend review-workspace checkpoint (2026-10-16)
 
-The redesigned React workspace is implemented and locally validated, pending
-cloud rollout. It preserves API/authentication behavior and adds a compact
+The redesigned React workspace is implemented, locally validated and deployed. It preserves API/authentication behavior and adds a compact
 workflow shell, complete mobile navigation, an asymmetric evaluation/attention
 summary, and an architecture canvas with resource-category shapes, a searchable
 resource index and keyboard-accessible evidence drawer. Findings, intent editing,
@@ -15,12 +71,12 @@ critique rounds covered six pages at 390/768/1440 pixels, including overflow,
 keyboard focus, full navigation, lifecycle errors and evaluation polling. The
 browser tests use explicit intercepted local fixtures; they do not prove cloud
 connectivity. See docs/FRONTEND_DESIGN.md. Backend checkpoint 86b2271 also passed
-SAM lint/build. Live rollout and runtime diagnostic verification remain pending.
+SAM lint/build. Live rollout and runtime verification are recorded above.
 
 ## Evidence and impact completion checkpoint (2026-10-16)
 
-Local backend implementation is complete; this checkpoint has not yet been
-rolled out. AWS Academy validation is excluded at the owner's request.
+Local backend implementation is complete and subsequently rolled out as recorded
+above. AWS Academy validation is excluded at the owner's request.
 
 - `EnableSGAttachmentInventory` defaults off. Its bounded metadata-only helper
   combines existing EC2/RDS/Lambda SG relationships with filtered network-interface
@@ -68,9 +124,8 @@ The ENI permission was derived from the actual helper using IAM Policy Autopilot
 inventory and evaluation roles; generated policies were not uploaded directly.
 All other source files, feature flags and `/v1` envelopes remain compatible.
 
-The frontend redesign and final live worker verification are still in progress
-at this checkpoint. No new older-finding decisions or real remediation have yet
-been applied during this completion pass.
+This implementation checkpoint preceded the deployed verification recorded above.
+Modifying remediation remains disabled.
 
 ## Owner-approved activation and live evaluation (2026-10-16)
 
